@@ -1,0 +1,24 @@
+<?php
+
+use App\Domains\User\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Domains\User\Http\Controllers\AuthLoginController;
+use App\Domains\User\Http\Controllers\AuthRegisterController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+Route::middleware('throttle:6,1')->group(function (): void {
+    Route::post('/auth/register', AuthRegisterController::class);
+});
+
+Route::middleware('throttle:login')->group(function (): void {
+    Route::post('/auth/login', AuthLoginController::class);
+});
+
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::post('/admin/users', [AdminUserController::class, 'store'])
+        ->middleware('can:user.create');
+});
