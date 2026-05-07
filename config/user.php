@@ -21,8 +21,19 @@ return [
     ],
 
     'otp' => [
+        'length' => env('OTP_LENGTH', 6),
         'ttl_minutes' => env('OTP_TTL_MINUTES', 5),
         'max_attempts' => env('OTP_MAX_ATTEMPTS', 5),
+        'cooldown_seconds' => env('OTP_COOLDOWN_SECONDS', 60),
+        'rate_limit' => [
+            'max_requests' => env('OTP_RATE_LIMIT_MAX', 3),
+            'decay_minutes' => env('OTP_RATE_LIMIT_DECAY_MINUTES', 10),
+        ],
+        'sms' => [
+            'driver' => env('SMS_DRIVER', 'log'),
+            'from' => env('SMS_FROM', 'CORE'),
+        ],
+        'message_template' => env('OTP_MESSAGE_TEMPLATE', 'CoreCMS giris kodunuz: :code (:ttl_minutes dk gecerli).'),
     ],
 
     'login' => [

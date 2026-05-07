@@ -3,14 +3,25 @@
 namespace App\Providers;
 
 use App\Domains\User\Actions\LoginWithPasswordAction;
+use App\Domains\User\Actions\RequestLoginOtpAction;
+use App\Domains\User\Contracts\SmsGateway;
+use App\Domains\User\Events\OtpDeliveryFailed;
+use App\Domains\User\Events\OtpRequested;
+use App\Domains\User\Events\OtpRequestRateLimited;
 use App\Domains\User\Events\UserLoggedIn;
 use App\Domains\User\Events\UserLoginFailed;
 use App\Domains\User\Events\UserRegistered;
 use App\Domains\User\Listeners\LogFailedLogin;
+use App\Domains\User\Listeners\LogOtpDeliveryFailed;
+use App\Domains\User\Listeners\LogOtpRateLimited;
+use App\Domains\User\Listeners\LogOtpRequested;
 use App\Domains\User\Listeners\LogRegisteredUser;
 use App\Domains\User\Listeners\LogSuccessfulLogin;
 use App\Domains\User\Models\User;
 use App\Domains\User\Policies\UserPolicy;
+use App\Domains\User\Sms\FakeSmsGateway;
+use App\Domains\User\Sms\LogSmsGateway;
+use App\Domains\User\Support\OtpCodeGenerator;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Http\Request;
@@ -22,9 +33,6 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         Schema::defaultStringLength(191);
@@ -36,11 +44,33 @@ class AppServiceProvider extends ServiceProvider
                 decaySeconds: (int) config('user.login.decay_minutes', 15) * 60,
             );
         });
+
+        $this->app->singleton(SmsGateway::class, function () {
+            return match ((string) config('user.otp.sms.driver', 'log')) {
+                'fake' => new FakeSmsGateway(),
+                default => new LogSmsGateway(),
+            };
+        });
+
+        $this->app->bind(OtpCodeGenerator::class, function () {
+            return new OtpCodeGenerator((int) config('user.otp.length', 6));
+        });
+
+        $this->app->bind(RequestLoginOtpAction::class, function ($app) {
+            return new RequestLoginOtpAction(
+                smsGateway: $app->make(SmsGateway::class),
+                codeGenerator: $app->make(OtpCodeGenerator::class),
+                hasher: $app->make(Hasher::class),
+                maxAttempts: (int) config('user.otp.max_attempts', 5),
+                ttlMinutes: (int) config('user.otp.ttl_minutes', 5),
+                cooldownSeconds: (int) config('user.otp.cooldown_seconds', 60),
+                rateLimitMax: (int) config('user.otp.rate_limit.max_requests', 3),
+                rateLimitDecaySeconds: (int) config('user.otp.rate_limit.decay_minutes', 10) * 60,
+                messageTemplate: (string) config('user.otp.message_template', 'CoreCMS giris kodunuz: :code'),
+            );
+        });
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         Gate::policy(User::class, UserPolicy::class);
@@ -48,6 +78,9 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(UserRegistered::class, LogRegisteredUser::class);
         Event::listen(UserLoggedIn::class, LogSuccessfulLogin::class);
         Event::listen(UserLoginFailed::class, LogFailedLogin::class);
+        Event::listen(OtpRequested::class, LogOtpRequested::class);
+        Event::listen(OtpRequestRateLimited::class, LogOtpRateLimited::class);
+        Event::listen(OtpDeliveryFailed::class, LogOtpDeliveryFailed::class);
 
         $this->configureRateLimiters();
     }
@@ -67,6 +100,23 @@ class AppServiceProvider extends ServiceProvider
                     'errors' => [],
                 ], 429);
             });
+        });
+
+        RateLimiter::for('otp-send', function (Request $request) {
+            $phone = (string) $request->input('phone', '');
+            $key = sha1(($request->ip() ?? 'no-ip') . '|' . $phone);
+            $maxRequests = (int) config('user.otp.rate_limit.max_requests', 3);
+            $decayMinutes = (int) config('user.otp.rate_limit.decay_minutes', 10);
+
+            return Limit::perMinutes($decayMinutes, $maxRequests)
+                ->by($key)
+                ->response(function () {
+                    return response()->json([
+                        'error_code' => 'AUTH.OTP_RATE_LIMITED',
+                        'message' => 'Çok fazla OTP isteği. Daha sonra tekrar deneyin.',
+                        'errors' => [],
+                    ], 429);
+                });
         });
     }
 }

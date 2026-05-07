@@ -3,6 +3,7 @@
 use App\Domains\User\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Domains\User\Http\Controllers\AuthLoginController;
 use App\Domains\User\Http\Controllers\AuthRegisterController;
+use App\Domains\User\Http\Controllers\SendOtpController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,10 @@ Route::middleware('throttle:6,1')->group(function (): void {
 
 Route::middleware('throttle:login')->group(function (): void {
     Route::post('/auth/login', AuthLoginController::class);
+});
+
+Route::middleware('throttle:otp-send')->group(function (): void {
+    Route::post('/auth/otp/send', SendOtpController::class);
 });
 
 Route::middleware('auth:sanctum')->group(function (): void {

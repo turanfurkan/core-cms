@@ -23,9 +23,14 @@ class LoginOtpFactory extends Factory
         return [
             'user_id' => null,
             'phone' => '+90' . fake()->unique()->numerify('5#########'),
+            'purpose' => LoginOtp::PURPOSE_LOGIN,
             'code_hash' => Hash::make('123456'),
             'attempts' => 0,
             'max_attempts' => 5,
+            'delivery_status' => LoginOtp::DELIVERY_SENT,
+            'ip_address' => null,
+            'user_agent' => null,
+            'request_id' => null,
             'expires_at' => now()->addMinutes(5),
             'consumed_at' => null,
         ];

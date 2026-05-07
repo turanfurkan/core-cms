@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\User\Exceptions\LoginException;
+use App\Domains\User\Exceptions\OtpException;
 use App\Domains\User\Exceptions\RegistrationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -35,6 +36,24 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (LoginException $e, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+
+            $headers = [];
+            if ($e->retryAfter !== null) {
+                $headers['Retry-After'] = (string) $e->retryAfter;
+            }
+
+            return response()->json([
+                'error_code' => $e->errorCode,
+                'message' => $e->getMessage(),
+                'errors' => $e->errors,
+                'retry_after' => $e->retryAfter,
+            ], $e->statusCode, $headers);
+        });
+
+        $exceptions->render(function (OtpException $e, Request $request) {
             if (! $request->expectsJson()) {
                 return null;
             }

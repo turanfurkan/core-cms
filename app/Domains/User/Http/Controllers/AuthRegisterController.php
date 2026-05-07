@@ -3,9 +3,10 @@
 namespace App\Domains\User\Http\Controllers;
 
 use App\Domains\User\Actions\RegisterUserAction;
-use App\Domains\User\Actions\SendLoginOtpAction;
+use App\Domains\User\Actions\RequestLoginOtpAction;
 use App\Domains\User\Http\Requests\SelfRegisterRequest;
 use App\Domains\User\Http\Resources\UserResource;
+use App\Domains\User\Models\LoginOtp;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
@@ -14,7 +15,7 @@ class AuthRegisterController extends Controller
     public function __invoke(
         SelfRegisterRequest $request,
         RegisterUserAction $action,
-        SendLoginOtpAction $sendOtp,
+        RequestLoginOtpAction $sendOtp,
     ): JsonResponse {
         $user = $action->execute(
             data: $request->validated(),
@@ -24,7 +25,12 @@ class AuthRegisterController extends Controller
         );
 
         if ((bool) config('user.register.require_otp_verification')) {
-            $sendOtp->execute($user->phone, $user);
+            $sendOtp->execute(
+                phone: $user->phone,
+                ip: $request->ip(),
+                userAgent: $request->userAgent(),
+                purpose: LoginOtp::PURPOSE_REGISTER_VERIFY,
+            );
 
             return response()->json([
                 'message' => 'Registration successful. Please verify the OTP sent to your phone.',
