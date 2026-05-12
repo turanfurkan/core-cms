@@ -61,4 +61,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->middleware('can:user.create');
     Route::patch('/admin/users/{user}/status', [AdminUserController::class, 'updateStatus'])
         ->middleware('can:user.update.any');
+    Route::patch('/admin/users/{user}/roles', [AdminUserController::class, 'syncRoles'])
+        ->middleware('can:role.assign');
+    Route::post('/admin/users/{user}/impersonate', [AdminUserController::class, 'impersonate'])
+        ->middleware('can:user.view.any');
 });

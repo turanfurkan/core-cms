@@ -2,6 +2,7 @@
 
 namespace App\Domains\User\Http\Controllers\Admin;
 
+use App\Domains\User\Actions\ImpersonateUserAction;
 use App\Domains\User\Actions\RegisterUserAction;
 use App\Domains\User\Actions\SyncUserRolesAction;
 use App\Domains\User\Actions\UpdateUserStatusAction;
@@ -12,6 +13,7 @@ use App\Domains\User\Http\Resources\UserResource;
 use App\Domains\User\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
@@ -42,5 +44,23 @@ class UserController extends Controller
         $user = $action->execute($user, $request->input('status'));
 
         return new UserResource($user);
+    }
+
+    public function syncRoles(User $user, SyncUserRolesRequest $request, SyncUserRolesAction $action): UserResource
+    {
+        $user = $action->execute($user, $request->input('roles'));
+
+        return new UserResource($user);
+    }
+
+    public function impersonate(User $user, Request $request, ImpersonateUserAction $action): JsonResponse
+    {
+        $token = $action->execute($request->user(), $user);
+
+        return response()->json([
+            'message' => "Şu an {$user->name} kılığındasınız.",
+            'access_token' => $token,
+            'token_type' => 'Bearer'
+        ]);
     }
 }
