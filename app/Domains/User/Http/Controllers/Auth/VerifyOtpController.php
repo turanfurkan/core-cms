@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Domains\User\Http\Controllers;
+namespace App\Domains\User\Http\Controllers\Auth;
 
 use App\Domains\User\Actions\CreateAuthTokenAction;
 use App\Domains\User\Actions\VerifyLoginOtpAction;
 use App\Domains\User\Exceptions\OtpException;
-use App\Domains\User\Http\Requests\VerifyOtpRequest;
+use App\Domains\User\Http\Requests\Auth\VerifyOtpRequest;
 use App\Domains\User\Http\Resources\UserResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;

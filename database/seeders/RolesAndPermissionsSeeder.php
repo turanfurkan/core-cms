@@ -20,6 +20,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'user.create.staff',
             'user.update.any',
             'user.delete',
+            'user.revoke',
             'role.assign',
             'role.assign.admin',
         ];
@@ -38,6 +39,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'user.create.staff',
                 'user.update.any',
                 'user.delete',
+                'user.revoke',
                 'role.assign',
             ],
             'editor' => [

@@ -1,11 +1,12 @@
 <?php
 
 use App\Domains\User\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Domains\User\Http\Controllers\AuthLoginController;
-use App\Domains\User\Http\Controllers\AuthLogoutController;
-use App\Domains\User\Http\Controllers\AuthRegisterController;
-use App\Domains\User\Http\Controllers\SendOtpController;
-use App\Domains\User\Http\Controllers\VerifyOtpController;
+use App\Domains\User\Http\Controllers\Auth\LoginController;
+use App\Domains\User\Http\Controllers\Auth\LogoutController;
+use App\Domains\User\Http\Controllers\Auth\RegisterController;
+use App\Domains\User\Http\Controllers\Auth\SendOtpController;
+use App\Domains\User\Http\Controllers\Auth\VerifyOtpController;
+use App\Domains\User\Http\Controllers\Profile\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -18,19 +19,19 @@ Route::get('/health', function (): array {
 });
 
 Route::middleware('auth:sanctum')->group(function (): void {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+    Route::get('/user', [ProfileController::class, 'show']);
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::patch('/profile', [ProfileController::class, 'update']);
 
-    Route::post('/auth/logout', AuthLogoutController::class);
+    Route::post('/auth/logout', LogoutController::class);
 });
 
 Route::middleware('throttle:6,1')->group(function (): void {
-    Route::post('/auth/register', AuthRegisterController::class);
+    Route::post('/auth/register', RegisterController::class);
 });
 
 Route::middleware('throttle:login')->group(function (): void {
-    Route::post('/auth/login', AuthLoginController::class);
+    Route::post('/auth/login', LoginController::class);
 });
 
 Route::middleware('throttle:otp-send')->group(function (): void {

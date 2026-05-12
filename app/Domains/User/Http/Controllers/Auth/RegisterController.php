@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Domains\User\Http\Controllers;
+namespace App\Domains\User\Http\Controllers\Auth;
 
 use App\Domains\User\Actions\RegisterUserAction;
 use App\Domains\User\Actions\RequestLoginOtpAction;
-use App\Domains\User\Http\Requests\SelfRegisterRequest;
+use App\Domains\User\Http\Requests\Auth\RegisterRequest;
 use App\Domains\User\Http\Resources\UserResource;
 use App\Domains\User\Models\LoginOtp;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
-class AuthRegisterController extends Controller
+class RegisterController extends Controller
 {
     public function __invoke(
-        SelfRegisterRequest $request,
+        RegisterRequest $request,
         RegisterUserAction $action,
         RequestLoginOtpAction $sendOtp,
     ): JsonResponse {

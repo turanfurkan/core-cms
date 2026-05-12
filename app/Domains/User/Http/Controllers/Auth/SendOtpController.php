@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Domains\User\Http\Controllers;
+namespace App\Domains\User\Http\Controllers\Auth;
 
 use App\Domains\User\Actions\RequestLoginOtpAction;
-use App\Domains\User\Http\Requests\SendOtpRequest;
+use App\Domains\User\Http\Requests\Auth\SendOtpRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 

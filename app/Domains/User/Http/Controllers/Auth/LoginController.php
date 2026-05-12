@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Domains\User\Http\Controllers;
+namespace App\Domains\User\Http\Controllers\Auth;
 
 use App\Domains\User\Actions\CreateAuthTokenAction;
 use App\Domains\User\Actions\LoginWithPasswordAction;
-use App\Domains\User\Http\Requests\LoginRequest;
+use App\Domains\User\Http\Requests\Auth\LoginRequest;
 use App\Domains\User\Http\Resources\UserResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
-class AuthLoginController extends Controller
+class LoginController extends Controller
 {
     public function __invoke(
         LoginRequest $request,

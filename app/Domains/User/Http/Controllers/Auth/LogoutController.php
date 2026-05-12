@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Domains\User\Http\Controllers;
+namespace App\Domains\User\Http\Controllers\Auth;
 
 use App\Domains\User\Actions\LogoutUserAction;
 use App\Domains\User\DataTransferObjects\LogoutData;
-use App\Domains\User\Http\Requests\LogoutRequest;
+use App\Domains\User\Http\Requests\Auth\LogoutRequest;
 use App\Domains\User\Http\Resources\LogoutResource;
 use App\Http\Controllers\Controller;
 
-class AuthLogoutController extends Controller
+class LogoutController extends Controller
 {
     public function __invoke(LogoutRequest $request, LogoutUserAction $action): LogoutResource
     {

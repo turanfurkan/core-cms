@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\User\Http\Requests;
+namespace App\Domains\User\Http\Requests\Auth;
 
 use App\Domains\User\Rules\PhoneNumber;
 use App\Domains\User\Rules\StrongPassword;
@@ -8,7 +8,7 @@ use App\Domains\User\Support\PhoneNumberNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class SelfRegisterRequest extends FormRequest
+class RegisterRequest extends FormRequest
 {
     public function authorize(): bool
     {

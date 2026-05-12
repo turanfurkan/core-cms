@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\User\Http\Requests;
+namespace App\Domains\User\Http\Requests\Admin;
 
 use App\Domains\User\Rules\PhoneNumber;
 use App\Domains\User\Rules\StrongPassword;

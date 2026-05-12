@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\User\Http\Requests;
+namespace App\Domains\User\Http\Requests\Auth;
 
 use App\Domains\User\Rules\LoginIdentifier;
 use App\Domains\User\Support\PhoneNumberNormalizer;

@@ -84,7 +84,7 @@ class AuthLogoutTest extends TestCase
         $adminUser->assignRole('admin'); // Weight 50
 
         $superAdmin = User::factory()->create();
-        $superAdmin->assignRole('super-admin'); // Weight 100
+        $superAdmin->assignRole('super_admin'); // Weight 100
         $superAdmin->createToken('super-session');
 
         $token = $adminUser->createToken('admin-token')->plainTextToken;
@@ -106,7 +106,7 @@ class AuthLogoutTest extends TestCase
     public function test_tc06_admin_revoke_success(): void
     {
         $superAdmin = User::factory()->create();
-        $superAdmin->assignRole('super-admin');
+        $superAdmin->assignRole('super_admin');
 
         $targetUser = User::factory()->create();
         $targetUser->assignRole('user');
@@ -144,6 +144,9 @@ class AuthLogoutTest extends TestCase
         $this->withHeader('Authorization', 'Bearer ' . $token)
             ->postJson(self::ENDPOINT, ['scope' => 'current_only'])
             ->assertStatus(200);
+
+        // Guard'ı temizle (Test ortamında state kalmaması için)
+        auth()->forgetGuards();
 
         // Aynı token ile tekrar dene
         $this->withHeader('Authorization', 'Bearer ' . $token)

@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Domains\User\Http\Requests;
+namespace App\Domains\User\Http\Requests\Auth;
 
 use App\Domains\User\Rules\PhoneNumber;
 use App\Domains\User\Support\PhoneNumberNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 
-class VerifyOtpRequest extends FormRequest
+class SendOtpRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -27,18 +27,15 @@ class VerifyOtpRequest extends FormRequest
     {
         return [
             'phone' => ['required', 'string', new PhoneNumber()],
-            'code' => ['required', 'string', 'min:4', 'max:10'],
-            'request_id' => ['nullable', 'string', 'uuid'],
+            'purpose' => ['nullable', 'string', 'in:login'],
+            'channel' => ['nullable', 'string', 'in:sms'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'phone.required' => 'Telefon numarası zorunludur.',
-            'code.required' => 'Doğrulama kodu zorunludur.',
-            'code.min' => 'Doğrulama kodu en az 4 karakter olmalıdır.',
-            'code.max' => 'Doğrulama kodu en fazla 10 karakter olmalıdır.',
+            'phone.required' => 'Phone number is required.',
         ];
     }
 }

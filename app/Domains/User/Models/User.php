@@ -86,9 +86,9 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getRoleWeight(): int
     {
         $roleWeights = [
-            'super-admin' => 100,
+            'super_admin' => 100,
             'admin'       => 50,
-            'manager'     => 20,
+            'editor'      => 20,
             'user'        => 1
         ];
 

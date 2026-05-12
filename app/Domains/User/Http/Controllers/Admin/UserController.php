@@ -3,7 +3,7 @@
 namespace App\Domains\User\Http\Controllers\Admin;
 
 use App\Domains\User\Actions\RegisterUserAction;
-use App\Domains\User\Http\Requests\AdminRegisterRequest;
+use App\Domains\User\Http\Requests\Admin\AdminRegisterRequest;
 use App\Domains\User\Http\Resources\UserResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;

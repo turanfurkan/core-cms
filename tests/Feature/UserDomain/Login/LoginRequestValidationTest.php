@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\UserDomain\Login;
 
-use App\Domains\User\Http\Requests\LoginRequest;
+use App\Domains\User\Http\Requests\Auth\LoginRequest;
 use Illuminate\Routing\Redirector;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;
