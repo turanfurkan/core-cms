@@ -83,6 +83,27 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->password !== null && $this->password !== '';
     }
 
+    public function getRoleWeight(): int
+    {
+        $roleWeights = [
+            'super-admin' => 100,
+            'admin'       => 50,
+            'manager'     => 20,
+            'user'        => 1
+        ];
+
+        return $this->roles->max(fn($role) => $roleWeights[$role->name] ?? 0) ?? 0;
+    }
+
+    public function canRevokeSessionsOf(User $target): bool
+    {
+        if ($this->id === $target->id) {
+            return true;
+        }
+
+        return $this->getRoleWeight() > $target->getRoleWeight();
+    }
+
     protected static function newFactory(): Factory
     {
         return UserFactory::new();

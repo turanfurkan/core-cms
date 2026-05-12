@@ -2,6 +2,7 @@
 
 use App\Domains\User\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Domains\User\Http\Controllers\AuthLoginController;
+use App\Domains\User\Http\Controllers\AuthLogoutController;
 use App\Domains\User\Http\Controllers\AuthRegisterController;
 use App\Domains\User\Http\Controllers\SendOtpController;
 use App\Domains\User\Http\Controllers\VerifyOtpController;
@@ -16,8 +17,12 @@ Route::get('/health', function (): array {
     ];
 });
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    Route::post('/auth/logout', AuthLogoutController::class);
 });
 
 Route::middleware('throttle:6,1')->group(function (): void {

@@ -8,10 +8,14 @@ use App\Domains\User\Contracts\SmsGateway;
 use App\Domains\User\Events\OtpDeliveryFailed;
 use App\Domains\User\Events\OtpRequested;
 use App\Domains\User\Events\OtpRequestRateLimited;
+use App\Domains\User\Events\OtpVerificationFailed;
+use App\Domains\User\Events\OtpVerified;
 use App\Domains\User\Events\UserLoggedIn;
+use App\Domains\User\Events\UserLoggedOut;
 use App\Domains\User\Events\UserLoginFailed;
 use App\Domains\User\Events\UserRegistered;
 use App\Domains\User\Listeners\LogFailedLogin;
+use App\Domains\User\Listeners\LogLogoutActivity;
 use App\Domains\User\Listeners\LogOtpDeliveryFailed;
 use App\Domains\User\Listeners\LogOtpRateLimited;
 use App\Domains\User\Listeners\LogOtpRequested;
@@ -19,8 +23,6 @@ use App\Domains\User\Listeners\LogOtpVerificationFailed;
 use App\Domains\User\Listeners\LogOtpVerified;
 use App\Domains\User\Listeners\LogRegisteredUser;
 use App\Domains\User\Listeners\LogSuccessfulLogin;
-use App\Domains\User\Events\OtpVerificationFailed;
-use App\Domains\User\Events\OtpVerified;
 use App\Domains\User\Models\User;
 use App\Domains\User\Policies\UserPolicy;
 use App\Domains\User\Sms\FakeSmsGateway;
@@ -87,6 +89,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(OtpDeliveryFailed::class, LogOtpDeliveryFailed::class);
         Event::listen(OtpVerified::class, LogOtpVerified::class);
         Event::listen(OtpVerificationFailed::class, LogOtpVerificationFailed::class);
+        Event::listen(UserLoggedOut::class, LogLogoutActivity::class);
 
         $this->configureRateLimiters();
     }

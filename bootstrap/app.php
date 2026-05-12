@@ -3,6 +3,7 @@
 use App\Domains\User\Exceptions\LoginException;
 use App\Domains\User\Exceptions\OtpException;
 use App\Domains\User\Exceptions\RegistrationException;
+use App\Domains\User\Exceptions\RevokeFailedException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -69,6 +70,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 'errors' => $e->errors,
                 'retry_after' => $e->retryAfter,
             ], $e->statusCode, $headers);
+        });
+
+        $exceptions->render(function (RevokeFailedException $e, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+
+            return response()->json([
+                'error_code' => $e->errorCode,
+                'message' => $e->getMessage(),
+            ], $e->statusCode);
         });
 
         $exceptions->render(function (ValidationException $e, Request $request) {
