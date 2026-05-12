@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\User\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Domains\User\Http\Controllers\Auth\ForgotPasswordController;
 use App\Domains\User\Http\Controllers\Auth\LoginController;
 use App\Domains\User\Http\Controllers\Auth\LogoutController;
 use App\Domains\User\Http\Controllers\Auth\RegisterController;
@@ -39,6 +40,7 @@ Route::middleware('throttle:otp-send')->group(function (): void {
 });
 
 Route::post('/auth/otp/verify', VerifyOtpController::class);
+Route::post('/auth/password/forgot', ForgotPasswordController::class);
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/users', [AdminUserController::class, 'store'])
