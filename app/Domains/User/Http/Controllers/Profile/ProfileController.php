@@ -3,14 +3,18 @@
 namespace App\Domains\User\Http\Controllers\Profile;
 
 use App\Domains\User\Actions\DeleteAccountAction;
+use App\Domains\User\Actions\StoreUserConsentAction;
 use App\Domains\User\Actions\UpdateAvatarAction;
 use App\Domains\User\Actions\UpdatePasswordAction;
 use App\Domains\User\Actions\UpdateProfileAction;
+use App\Domains\User\Actions\UploadUserDocumentAction;
 use App\Domains\User\DataTransferObjects\UpdateProfileData;
 use App\Domains\User\Http\Requests\Profile\DeleteAccountRequest;
+use App\Domains\User\Http\Requests\Profile\StoreConsentRequest;
 use App\Domains\User\Http\Requests\Profile\UpdateAvatarRequest;
 use App\Domains\User\Http\Requests\Profile\UpdatePasswordRequest;
 use App\Domains\User\Http\Requests\Profile\UpdateProfileRequest;
+use App\Domains\User\Http\Requests\Profile\UploadDocumentRequest;
 use App\Domains\User\Http\Resources\UserResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -76,6 +80,35 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'Hesabınız başarıyla silindi.'
+        ]);
+    }
+
+    /**
+     * Kullanıcı sözleşme onaylarını kaydeder.
+     */
+    public function storeConsent(StoreConsentRequest $request, StoreUserConsentAction $action): JsonResponse
+    {
+        $action->execute($request->user(), $request->validated());
+
+        return response()->json([
+            'message' => 'Onayınız başarıyla kaydedildi.'
+        ]);
+    }
+
+    /**
+     * Kullanıcı dokümanlarını yükler.
+     */
+    public function uploadDocument(UploadDocumentRequest $request, UploadUserDocumentAction $action): JsonResponse
+    {
+        $url = $action->execute(
+            $request->user(),
+            $request->file('document'),
+            $request->input('document_type')
+        );
+
+        return response()->json([
+            'message' => 'Dokümanınız başarıyla yüklendi.',
+            'document_url' => $url
         ]);
     }
 }

@@ -24,6 +24,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
     {
         $this->addMediaCollection('avatar')
             ->singleFile();
+
+        $this->addMediaCollection('documents');
     }
 
     /**
