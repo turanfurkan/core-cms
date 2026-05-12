@@ -4,6 +4,7 @@ use App\Domains\User\Http\Controllers\Admin\UserController as AdminUserControlle
 use App\Domains\User\Http\Controllers\AuthLoginController;
 use App\Domains\User\Http\Controllers\AuthRegisterController;
 use App\Domains\User\Http\Controllers\SendOtpController;
+use App\Domains\User\Http\Controllers\VerifyOtpController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,8 @@ Route::middleware('throttle:login')->group(function (): void {
 Route::middleware('throttle:otp-send')->group(function (): void {
     Route::post('/auth/otp/send', SendOtpController::class);
 });
+
+Route::post('/auth/otp/verify', VerifyOtpController::class);
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/users', [AdminUserController::class, 'store'])

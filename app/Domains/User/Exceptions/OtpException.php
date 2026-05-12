@@ -53,4 +53,50 @@ class OtpException extends RuntimeException
             statusCode: 503,
         );
     }
+
+    public static function notFound(): self
+    {
+        return new self(
+            errorCode: 'AUTH.OTP_NOT_FOUND',
+            message: 'Geçerli bir OTP kaydı bulunamadı.',
+            statusCode: 404,
+        );
+    }
+
+    public static function invalid(): self
+    {
+        return new self(
+            errorCode: 'AUTH.OTP_INVALID',
+            message: 'Girdiğiniz kod hatalı.',
+            statusCode: 400,
+        );
+    }
+
+    public static function expired(): self
+    {
+        return new self(
+            errorCode: 'AUTH.OTP_EXPIRED',
+            message: 'OTP kodunun süresi dolmuş.',
+            statusCode: 400,
+        );
+    }
+
+    public static function maxAttemptsReached(): self
+    {
+        return new self(
+            errorCode: 'AUTH.OTP_MAX_ATTEMPTS',
+            message: 'Çok fazla hatalı deneme yaptınız. Yeni bir kod istemelisiniz.',
+            statusCode: 400,
+        );
+    }
+
+    public static function verifyRateLimited(int $retryAfter): self
+    {
+        return new self(
+            errorCode: 'AUTH.OTP_VERIFY_RATE_LIMITED',
+            message: 'Çok fazla doğrulama denemesi. Lütfen daha sonra tekrar deneyin.',
+            statusCode: 429,
+            retryAfter: $retryAfter,
+        );
+    }
 }

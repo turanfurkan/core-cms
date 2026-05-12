@@ -15,8 +15,12 @@ use App\Domains\User\Listeners\LogFailedLogin;
 use App\Domains\User\Listeners\LogOtpDeliveryFailed;
 use App\Domains\User\Listeners\LogOtpRateLimited;
 use App\Domains\User\Listeners\LogOtpRequested;
+use App\Domains\User\Listeners\LogOtpVerificationFailed;
+use App\Domains\User\Listeners\LogOtpVerified;
 use App\Domains\User\Listeners\LogRegisteredUser;
 use App\Domains\User\Listeners\LogSuccessfulLogin;
+use App\Domains\User\Events\OtpVerificationFailed;
+use App\Domains\User\Events\OtpVerified;
 use App\Domains\User\Models\User;
 use App\Domains\User\Policies\UserPolicy;
 use App\Domains\User\Sms\FakeSmsGateway;
@@ -81,6 +85,8 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(OtpRequested::class, LogOtpRequested::class);
         Event::listen(OtpRequestRateLimited::class, LogOtpRateLimited::class);
         Event::listen(OtpDeliveryFailed::class, LogOtpDeliveryFailed::class);
+        Event::listen(OtpVerified::class, LogOtpVerified::class);
+        Event::listen(OtpVerificationFailed::class, LogOtpVerificationFailed::class);
 
         $this->configureRateLimiters();
     }
