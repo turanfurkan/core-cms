@@ -22,6 +22,8 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'email_verified_at' => optional($this->email_verified_at)?->toAtomString(),
             'phone_verified_at' => optional($this->phone_verified_at)?->toAtomString(),
+            'status' => $this->status,
+            'avatar_url' => $this->getFirstMediaUrl('avatar'),
             'roles' => $this->getRoleNames()->values(),
         ];
     }

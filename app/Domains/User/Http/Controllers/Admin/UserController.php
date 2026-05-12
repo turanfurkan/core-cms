@@ -3,8 +3,13 @@
 namespace App\Domains\User\Http\Controllers\Admin;
 
 use App\Domains\User\Actions\RegisterUserAction;
+use App\Domains\User\Actions\SyncUserRolesAction;
+use App\Domains\User\Actions\UpdateUserStatusAction;
 use App\Domains\User\Http\Requests\Admin\AdminRegisterRequest;
+use App\Domains\User\Http\Requests\Admin\SyncUserRolesRequest;
+use App\Domains\User\Http\Requests\Admin\UpdateUserStatusRequest;
 use App\Domains\User\Http\Resources\UserResource;
+use App\Domains\User\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
@@ -30,5 +35,12 @@ class UserController extends Controller
             'message' => 'User created successfully.',
             'user' => new UserResource($user),
         ], 201);
+    }
+
+    public function updateStatus(User $user, UpdateUserStatusRequest $request, UpdateUserStatusAction $action): UserResource
+    {
+        $user = $action->execute($user, $request->input('status'));
+
+        return new UserResource($user);
     }
 }

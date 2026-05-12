@@ -5,6 +5,7 @@ use App\Domains\User\Http\Controllers\Auth\ForgotPasswordController;
 use App\Domains\User\Http\Controllers\Auth\LoginController;
 use App\Domains\User\Http\Controllers\Auth\LogoutController;
 use App\Domains\User\Http\Controllers\Auth\RegisterController;
+use App\Domains\User\Http\Controllers\Auth\ResetPasswordController;
 use App\Domains\User\Http\Controllers\Auth\SendOtpController;
 use App\Domains\User\Http\Controllers\Auth\VerifyOtpController;
 use App\Domains\User\Http\Controllers\Profile\ProfileController;
@@ -23,6 +24,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/user', [ProfileController::class, 'show']);
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::patch('/profile', [ProfileController::class, 'update']);
+    Route::patch('/profile/password', [ProfileController::class, 'changePassword']);
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar']);
+    Route::delete('/profile', [ProfileController::class, 'destroy']);
 
     Route::post('/auth/logout', LogoutController::class);
 });
@@ -50,7 +54,11 @@ Route::get('/auth/password/reset/{token}', function (string $token) {
     ]);
 })->name('password.reset');
 
+Route::patch('/auth/password/reset', ResetPasswordController::class);
+
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/users', [AdminUserController::class, 'store'])
         ->middleware('can:user.create');
+    Route::patch('/admin/users/{user}/status', [AdminUserController::class, 'updateStatus'])
+        ->middleware('can:user.update.any');
 });
