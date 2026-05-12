@@ -33,8 +33,9 @@ class UserImpersonationTest extends TestCase
 
         $token = $response->json('access_token');
 
-        // P0: Logout admin to ensure the next request uses the Bearer token
-        auth()->forgetUser();
+        // P0: Deep clear the authenticated user
+        \Illuminate\Support\Facades\Auth::forgetUser();
+        $this->app->forgetInstance('auth');
         
         $profileResponse = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->getJson('/api/profile');
