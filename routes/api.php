@@ -8,6 +8,14 @@ use App\Domains\User\Http\Controllers\VerifyOtpController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+//API health check
+Route::get('/health', function (): array {
+    return [
+        'status' => 'ok',
+        'version' => config('app.version'),
+    ];
+});
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });

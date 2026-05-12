@@ -68,7 +68,7 @@ class VerifyOtpEndpointTest extends TestCase
 
         $response = $this->postJson(self::ENDPOINT, [
             'phone' => self::TEST_PHONE,
-            'code' => 'wrong',
+            'code' => '9999',
         ]);
 
         $response->assertStatus(400)
@@ -90,7 +90,7 @@ class VerifyOtpEndpointTest extends TestCase
 
         $response = $this->postJson(self::ENDPOINT, [
             'phone' => self::TEST_PHONE,
-            'code' => 'wrong-again',
+            'code' => '8888',
         ]);
 
         $response->assertStatus(400)
@@ -127,13 +127,13 @@ class VerifyOtpEndpointTest extends TestCase
         for ($i = 0; $i < 5; $i++) {
             $this->postJson(self::ENDPOINT, [
                 'phone' => self::TEST_PHONE,
-                'code' => 'any',
+                'code' => '1111',
             ]);
         }
 
         $sixth = $this->postJson(self::ENDPOINT, [
             'phone' => self::TEST_PHONE,
-            'code' => 'any',
+            'code' => '1111',
         ]);
 
         $sixth->assertStatus(429)
