@@ -42,6 +42,14 @@ Route::middleware('throttle:otp-send')->group(function (): void {
 Route::post('/auth/otp/verify', VerifyOtpController::class);
 Route::post('/auth/password/forgot', ForgotPasswordController::class);
 
+// Bu route Laravel'in mail içindeki linki oluşturabilmesi için zorunludur.
+Route::get('/auth/password/reset/{token}', function (string $token) {
+    return response()->json([
+        'message' => 'Lütfen bu token ile şifrenizi sıfırlayın.',
+        'token' => $token
+    ]);
+})->name('password.reset');
+
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/users', [AdminUserController::class, 'store'])
         ->middleware('can:user.create');
