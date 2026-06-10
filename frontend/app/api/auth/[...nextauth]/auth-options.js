@@ -24,56 +24,56 @@ const authOptions = {
           );
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8000';
+        try {
+          const res = await fetch(`${backendUrl}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+              login: credentials.email,
+              password: credentials.password,
+            }),
+          });
 
-        if (!user) {
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(
+              JSON.stringify({
+                code: res.status,
+                message: data.message || 'Giriş başarısız.',
+              }),
+            );
+          }
+
+          return {
+            id: data.user.id,
+            status: data.user.status,
+            email: data.user.email,
+            name: data.user.name || 'Anonymous',
+            roleId: data.user.role?.id || '',
+            roleName: data.user.role?.name || 'user',
+            avatar: data.user.avatar_url || data.user.avatar || null,
+            accessToken: data.token,
+          };
+        } catch (error) {
+          try {
+            const parsed = JSON.parse(error.message);
+            if (parsed.code && parsed.message) {
+              throw error;
+            }
+          } catch {}
+
           throw new Error(
             JSON.stringify({
-              code: 404,
-              message: 'User not found. Please register first.',
+              code: 500,
+              message: error.message || 'Backend bağlantı hatası.',
             }),
           );
         }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password || '',
-        );
-
-        if (!isPasswordValid) {
-          throw new Error(
-            JSON.stringify({
-              code: 401,
-              message: 'Invalid credentials. Incorrect password.',
-            }),
-          );
-        }
-
-        if (user.status !== 'ACTIVE') {
-          throw new Error(
-            JSON.stringify({
-              code: 403,
-              message: 'Account not activated. Please verify your email.',
-            }),
-          );
-        }
-
-        // Update `lastSignInAt` field
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastSignInAt: new Date() },
-        });
-
-        return {
-          id: user.id,
-          status: user.status,
-          email: user.email,
-          name: user.name || 'Anonymous',
-          roleId: user.roleId,
-          avatar: user.avatar,
-        };
       },
     }),
     GoogleProvider({
@@ -160,18 +160,15 @@ const authOptions = {
       if (trigger === 'update' && session?.user) {
         token = session.user;
       } else {
-        if (user && user.roleId) {
-          const role = await prisma.userRole.findUnique({
-            where: { id: user.roleId },
-          });
-
+        if (user) {
           token.id = user.id || token.sub;
           token.email = user.email;
           token.name = user.name;
           token.avatar = user.avatar;
           token.status = user.status;
           token.roleId = user.roleId;
-          token.roleName = role?.name;
+          token.roleName = user.roleName;
+          token.accessToken = user.accessToken;
         }
       }
 
@@ -186,6 +183,7 @@ const authOptions = {
         session.user.status = token.status;
         session.user.roleId = token.roleId;
         session.user.roleName = token.roleName;
+        session.user.accessToken = token.accessToken;
       }
       return session;
     },

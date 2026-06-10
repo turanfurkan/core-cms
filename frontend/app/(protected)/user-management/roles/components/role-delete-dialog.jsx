@@ -2,7 +2,7 @@
 
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LoaderCircleIcon } from 'lucide-react';
+import { LoaderCircleIcon, X, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
@@ -85,6 +85,7 @@ const RoleDeleteDialog = ({ open, closeDialog, role }) => {
         </DialogDescription>
         <DialogFooter>
           <Button variant="outline" onClick={closeDialog}>
+            <X />
             Cancel
           </Button>
           <Button
@@ -92,8 +93,10 @@ const RoleDeleteDialog = ({ open, closeDialog, role }) => {
             onClick={() => mutation.mutate()}
             disabled={mutation.status === 'pending'}
           >
-            {mutation.status === 'pending' && (
+            {mutation.status === 'pending' ? (
               <LoaderCircleIcon className="animate-spin" />
+            ) : (
+              <Trash2 />
             )}
             Delete
           </Button>

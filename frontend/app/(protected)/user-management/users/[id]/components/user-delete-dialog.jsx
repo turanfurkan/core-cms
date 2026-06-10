@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LoaderCircleIcon } from 'lucide-react';
+import { LoaderCircleIcon, X, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -149,6 +149,7 @@ const UserDeleteDialog = ({ open, closeDialog, user }) => {
 
               <DialogFooter>
                 <Button variant="outline" onClick={closeDialog}>
+                  <X />
                   Cancel
                 </Button>
                 <Button
@@ -160,8 +161,10 @@ const UserDeleteDialog = ({ open, closeDialog, user }) => {
                     mutation.status === 'pending'
                   }
                 >
-                  {mutation.status === 'pending' && (
+                  {mutation.status === 'pending' ? (
                     <LoaderCircleIcon className="animate-spin" />
+                  ) : (
+                    <Trash2 />
                   )}
                   Delete user account
                 </Button>

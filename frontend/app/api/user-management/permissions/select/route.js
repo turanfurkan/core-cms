@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { prisma } from '@/lib/prisma';
+import { backendFetch } from '@/lib/api-server';
 import authOptions from '@/app/api/auth/[...nextauth]/auth-options';
 
 export async function GET() {
@@ -10,25 +10,32 @@ export async function GET() {
     if (!session) {
       return NextResponse.json(
         { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
+        { status: 401 },
       );
     }
 
-    const permissions = await prisma.userPermission.findMany({
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
+    const response = await backendFetch('/api/admin/permissions');
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { message: data.message || 'Failed to fetch permissions from backend.' },
+        { status: response.status }
+      );
+    }
+
+    // The backend returns permissions wrapped in 'data'.
+    // We map Spatie permission name to both name and slug for frontend compatibility.
+    const permissions = (data.data || []).map((p) => ({
+      id: String(p.id),
+      name: p.name,
+      slug: p.name,
+    }));
 
     return NextResponse.json(permissions);
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
+      { message: error.message || 'Oops! Something went wrong. Please try again in a moment.' },
       { status: 500 },
     );
   }

@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Domains\Identity\Events;
+
+use App\Domains\Identity\Models\User;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class UserRegistered
+{
+    use Dispatchable, SerializesModels;
+
+    public function __construct(
+        public User $user,
+        public ?int $createdBy = null,
+        public string $registerChannel = 'self',
+    ) {
+    }
+}

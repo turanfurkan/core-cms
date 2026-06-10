@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LoaderCircleIcon, X } from 'lucide-react';
+import { LoaderCircleIcon, X, Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api';
@@ -318,10 +318,15 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
+                <X />
                 Cancel
               </Button>
               <Button type="submit" disabled={isProcessing}>
-                {isProcessing && <LoaderCircleIcon className="animate-spin" />}
+                {isProcessing ? (
+                  <LoaderCircleIcon className="animate-spin" />
+                ) : (
+                  <Check />
+                )}
                 {role ? 'Update Role' : 'Create Role'}
               </Button>
             </DialogFooter>

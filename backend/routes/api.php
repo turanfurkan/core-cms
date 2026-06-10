@@ -1,14 +1,16 @@
 <?php
 
-use App\Domains\User\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Domains\User\Http\Controllers\Auth\ForgotPasswordController;
-use App\Domains\User\Http\Controllers\Auth\LoginController;
-use App\Domains\User\Http\Controllers\Auth\LogoutController;
-use App\Domains\User\Http\Controllers\Auth\RegisterController;
-use App\Domains\User\Http\Controllers\Auth\ResetPasswordController;
-use App\Domains\User\Http\Controllers\Auth\SendOtpController;
-use App\Domains\User\Http\Controllers\Auth\VerifyOtpController;
-use App\Domains\User\Http\Controllers\Profile\ProfileController;
+use App\Domains\Identity\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Domains\Identity\Http\Controllers\Admin\RoleController;
+use App\Domains\Identity\Http\Controllers\Admin\PermissionController;
+use App\Domains\Identity\Http\Controllers\Auth\ForgotPasswordController;
+use App\Domains\Identity\Http\Controllers\Auth\LoginController;
+use App\Domains\Identity\Http\Controllers\Auth\LogoutController;
+use App\Domains\Identity\Http\Controllers\Auth\RegisterController;
+use App\Domains\Identity\Http\Controllers\Auth\ResetPasswordController;
+use App\Domains\Identity\Http\Controllers\Auth\SendOtpController;
+use App\Domains\Identity\Http\Controllers\Auth\VerifyOtpController;
+use App\Domains\Identity\Http\Controllers\Profile\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -59,12 +61,27 @@ Route::get('/auth/password/reset/{token}', function (string $token) {
 Route::patch('/auth/password/reset', ResetPasswordController::class);
 
 Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('/admin/users', [AdminUserController::class, 'index'])
+        ->middleware('can:user.viewAny');
+    Route::get('/admin/users/{user}', [AdminUserController::class, 'show'])
+        ->middleware('can:user.view.any');
     Route::post('/admin/users', [AdminUserController::class, 'store'])
         ->middleware('can:user.create');
+    Route::put('/admin/users/{user}', [AdminUserController::class, 'update'])
+        ->middleware('can:user.update.any');
+    Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])
+        ->middleware('can:user.delete');
+    Route::post('/admin/users/{user}/restore', [AdminUserController::class, 'restore'])
+        ->middleware('can:user.update.any');
+
     Route::patch('/admin/users/{user}/status', [AdminUserController::class, 'updateStatus'])
         ->middleware('can:user.update.any');
     Route::patch('/admin/users/{user}/roles', [AdminUserController::class, 'syncRoles'])
         ->middleware('can:role.assign');
     Route::post('/admin/users/{user}/impersonate', [AdminUserController::class, 'impersonate'])
         ->middleware('can:user.view.any');
+
+    // Roles & Permissions Management
+    Route::get('/admin/roles', [RoleController::class, 'index']);
+    Route::get('/admin/permissions', [PermissionController::class, 'index']);
 });

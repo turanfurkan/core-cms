@@ -1,208 +1,119 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { getClientIP } from '@/lib/api';
-import { prisma } from '@/lib/prisma';
-import { systemLog } from '@/services/system-log';
-import { UserAddSchema } from '@/app/(protected)/user-management/users/forms/user-add-schema';
+import { backendFetch } from '@/lib/api-server';
 import authOptions from '@/app/api/auth/[...nextauth]/auth-options';
-import { UserStatus } from '@/app/models/user';
 
 export async function GET(req) {
-  const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const limit = parseInt(searchParams.get('limit') || '10', 10);
-  const query = searchParams.get('query') || '';
-  const sortField = searchParams.get('sort') || 'name';
-  const sortDirection = searchParams.get('dir') === 'desc' ? 'desc' : 'asc';
-  const status = searchParams.get('status') || null;
-  const roleId = searchParams.get('roleId') || null;
-
   try {
-    // Validate user session
     const session = await getServerSession(authOptions);
-
     if (!session) {
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const page = searchParams.get('page') || '1';
+    const limit = searchParams.get('limit') || '10';
+    const query = searchParams.get('query') || '';
+    const sort = searchParams.get('sort') || 'createdAt';
+    const dir = searchParams.get('dir') || 'asc';
+    const status = searchParams.get('status') || '';
+    const roleId = searchParams.get('roleId') || '';
+
+    // Build query params for Laravel API
+    const params = new URLSearchParams({
+      page,
+      limit,
+      query,
+      sort,
+      dir,
+      status,
+      role_id: roleId,
+    });
+
+    const response = await backendFetch(`/api/admin/users?${params.toString()}`);
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
+        { message: data.message || 'Error fetching users from backend.' },
+        { status: response.status }
       );
     }
 
-    // Map status query to enum type, fallback to null if invalid
-    const statusFilter = status && status !== 'all' ? status : undefined;
-
-    // Count total users with filters
-    const totalCount = await prisma.user.count({
-      where: {
-        AND: [
-          ...(statusFilter ? [{ status: statusFilter }] : []), // Add status filter if valid
-          ...(roleId && roleId !== 'all' ? [{ roleId }] : []), // Add role filter if valid
-          {
-            OR: [
-              { name: { contains: query, mode: 'insensitive' } },
-              { email: { contains: query, mode: 'insensitive' } },
-            ],
-          },
-        ],
-      },
-    });
-
-    // Set order logic
-    const sortMap = {
-      name: { name: sortDirection },
-      role_name: { role: { name: sortDirection } },
-      status: { status: sortDirection },
-      createdAt: { createdAt: sortDirection },
-      lastSignInAt: { lastSignInAt: sortDirection },
-    };
-
-    // Default to createdAt sorting if no valid field is found
-    const orderBy = sortMap[sortField] ?? {
-      createdAt: sortDirection,
-    };
-
-    // Fetch users with filters
-    const users = await prisma.user.findMany({
-      where: {
-        AND: [
-          ...(statusFilter ? [{ status: statusFilter }] : []), // Add status filter if valid
-          ...(roleId && roleId !== 'all' ? [{ roleId }] : []), // Add role filter if valid
-          {
-            OR: [
-              { name: { contains: query, mode: 'insensitive' } },
-              { email: { contains: query, mode: 'insensitive' } },
-            ],
-          },
-        ],
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy,
-      select: {
-        id: true,
-        isTrashed: true,
-        avatar: true,
-        name: true,
-        email: true,
-        status: true,
-        createdAt: true,
-        lastSignInAt: true,
-        role: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
-
+    // Transform Laravel pagination to Next.js expectation
     return NextResponse.json({
-      data: users,
+      data: data.data,
       pagination: {
-        total: totalCount,
-        page,
-        limit,
+        total: data.meta?.total || 0,
+        page: data.meta?.current_page ? parseInt(data.meta.current_page, 10) : parseInt(page, 10),
+        limit: data.meta?.per_page ? parseInt(data.meta.per_page, 10) : parseInt(limit, 10),
       },
     });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Something went wrong.' },
+      { status: 500 }
     );
   }
 }
 
 export async function POST(request) {
   try {
-    // Validate user session
     const session = await getServerSession(authOptions);
-
     if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
-      );
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
     }
 
-    const clientIp = getClientIP(request);
     const body = await request.json();
-    const parsedData = UserAddSchema.safeParse(body);
+    const { name, email, roleId } = body;
 
-    if (!parsedData.success) {
+    if (!name || !email || !roleId) {
+      return NextResponse.json({ message: 'Invalid input.' }, { status: 400 });
+    }
+
+    // Convert Next.js roleId to Spatie role name by calling Roles API
+    const rolesRes = await backendFetch('/api/admin/roles');
+    const rolesData = await rolesRes.json();
+
+    if (!rolesRes.ok) {
       return NextResponse.json(
-        { error: 'Invalid input.' },
-        { status: 400 }, // Bad request
+        { message: 'Failed to fetch roles from backend.' },
+        { status: rolesRes.status }
       );
     }
 
-    const { name, email, roleId } = parsedData.data;
+    const matchedRole = rolesData.data.find((r) => String(r.id) === String(roleId));
+    const roleSlug = matchedRole ? matchedRole.slug : 'user';
 
-    // Check if the email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+    const response = await backendFetch('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify({
+        name,
+        email,
+        role: roleSlug,
+      }),
     });
 
-    if (existingUser) {
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Email is already registered.' },
-        { status: 409 }, // Conflict
+        { message: data.message || 'Failed to create user on backend.' },
+        { status: response.status }
       );
     }
-
-    // Check if the role exists
-    const existingRole = await prisma.userRole.findUnique({
-      where: { id: roleId },
-    });
-
-    if (!existingRole) {
-      return NextResponse.json(
-        {
-          message:
-            'Selected role does not exist. Someone might have deleted it already.',
-        },
-        { status: 404 }, // Not found
-      );
-    }
-
-    // Use a transaction to insert multiple records atomically
-    const result = await prisma.$transaction(async (tx) => {
-      // Create a user
-      const user = await tx.user.create({
-        data: {
-          name,
-          email,
-          status: UserStatus.ACTIVE,
-          roleId,
-        },
-      });
-
-      // Log the event
-      await systemLog(
-        {
-          event: 'create',
-          userId: session.user.id,
-          entityId: user.id,
-          entityType: 'user',
-          description: 'User added by user.',
-          ipAddress: clientIp,
-        },
-        tx,
-      );
-
-      return user;
-    });
 
     return NextResponse.json(
       {
         message: 'User successfully added.',
-        user: result,
+        user: data.user,
       },
-      { status: 200 },
+      { status: 200 }
     );
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Something went wrong.' },
+      { status: 500 }
     );
   }
 }

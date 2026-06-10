@@ -1,9 +1,9 @@
 <?php
 
-use App\Domains\User\Exceptions\LoginException;
-use App\Domains\User\Exceptions\OtpException;
-use App\Domains\User\Exceptions\RegistrationException;
-use App\Domains\User\Exceptions\RevokeFailedException;
+use App\Domains\Identity\Exceptions\LoginException;
+use App\Domains\Identity\Exceptions\OtpException;
+use App\Domains\Identity\Exceptions\RegistrationException;
+use App\Domains\Identity\Exceptions\RevokeFailedException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;

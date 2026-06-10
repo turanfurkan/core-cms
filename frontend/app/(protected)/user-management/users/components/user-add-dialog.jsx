@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LoaderCircleIcon } from 'lucide-react';
+import { LoaderCircleIcon, UserPlus, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api';
@@ -190,13 +190,18 @@ const UserAddDialog = ({ open, closeDialog }) => {
             </DialogBody>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
+                <X />
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={!form.formState.isDirty || isProcessing}
               >
-                {isProcessing && <LoaderCircleIcon className="animate-spin" />}
+                {isProcessing ? (
+                  <LoaderCircleIcon className="animate-spin" />
+                ) : (
+                  <UserPlus />
+                )}
                 Add user
               </Button>
             </DialogFooter>

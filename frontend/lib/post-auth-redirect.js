@@ -12,19 +12,10 @@ function withSearch(path, search) {
  */
 export function callbackPathForDemoRoute(demo, pathname, search) {
   const normalized = pathname && pathname !== '' ? pathname : '/';
-
-  const seg = normalized.match(DEMO_SEGMENT_RE);
-  if (seg && seg[1] === demo) {
-    const rest = seg[2];
-    const path =
-      rest == null || rest === '' || rest === '/'
-        ? `/${demo}/`
-        : `/${demo}${rest}`;
-    return withSearch(path, search);
-  }
-
-  const path = normalized === '/' ? `/${demo}/` : `/${demo}${normalized}`;
-  return withSearch(path, search);
+  
+  // Since there is no rewrite middleware, demo prefixes in paths (e.g. /demo1/...) are not valid routes.
+  // We return the actual path directly (e.g. / or /account) to load pages successfully.
+  return withSearch(normalized, search);
 }
 
 /** Reject open redirects; only same-origin relative paths. */

@@ -1,195 +1,127 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { getClientIP } from '@/lib/api';
-import { prisma } from '@/lib/prisma';
-import { systemLog } from '@/services/system-log';
-import { UserProfileSchema } from '@/app/(protected)/user-management/users/[id]/forms/user-profile-schema';
+import { backendFetch } from '@/lib/api-server';
 import authOptions from '@/app/api/auth/[...nextauth]/auth-options';
-import { UserStatus } from '@/app/models/user';
 
-// GET: Fetch a specific user by ID, including role
+// GET: Fetch a specific user by ID
 export async function GET(request, { params }) {
   try {
-    // Validate user session
     const session = await getServerSession(authOptions);
-
     if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
-      );
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
     }
 
     const { id } = await params;
+    const response = await backendFetch(`/api/admin/users/${id}`);
+    const data = await response.json();
 
-    // Fetch the user and their associated roles
-    const user = await prisma.user.findUnique({
-      where: { id },
-      include: {
-        role: true,
-      },
-    });
-
-    if (!user) {
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Record not found. Someone might have deleted it already.' },
-        { status: 404 },
+        { message: data.message || 'Failed to fetch user from backend.' },
+        { status: response.status }
       );
     }
 
-    return NextResponse.json(user);
-  } catch {
+    // Unwrap Laravel API Resource wrapping
+    return NextResponse.json(data.data);
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Something went wrong.' },
+      { status: 500 }
     );
   }
 }
 
-// PUT: Edit a specific permission by ID
+// PUT: Edit a specific user by ID
 export async function PUT(request, { params }) {
   try {
-    // Validate user session
     const session = await getServerSession(authOptions);
-
     if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
-      );
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
     }
 
     const { id } = await params;
-
-    // Ensure the user ID is provided
-    if (!id) {
-      return NextResponse.json(
-        { message: 'Invalid input.' },
-        { status: 400 }, // Bad request
-      );
-    }
-
-    const clientIp = getClientIP(request);
     const body = await request.json();
+    const { name, status, roleId } = body;
 
-    const parsedData = UserProfileSchema.safeParse(body);
-    if (!parsedData.success) {
+    if (!id || !name || !status || !roleId) {
+      return NextResponse.json({ message: 'Invalid input.' }, { status: 400 });
+    }
+
+    // Convert roleId to Spatie role name
+    const rolesRes = await backendFetch('/api/admin/roles');
+    const rolesData = await rolesRes.json();
+
+    if (!rolesRes.ok) {
       return NextResponse.json(
-        { message: 'Invalid input.' },
-        { status: 400 }, // Bad Request
+        { message: 'Failed to fetch roles from backend.' },
+        { status: rolesRes.status }
       );
     }
 
-    const { name, status, roleId } = parsedData.data;
+    const matchedRole = rolesData.data.find((r) => String(r.id) === String(roleId));
+    const roleSlug = matchedRole ? matchedRole.slug : 'user';
 
-    // Check if the role exists
-    const roleExists = await prisma.userRole.findUnique({
-      where: { id: roleId },
+    const response = await backendFetch(`/api/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        name,
+        status,
+        role: roleSlug,
+      }),
     });
-    if (!roleExists) {
+
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Role does not exist' },
-        { status: 400 },
+        { message: data.message || 'Failed to update user on backend.' },
+        { status: response.status }
       );
     }
-
-    // Use a transaction to insert multiple records atomically
-    await prisma.$transaction(async (tx) => {
-      const user = await tx.user.update({
-        where: { id },
-        data: { name, status: status, roleId },
-      });
-
-      // Log the event
-      await systemLog(
-        {
-          event: 'update',
-          userId: session.user.id,
-          entityId: user.id,
-          entityType: 'user.profile',
-          description: 'User profile updated.',
-          ipAddress: clientIp,
-        },
-        tx,
-      );
-
-      return user;
-    });
 
     return NextResponse.json(
       { message: 'User profile successfully updated.' },
-      { status: 200 },
+      { status: 200 }
     );
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Something went wrong.' },
+      { status: 500 }
     );
   }
 }
 
+// DELETE: Delete a user by ID
 export async function DELETE(request, { params }) {
   try {
-    // Validate user session
     const session = await getServerSession(authOptions);
-
     if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
-      );
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
     }
 
-    const clientIp = getClientIP(request);
     const { id } = await params;
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Invalid input.' },
-        { status: 400 }, // Bad request
-      );
-    }
-
-    // Check if the role exists
-    const userToDelete = await prisma.user.findUnique({ where: { id } });
-    if (userToDelete && userToDelete.isProtected) {
-      return NextResponse.json(
-        { message: 'You do not have permission to delete system users.' },
-        { status: 401 },
-      );
-    }
-
-    // Use a transaction to insert multiple records atomically
-    await prisma.$transaction(async (tx) => {
-      const user = await prisma.user.update({
-        where: { id, isProtected: false },
-        data: { isTrashed: true, status: UserStatus.INACTIVE },
-      });
-
-      // Log the event
-      await systemLog(
-        {
-          event: 'trash',
-          userId: session.user.id,
-          entityId: user.id,
-          entityType: 'user',
-          description: 'User trashed.',
-          ipAddress: clientIp,
-        },
-        tx,
-      );
-
-      return user;
+    const response = await backendFetch(`/api/admin/users/${id}`, {
+      method: 'DELETE',
     });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { message: data.message || 'Failed to delete user on backend.' },
+        { status: response.status }
+      );
+    }
 
     return NextResponse.json(
       { message: 'User successfully deleted.' },
-      { status: 200 },
+      { status: 200 }
     );
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Something went wrong.' },
+      { status: 500 }
     );
   }
 }
