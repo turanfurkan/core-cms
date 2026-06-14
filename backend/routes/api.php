@@ -11,6 +11,9 @@ use App\Domains\Identity\Http\Controllers\Auth\ResetPasswordController;
 use App\Domains\Identity\Http\Controllers\Auth\SendOtpController;
 use App\Domains\Identity\Http\Controllers\Auth\VerifyOtpController;
 use App\Domains\Identity\Http\Controllers\Profile\ProfileController;
+use App\Domains\Content\Http\Controllers\Admin\ContentTypeController;
+use App\Domains\Content\Http\Controllers\Admin\ContentEntryController;
+use App\Domains\Content\Http\Controllers\Public\ContentDeliveryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -84,4 +87,36 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // Roles & Permissions Management
     Route::get('/admin/roles', [RoleController::class, 'index']);
     Route::get('/admin/permissions', [PermissionController::class, 'index']);
+
+    // Admin Content Type Schemas Management
+    Route::apiResource('/admin/content-types', ContentTypeController::class);
+
+    // Admin Content Entries Management
+    Route::get('/admin/content-types/{content_type}/entries', [ContentEntryController::class, 'index']);
+    Route::post('/admin/content-types/{content_type}/entries', [ContentEntryController::class, 'store']);
+    Route::get('/admin/content-types/{content_type}/entries/{content_entry}', [ContentEntryController::class, 'show']);
+    Route::put('/admin/content-types/{content_type}/entries/{content_entry}', [ContentEntryController::class, 'update']);
+    Route::delete('/admin/content-types/{content_type}/entries/{content_entry}', [ContentEntryController::class, 'destroy']);
+    Route::post('/admin/content-types/{content_type}/entries/{content_entry}/publish', [ContentEntryController::class, 'publish']);
+    Route::post('/admin/content-types/{content_type}/entries/{content_entry}/revisions/{content_revision}/rollback', [ContentEntryController::class, 'rollback']);
+
+    // Media Folders Management
+    Route::get('/admin/media/folders', [\App\Domains\Media\Http\Controllers\Admin\FolderController::class, 'index']);
+    Route::post('/admin/media/folders', [\App\Domains\Media\Http\Controllers\Admin\FolderController::class, 'store']);
+    Route::get('/admin/media/folders/{folder}', [\App\Domains\Media\Http\Controllers\Admin\FolderController::class, 'show']);
+    Route::put('/admin/media/folders/{folder}', [\App\Domains\Media\Http\Controllers\Admin\FolderController::class, 'update']);
+    Route::post('/admin/media/folders/{folder}/move', [\App\Domains\Media\Http\Controllers\Admin\FolderController::class, 'move']);
+    Route::delete('/admin/media/folders/{folder}', [\App\Domains\Media\Http\Controllers\Admin\FolderController::class, 'destroy']);
+
+    // Media Files Management
+    Route::get('/admin/media/files', [\App\Domains\Media\Http\Controllers\Admin\MediaController::class, 'index']);
+    Route::post('/admin/media/files', [\App\Domains\Media\Http\Controllers\Admin\MediaController::class, 'store']);
+    Route::get('/admin/media/files/{media}', [\App\Domains\Media\Http\Controllers\Admin\MediaController::class, 'show']);
+    Route::put('/admin/media/files/{media}/meta', [\App\Domains\Media\Http\Controllers\Admin\MediaController::class, 'updateMeta']);
+    Route::post('/admin/media/files/{media}/move', [\App\Domains\Media\Http\Controllers\Admin\MediaController::class, 'move']);
+    Route::delete('/admin/media/files/{media}', [\App\Domains\Media\Http\Controllers\Admin\MediaController::class, 'destroy']);
 });
+
+// Public Content Delivery API (Read-only)
+Route::get('/content/delivery/{contentTypeSlug}', [ContentDeliveryController::class, 'index']);
+Route::get('/content/delivery/{contentTypeSlug}/{entrySlug}', [ContentDeliveryController::class, 'show']);
