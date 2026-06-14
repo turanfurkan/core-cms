@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Domains\SEO\Traits\HasSeo;
+use App\Domains\Workflow\Traits\HasWorkflow;
 
 class ContentEntry extends Model
 {
-    use HasFactory, SoftDeletes, HasSeo;
+    use HasFactory, SoftDeletes, HasSeo, HasWorkflow;
 
     public const STATUS_DRAFT = 'draft';
     public const STATUS_PUBLISHED = 'published';

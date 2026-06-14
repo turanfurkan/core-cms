@@ -115,6 +115,17 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::put('/admin/media/files/{media}/meta', [\App\Domains\Media\Http\Controllers\Admin\MediaController::class, 'updateMeta']);
     Route::post('/admin/media/files/{media}/move', [\App\Domains\Media\Http\Controllers\Admin\MediaController::class, 'move']);
     Route::delete('/admin/media/files/{media}', [\App\Domains\Media\Http\Controllers\Admin\MediaController::class, 'destroy']);
+
+    // Workflows Management
+    Route::get('/admin/workflows', [\App\Domains\Workflow\Http\Controllers\Admin\WorkflowController::class, 'index']);
+    Route::post('/admin/workflows', [\App\Domains\Workflow\Http\Controllers\Admin\WorkflowController::class, 'store']);
+    Route::get('/admin/workflows/{workflow}', [\App\Domains\Workflow\Http\Controllers\Admin\WorkflowController::class, 'show']);
+    Route::delete('/admin/workflows/{workflow}', [\App\Domains\Workflow\Http\Controllers\Admin\WorkflowController::class, 'destroy']);
+
+    // Workflow Transitions
+    Route::get('/admin/workflows/transitions/{resource_type}/{resource_id}', [\App\Domains\Workflow\Http\Controllers\Admin\WorkflowTransitionController::class, 'availableTransitions']);
+    Route::post('/admin/workflows/transitions/{resource_type}/{resource_id}', [\App\Domains\Workflow\Http\Controllers\Admin\WorkflowTransitionController::class, 'triggerTransition']);
+    Route::get('/admin/workflows/history/{resource_type}/{resource_id}', [\App\Domains\Workflow\Http\Controllers\Admin\WorkflowTransitionController::class, 'history']);
 });
 
 // Public Content Delivery API (Read-only)

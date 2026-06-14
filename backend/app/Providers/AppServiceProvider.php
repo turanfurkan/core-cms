@@ -90,6 +90,10 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(OtpVerified::class, LogOtpVerified::class);
         Event::listen(OtpVerificationFailed::class, LogOtpVerificationFailed::class);
         Event::listen(UserLoggedOut::class, LogLogoutActivity::class);
+        Event::listen(
+            \App\Domains\Workflow\Events\WorkflowTransitioned::class,
+            \App\Domains\Workflow\Listeners\AutoPublishContentListener::class
+        );
 
         $this->configureRateLimiters();
     }
