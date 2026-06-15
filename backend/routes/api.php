@@ -34,6 +34,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::delete('/profile', [ProfileController::class, 'destroy']);
     Route::post('/profile/consents', [ProfileController::class, 'storeConsent']);
     Route::post('/profile/documents', [ProfileController::class, 'uploadDocument']);
+    Route::get('/profile/notifications', [\App\Domains\Notification\Http\Controllers\UserNotificationController::class, 'index']);
+    Route::patch('/profile/notifications/{id}/read', [\App\Domains\Notification\Http\Controllers\UserNotificationController::class, 'markAsRead']);
+    Route::post('/profile/notifications/read-all', [\App\Domains\Notification\Http\Controllers\UserNotificationController::class, 'markAllAsRead']);
+    Route::delete('/profile/notifications/{id}', [\App\Domains\Notification\Http\Controllers\UserNotificationController::class, 'destroy']);
 
     Route::post('/auth/logout', LogoutController::class);
 });
@@ -138,8 +142,33 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/admin/translations', [\App\Domains\Localization\Http\Controllers\Admin\TranslationController::class, 'index']);
     Route::post('/admin/translations', [\App\Domains\Localization\Http\Controllers\Admin\TranslationController::class, 'store']);
     Route::delete('/admin/translations/{translation}', [\App\Domains\Localization\Http\Controllers\Admin\TranslationController::class, 'destroy']);
+
+    // Forms Management
+    Route::get('/admin/forms', [\App\Domains\Forms\Http\Controllers\Admin\FormController::class, 'index']);
+    Route::post('/admin/forms', [\App\Domains\Forms\Http\Controllers\Admin\FormController::class, 'store']);
+    Route::get('/admin/forms/{form}', [\App\Domains\Forms\Http\Controllers\Admin\FormController::class, 'show']);
+    Route::put('/admin/forms/{form}', [\App\Domains\Forms\Http\Controllers\Admin\FormController::class, 'update']);
+    Route::delete('/admin/forms/{form}', [\App\Domains\Forms\Http\Controllers\Admin\FormController::class, 'destroy']);
+
+    // Form Submissions Management
+    Route::get('/admin/forms/submissions', [\App\Domains\Forms\Http\Controllers\Admin\FormSubmissionController::class, 'index']);
+    Route::get('/admin/forms/submissions/{submission}', [\App\Domains\Forms\Http\Controllers\Admin\FormSubmissionController::class, 'show']);
+    Route::patch('/admin/forms/submissions/{submission}/status', [\App\Domains\Forms\Http\Controllers\Admin\FormSubmissionController::class, 'updateStatus']);
+    Route::delete('/admin/forms/submissions/{submission}', [\App\Domains\Forms\Http\Controllers\Admin\FormSubmissionController::class, 'destroy']);
+
+    // Notification Templates Management
+    Route::get('/admin/notification-templates', [\App\Domains\Notification\Http\Controllers\Admin\NotificationTemplateController::class, 'index']);
+    Route::post('/admin/notification-templates', [\App\Domains\Notification\Http\Controllers\Admin\NotificationTemplateController::class, 'store']);
+    Route::get('/admin/notification-templates/{template}', [\App\Domains\Notification\Http\Controllers\Admin\NotificationTemplateController::class, 'show']);
+    Route::put('/admin/notification-templates/{template}', [\App\Domains\Notification\Http\Controllers\Admin\NotificationTemplateController::class, 'update']);
+    Route::delete('/admin/notification-templates/{template}', [\App\Domains\Notification\Http\Controllers\Admin\NotificationTemplateController::class, 'destroy']);
 });
 
 // Public Content Delivery API (Read-only)
 Route::get('/content/delivery/{contentTypeSlug}', [ContentDeliveryController::class, 'index']);
 Route::get('/content/delivery/{contentTypeSlug}/{entrySlug}', [ContentDeliveryController::class, 'show']);
+
+// Public Form Delivery & Submission API
+Route::get('/forms/{slug}', [\App\Domains\Forms\Http\Controllers\PublicFormController::class, 'show']);
+Route::post('/forms/{slug}/submit', [\App\Domains\Forms\Http\Controllers\PublicFormController::class, 'submit'])
+    ->middleware('throttle:5,1');

@@ -94,6 +94,10 @@ class AppServiceProvider extends ServiceProvider
             \App\Domains\Workflow\Events\WorkflowTransitioned::class,
             \App\Domains\Workflow\Listeners\AutoPublishContentListener::class
         );
+        Event::listen(
+            \App\Domains\Forms\Events\FormSubmitted::class,
+            \App\Domains\Forms\Listeners\SendFormSubmissionAlert::class
+        );
 
         $this->configureRateLimiters();
     }
