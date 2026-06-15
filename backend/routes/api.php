@@ -126,6 +126,18 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/admin/workflows/transitions/{resource_type}/{resource_id}', [\App\Domains\Workflow\Http\Controllers\Admin\WorkflowTransitionController::class, 'availableTransitions']);
     Route::post('/admin/workflows/transitions/{resource_type}/{resource_id}', [\App\Domains\Workflow\Http\Controllers\Admin\WorkflowTransitionController::class, 'triggerTransition']);
     Route::get('/admin/workflows/history/{resource_type}/{resource_id}', [\App\Domains\Workflow\Http\Controllers\Admin\WorkflowTransitionController::class, 'history']);
+
+    // Languages Management
+    Route::get('/admin/languages', [\App\Domains\Localization\Http\Controllers\Admin\LanguageController::class, 'index']);
+    Route::post('/admin/languages', [\App\Domains\Localization\Http\Controllers\Admin\LanguageController::class, 'store']);
+    Route::get('/admin/languages/{language}', [\App\Domains\Localization\Http\Controllers\Admin\LanguageController::class, 'show']);
+    Route::put('/admin/languages/{language}', [\App\Domains\Localization\Http\Controllers\Admin\LanguageController::class, 'update']);
+    Route::delete('/admin/languages/{language}', [\App\Domains\Localization\Http\Controllers\Admin\LanguageController::class, 'destroy']);
+
+    // Translations Management
+    Route::get('/admin/translations', [\App\Domains\Localization\Http\Controllers\Admin\TranslationController::class, 'index']);
+    Route::post('/admin/translations', [\App\Domains\Localization\Http\Controllers\Admin\TranslationController::class, 'store']);
+    Route::delete('/admin/translations/{translation}', [\App\Domains\Localization\Http\Controllers\Admin\TranslationController::class, 'destroy']);
 });
 
 // Public Content Delivery API (Read-only)
