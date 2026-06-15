@@ -4,9 +4,11 @@ namespace App\Domains\Integration\Http\Controllers\Admin;
 
 use App\Domains\Integration\Actions\CreateWebhookAction;
 use App\Domains\Integration\Actions\DeleteWebhookAction;
+use App\Domains\Integration\Actions\TestWebhookAction;
 use App\Domains\Integration\Actions\UpdateWebhookAction;
 use App\Domains\Integration\DTOs\WebhookData;
 use App\Domains\Integration\Http\Requests\WebhookRequest;
+use App\Domains\Integration\Http\Resources\WebhookLogResource;
 use App\Domains\Integration\Http\Resources\WebhookResource;
 use App\Domains\Integration\Models\Webhook;
 use App\Http\Controllers\Controller;
@@ -54,5 +56,14 @@ class WebhookController extends Controller
         return response()->json([
             'message' => 'Webhook integration deleted successfully.',
         ]);
+    }
+
+    public function test(Webhook $webhook, TestWebhookAction $action): JsonResponse
+    {
+        $log = $action->execute($webhook);
+
+        return (new WebhookLogResource($log))
+            ->response()
+            ->setStatusCode(200);
     }
 }

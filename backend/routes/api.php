@@ -176,7 +176,27 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/admin/webhooks/{webhook}', [\App\Domains\Integration\Http\Controllers\Admin\WebhookController::class, 'show']);
     Route::put('/admin/webhooks/{webhook}', [\App\Domains\Integration\Http\Controllers\Admin\WebhookController::class, 'update']);
     Route::delete('/admin/webhooks/{webhook}', [\App\Domains\Integration\Http\Controllers\Admin\WebhookController::class, 'destroy']);
+    Route::post('/admin/webhooks/{webhook}/test', [\App\Domains\Integration\Http\Controllers\Admin\WebhookController::class, 'test']);
     Route::get('/admin/webhooks/{webhook}/logs', [\App\Domains\Integration\Http\Controllers\Admin\WebhookLogController::class, 'index']);
+    Route::post('/admin/webhooks/{webhook}/logs/{log}/retry', [\App\Domains\Integration\Http\Controllers\Admin\WebhookLogController::class, 'retry']);
+
+    // SEO Paths Management
+    Route::get('/admin/seo/paths', [\App\Domains\SEO\Http\Controllers\Admin\SeoPathController::class, 'index']);
+    Route::post('/admin/seo/paths', [\App\Domains\SEO\Http\Controllers\Admin\SeoPathController::class, 'store']);
+    Route::get('/admin/seo/paths/{path}', [\App\Domains\SEO\Http\Controllers\Admin\SeoPathController::class, 'show']);
+    Route::put('/admin/seo/paths/{path}', [\App\Domains\SEO\Http\Controllers\Admin\SeoPathController::class, 'update']);
+    Route::delete('/admin/seo/paths/{path}', [\App\Domains\SEO\Http\Controllers\Admin\SeoPathController::class, 'destroy']);
+
+    // SEO Redirects Management
+    Route::get('/admin/seo/redirects', [\App\Domains\SEO\Http\Controllers\Admin\SeoRedirectController::class, 'index']);
+    Route::post('/admin/seo/redirects', [\App\Domains\SEO\Http\Controllers\Admin\SeoRedirectController::class, 'store']);
+    Route::get('/admin/seo/redirects/{redirect}', [\App\Domains\SEO\Http\Controllers\Admin\SeoRedirectController::class, 'show']);
+    Route::put('/admin/seo/redirects/{redirect}', [\App\Domains\SEO\Http\Controllers\Admin\SeoRedirectController::class, 'update']);
+    Route::delete('/admin/seo/redirects/{redirect}', [\App\Domains\SEO\Http\Controllers\Admin\SeoRedirectController::class, 'destroy']);
+
+    // Settings Management
+    Route::get('/admin/settings', [\App\Domains\Settings\Http\Controllers\Admin\SettingsController::class, 'index']);
+    Route::put('/admin/settings', [\App\Domains\Settings\Http\Controllers\Admin\SettingsController::class, 'update']);
 });
 
 // Public Content Delivery API (Read-only)
@@ -190,3 +210,11 @@ Route::post('/forms/{slug}/submit', [\App\Domains\Forms\Http\Controllers\PublicF
 
 // Public Navigation API
 Route::get('/navigations/{key}', [\App\Domains\Navigation\Http\Controllers\PublicNavigationController::class, 'show']);
+
+// Public SEO Endpoints
+Route::get('/seo/redirects/resolve', [\App\Domains\SEO\Http\Controllers\Public\PublicSeoController::class, 'resolveRedirect']);
+Route::get('/seo/metadata/resolve', [\App\Domains\SEO\Http\Controllers\Public\PublicSeoController::class, 'resolvePathSeo']);
+Route::get('/seo/sitemap', [\App\Domains\SEO\Http\Controllers\Public\PublicSeoController::class, 'sitemap']);
+
+// Public Settings API
+Route::get('/settings/public', [\App\Domains\Settings\Http\Controllers\Public\PublicSettingsController::class, 'index']);

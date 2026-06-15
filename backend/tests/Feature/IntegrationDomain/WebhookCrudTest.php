@@ -5,7 +5,10 @@ namespace Tests\Feature\IntegrationDomain;
 use App\Domains\Identity\Models\User;
 use App\Domains\Integration\Models\Webhook;
 use App\Domains\Integration\Models\WebhookLog;
+use App\Domains\Integration\Jobs\DispatchWebhookJob;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -134,5 +137,70 @@ class WebhookCrudTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['name', 'url', 'events.0']);
+    }
+
+    #[Test]
+    public function admin_can_test_webhook_connection(): void
+    {
+        Http::fake([
+            'https://example.com/ping' => Http::response('Handshake Successful', 200),
+        ]);
+
+        $webhook = Webhook::create([
+            'name' => 'Test Webhook Connection',
+            'url' => 'https://example.com/ping',
+            'events' => ['user.registered'],
+            'secret' => 'supersecret',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson("/api/admin/webhooks/{$webhook->id}/test");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('data.event', 'webhook.test');
+        $response->assertJsonPath('data.response_status', 200);
+        $response->assertJsonPath('data.response_body', 'Handshake Successful');
+
+        $this->assertDatabaseHas('integrations_webhook_logs', [
+            'webhook_id' => $webhook->id,
+            'event' => 'webhook.test',
+            'response_status' => 200,
+            'response_body' => 'Handshake Successful',
+        ]);
+    }
+
+    #[Test]
+    public function admin_can_retry_webhook_log(): void
+    {
+        Queue::fake();
+
+        $webhook = Webhook::create([
+            'name' => 'Retry Webhook',
+            'url' => 'https://example.com/webhook',
+            'events' => ['user.registered'],
+            'is_active' => true,
+        ]);
+
+        $log = WebhookLog::create([
+            'webhook_id' => $webhook->id,
+            'event' => 'user.registered',
+            'payload' => ['user_id' => 99, 'email' => 'retry@example.com'],
+            'response_status' => 500,
+            'response_body' => 'Internal Server Error',
+            'duration_ms' => 300,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson("/api/admin/webhooks/{$webhook->id}/logs/{$log->id}/retry");
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('message', 'Webhook delivery re-queued successfully.');
+
+        Queue::assertPushed(DispatchWebhookJob::class, function ($job) use ($webhook, $log) {
+            return $job->webhook->id === $webhook->id
+                && $job->event === 'user.registered'
+                && $job->payload === $log->payload;
+        });
     }
 }
