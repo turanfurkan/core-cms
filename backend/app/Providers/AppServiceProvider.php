@@ -95,9 +95,18 @@ class AppServiceProvider extends ServiceProvider
             \App\Domains\Workflow\Listeners\AutoPublishContentListener::class
         );
         Event::listen(
+            \App\Domains\Workflow\Events\WorkflowTransitioned::class,
+            \App\Domains\Integration\Listeners\WebhookEventListener::class
+        );
+        Event::listen(
             \App\Domains\Forms\Events\FormSubmitted::class,
             \App\Domains\Forms\Listeners\SendFormSubmissionAlert::class
         );
+        Event::listen(
+            \App\Domains\Forms\Events\FormSubmitted::class,
+            \App\Domains\Integration\Listeners\WebhookEventListener::class
+        );
+        Event::listen(UserRegistered::class, \App\Domains\Integration\Listeners\WebhookEventListener::class);
 
         $this->configureRateLimiters();
     }

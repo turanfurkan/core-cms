@@ -162,6 +162,21 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/admin/notification-templates/{template}', [\App\Domains\Notification\Http\Controllers\Admin\NotificationTemplateController::class, 'show']);
     Route::put('/admin/notification-templates/{template}', [\App\Domains\Notification\Http\Controllers\Admin\NotificationTemplateController::class, 'update']);
     Route::delete('/admin/notification-templates/{template}', [\App\Domains\Notification\Http\Controllers\Admin\NotificationTemplateController::class, 'destroy']);
+
+    // Navigations Management
+    Route::get('/admin/navigations', [\App\Domains\Navigation\Http\Controllers\Admin\NavigationController::class, 'index']);
+    Route::post('/admin/navigations', [\App\Domains\Navigation\Http\Controllers\Admin\NavigationController::class, 'store']);
+    Route::get('/admin/navigations/{navigation}', [\App\Domains\Navigation\Http\Controllers\Admin\NavigationController::class, 'show']);
+    Route::put('/admin/navigations/{navigation}', [\App\Domains\Navigation\Http\Controllers\Admin\NavigationController::class, 'update']);
+    Route::delete('/admin/navigations/{navigation}', [\App\Domains\Navigation\Http\Controllers\Admin\NavigationController::class, 'destroy']);
+
+    // Webhooks & Integration Management
+    Route::get('/admin/webhooks', [\App\Domains\Integration\Http\Controllers\Admin\WebhookController::class, 'index']);
+    Route::post('/admin/webhooks', [\App\Domains\Integration\Http\Controllers\Admin\WebhookController::class, 'store']);
+    Route::get('/admin/webhooks/{webhook}', [\App\Domains\Integration\Http\Controllers\Admin\WebhookController::class, 'show']);
+    Route::put('/admin/webhooks/{webhook}', [\App\Domains\Integration\Http\Controllers\Admin\WebhookController::class, 'update']);
+    Route::delete('/admin/webhooks/{webhook}', [\App\Domains\Integration\Http\Controllers\Admin\WebhookController::class, 'destroy']);
+    Route::get('/admin/webhooks/{webhook}/logs', [\App\Domains\Integration\Http\Controllers\Admin\WebhookLogController::class, 'index']);
 });
 
 // Public Content Delivery API (Read-only)
@@ -172,3 +187,6 @@ Route::get('/content/delivery/{contentTypeSlug}/{entrySlug}', [ContentDeliveryCo
 Route::get('/forms/{slug}', [\App\Domains\Forms\Http\Controllers\PublicFormController::class, 'show']);
 Route::post('/forms/{slug}/submit', [\App\Domains\Forms\Http\Controllers\PublicFormController::class, 'submit'])
     ->middleware('throttle:5,1');
+
+// Public Navigation API
+Route::get('/navigations/{key}', [\App\Domains\Navigation\Http\Controllers\PublicNavigationController::class, 'show']);
