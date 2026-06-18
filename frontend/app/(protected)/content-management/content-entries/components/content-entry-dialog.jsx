@@ -16,6 +16,17 @@ import { toast } from 'sonner';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 
+const getMediaIds = (value) => {
+  if (value === null || value === undefined) return '';
+  if (Array.isArray(value)) {
+    return value.map(item => (typeof item === 'object' && item !== null ? item.id : item));
+  }
+  if (typeof value === 'object') {
+    return value.id ?? '';
+  }
+  return value;
+};
+
 export default function ContentEntryDialog({ open, closeDialog, contentType, entry }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -353,14 +364,14 @@ export default function ContentEntryDialog({ open, closeDialog, contentType, ent
                   />
                 ) : field.type === 'gallery' || field.type === 'media_gallery' ? (
                   <FileUpload
-                    value={val}
+                    value={getMediaIds(val)}
                     onChange={(newVal) => handleValueChange(field.slug, newVal, activeTab)}
                     isMultiple={true}
                     placeholder={`${field.name} eklemek için tıklayın veya sürükleyin`}
                   />
                 ) : field.type === 'media' ? (
                   <FileUpload
-                    value={val}
+                    value={getMediaIds(val)}
                     onChange={(newVal) => handleValueChange(field.slug, newVal, activeTab)}
                     isMultiple={false}
                     placeholder={`${field.name} yüklemek için tıklayın veya sürükleyin`}

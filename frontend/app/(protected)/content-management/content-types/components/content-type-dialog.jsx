@@ -328,8 +328,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                         updated[idx].options = { ...updated[idx].options, localized: e.target.checked };
                         setFields(updated);
                       }}
-                      disabled={field.slug === 'title' || field.slug === 'slug'}
-                      className="h-3 w-3 rounded text-primary disabled:opacity-50"
+                      className="h-3 w-3 rounded text-primary"
                     />
                     <label htmlFor={`loc-${idx}`} className="text-[10px] text-muted-foreground select-none">{t('content_types.dialog.localized_abbr', 'Trans')}</label>
                   </div>
