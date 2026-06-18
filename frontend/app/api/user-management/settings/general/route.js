@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { getClientIP } from '@/lib/api';
-import { prisma } from '@/lib/prisma';
+import { getFrontendSettings, updateFrontendSettings } from '@/lib/api-server';
 import { deleteFromS3, uploadToS3 } from '@/lib/s3-upload';
 import { systemLog } from '@/services/system-log';
 import { GeneralSettingsSchema } from '@/app/(protected)/user-management/settings/forms/general-settings-schema';
@@ -19,7 +19,7 @@ export async function POST(request) {
     }
 
     const clientIp = getClientIP(request);
-    const settings = await prisma.systemSetting.findFirst();
+    const settings = await getFrontendSettings();
     if (!settings) {
       return NextResponse.json(
         { message: 'Settings not found.' },
@@ -70,10 +70,7 @@ export async function POST(request) {
       currencyFormat,
     } = validationResult.data;
 
-    // Fetch the current settings from the database
-    const currentSettings = await prisma.systemSetting.findUnique({
-      where: { id: settings.id },
-    });
+    const currentSettings = settings;
 
     // Handle logo removal
     if (logoAction === 'remove' && currentSettings?.logo) {
@@ -109,27 +106,24 @@ export async function POST(request) {
       }
     }
 
-    // Save or update the settings in the database
-    await prisma.systemSetting.update({
-      where: { id: settings.id },
-      data: {
-        name,
-        active,
-        address,
-        websiteURL,
-        supportEmail,
-        supportPhone,
-        language,
-        timezone,
-        currency,
-        currencyFormat,
-        logo:
-          logoAction === 'remove'
-            ? null
-            : logoAction === 'save'
-              ? logoUrl
-              : undefined,
-      },
+    // Save or update the settings in the backend settings table
+    await updateFrontendSettings({
+      name,
+      active,
+      address,
+      websiteURL,
+      supportEmail,
+      supportPhone,
+      language,
+      timezone,
+      currency,
+      currencyFormat,
+      logo:
+        logoAction === 'remove'
+          ? null
+          : logoAction === 'save'
+            ? logoUrl
+            : undefined,
     });
 
     // Log the event

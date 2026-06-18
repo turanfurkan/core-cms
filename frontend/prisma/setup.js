@@ -67,7 +67,7 @@ async function main() {
       });
 
       // Settings
-      tx.setting.create({
+      await tx.systemSetting.create({
         data: {
           name: 'Metronic',
         },

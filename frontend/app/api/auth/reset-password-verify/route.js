@@ -1,36 +1,36 @@
-// /api/auth/verify-reset-token.ts
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { backendFetch } from '@/lib/api-server';
 
 export async function POST(req) {
-  const { token } = await req.json();
-
-  // Validate the input
-  if (!token) {
-    return NextResponse.json(
-      { message: 'Token is required.' },
-      { status: 400 },
-    );
-  }
-
   try {
-    // Check if the token exists and is not expired
-    const verificationToken = await prisma.verificationToken.findUnique({
-      where: { token },
+    const { token } = await req.json();
+
+    if (!token) {
+      return NextResponse.json(
+        { message: 'Token is required.' },
+        { status: 400 }
+      );
+    }
+
+    const response = await backendFetch('/api/auth/frontend/reset-password-verify', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
     });
 
-    if (!verificationToken || verificationToken.expires < new Date()) {
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Invalid or expired token.' },
-        { status: 400 },
+        { message: data.message || 'Invalid or expired token.' },
+        { status: response.status }
       );
     }
 
     return NextResponse.json({ message: 'Token is valid.' }, { status: 200 });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Token verification failed.' },
-      { status: 500 },
+      { message: error.message || 'Token verification failed.' },
+      { status: 500 }
     );
   }
 }

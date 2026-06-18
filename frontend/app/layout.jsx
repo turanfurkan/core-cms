@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { AuthProvider } from '@/providers/auth-provider';
 import { I18nProvider } from '@/providers/i18n-provider';
@@ -12,8 +11,6 @@ import { Toaster } from '@/components/ui/sonner';
 import '@/css/styles.css';
 import '@/components/keenicons/assets/styles.css';
 
-const inter = Inter({ subsets: ['latin'] });
-
 export const metadata = {
   title: {
     template: '%s | Metronic',
@@ -24,11 +21,16 @@ export const metadata = {
 export default async function RootLayout({ children }) {
   return (
     <html className="h-full" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      </head>
       <body
         className={cn(
           'antialiased flex h-full text-base text-foreground bg-background',
-          inter.className,
         )}
+        style={{ fontFamily: "'Inter', sans-serif" }}
       >
         <QueryProvider>
           <AuthProvider>

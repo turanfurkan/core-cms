@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { getClientIP } from '@/lib/api';
-import { prisma } from '@/lib/prisma';
+import { getFrontendSettings, updateFrontendSettings } from '@/lib/api-server';
 import { systemLog } from '@/services/system-log';
 import { NotificationSettingsSchema } from '@/app/(protected)/user-management/settings/forms/notification-settings-schema';
 import authOptions from '@/app/api/auth/[...nextauth]/auth-options';
@@ -18,7 +18,7 @@ export async function POST(request) {
     }
 
     const clientIp = getClientIP(request);
-    const settings = await prisma.systemSetting.findFirst();
+    const settings = await getFrontendSettings();
     if (!settings) {
       return NextResponse.json(
         { message: 'Settings not found.' },
@@ -37,10 +37,7 @@ export async function POST(request) {
     }
 
     // Update the settings in the database
-    const updatedSettings = await prisma.systemSetting.update({
-      where: { id: settings.id }, // Adjust based on your logic to fetch the correct setting
-      data: parsedData.data,
-    });
+    const updatedSettings = await updateFrontendSettings(parsedData.data);
 
     // Log the event
     await systemLog({

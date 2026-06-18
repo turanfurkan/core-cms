@@ -1,46 +1,36 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { backendFetch } from '@/lib/api-server';
 
 export async function POST(req) {
-  const { token } = await req.json();
-
-  if (!token) {
-    return NextResponse.json({ error: 'Token is missing' }, { status: 400 });
-  }
-
-  // First, retrieve the verification token.
-  const verificationToken = await prisma.verificationToken.findUnique({
-    where: { token },
-  });
-
-  if (!verificationToken || verificationToken.expires < new Date()) {
-    return NextResponse.json(
-      { message: 'Invalid or expired token' },
-      { status: 400 },
-    );
-  }
-
   try {
-    // Use a transaction so that the user update and token deletion occur together.
-    await prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: verificationToken.identifier },
-        data: { status: 'ACTIVE', emailVerifiedAt: new Date() },
-      });
+    const { token } = await req.json();
 
-      await tx.verificationToken.delete({
-        where: { token },
-      });
+    if (!token) {
+      return NextResponse.json({ error: 'Token is missing' }, { status: 400 });
+    }
+
+    const response = await backendFetch('/api/auth/frontend/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
     });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { message: data.message || 'Verification failed.' },
+        { status: response.status }
+      );
+    }
 
     return NextResponse.json(
       { message: 'Email verified successfully!' },
-      { status: 200 },
+      { status: 200 }
     );
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 },
+      { message: error.message || 'Internal server error' },
+      { status: 500 }
     );
   }
 }

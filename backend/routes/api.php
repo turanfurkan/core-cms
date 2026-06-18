@@ -10,6 +10,7 @@ use App\Domains\Identity\Http\Controllers\Auth\RegisterController;
 use App\Domains\Identity\Http\Controllers\Auth\ResetPasswordController;
 use App\Domains\Identity\Http\Controllers\Auth\SendOtpController;
 use App\Domains\Identity\Http\Controllers\Auth\VerifyOtpController;
+use App\Domains\Identity\Http\Controllers\Auth\FrontendVerificationController;
 use App\Domains\Identity\Http\Controllers\Profile\ProfileController;
 use App\Domains\Content\Http\Controllers\Admin\ContentTypeController;
 use App\Domains\Content\Http\Controllers\Admin\ContentEntryController;
@@ -67,6 +68,11 @@ Route::get('/auth/password/reset/{token}', function (string $token) {
 
 Route::patch('/auth/password/reset', ResetPasswordController::class);
 
+Route::post('/auth/frontend/reset-password', [FrontendVerificationController::class, 'generateResetToken']);
+Route::post('/auth/frontend/reset-password-verify', [FrontendVerificationController::class, 'verifyResetToken']);
+Route::post('/auth/frontend/change-password', [FrontendVerificationController::class, 'changePassword']);
+Route::post('/auth/frontend/verify-email', [FrontendVerificationController::class, 'verifyEmail']);
+
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/admin/users', [AdminUserController::class, 'index'])
         ->middleware('can:user.viewAny');
@@ -90,7 +96,17 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     // Roles & Permissions Management
     Route::get('/admin/roles', [RoleController::class, 'index']);
+    Route::get('/admin/roles/{id}', [RoleController::class, 'show']);
+    Route::post('/admin/roles', [RoleController::class, 'store']);
+    Route::put('/admin/roles/{id}', [RoleController::class, 'update']);
+    Route::delete('/admin/roles/{id}', [RoleController::class, 'destroy']);
+    Route::patch('/admin/roles/{id}/default', [RoleController::class, 'setDefault']);
+
     Route::get('/admin/permissions', [PermissionController::class, 'index']);
+    Route::get('/admin/permissions/{id}', [PermissionController::class, 'show']);
+    Route::put('/admin/permissions/{id}', [PermissionController::class, 'update']);
+    Route::delete('/admin/permissions/{id}', [PermissionController::class, 'destroy']);
+    Route::post('/admin/permissions/delete', [PermissionController::class, 'bulkDestroy']);
 
     // Admin Content Type Schemas Management
     Route::apiResource('/admin/content-types', ContentTypeController::class);
@@ -197,24 +213,82 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // Settings Management
     Route::get('/admin/settings', [\App\Domains\Settings\Http\Controllers\Admin\SettingsController::class, 'index']);
     Route::put('/admin/settings', [\App\Domains\Settings\Http\Controllers\Admin\SettingsController::class, 'update']);
+
+    // API Keys Management
+    Route::get('/admin/api-keys', [\App\Domains\API\Http\Controllers\Admin\ApiKeyController::class, 'index']);
+    Route::post('/admin/api-keys', [\App\Domains\API\Http\Controllers\Admin\ApiKeyController::class, 'store']);
+    Route::get('/admin/api-keys/{apiKey}', [\App\Domains\API\Http\Controllers\Admin\ApiKeyController::class, 'show']);
+    Route::put('/admin/api-keys/{apiKey}', [\App\Domains\API\Http\Controllers\Admin\ApiKeyController::class, 'update']);
+    Route::delete('/admin/api-keys/{apiKey}', [\App\Domains\API\Http\Controllers\Admin\ApiKeyController::class, 'destroy']);
+
+    // Subscriber Management
+    Route::get('/admin/subscribers', [\App\Domains\Communication\Http\Controllers\Admin\SubscriberController::class, 'index']);
+    Route::post('/admin/subscribers', [\App\Domains\Communication\Http\Controllers\Admin\SubscriberController::class, 'store']);
+    Route::get('/admin/subscribers/{subscriber}', [\App\Domains\Communication\Http\Controllers\Admin\SubscriberController::class, 'show']);
+    Route::put('/admin/subscribers/{subscriber}', [\App\Domains\Communication\Http\Controllers\Admin\SubscriberController::class, 'update']);
+    Route::delete('/admin/subscribers/{subscriber}', [\App\Domains\Communication\Http\Controllers\Admin\SubscriberController::class, 'destroy']);
+
+    // Campaign Management
+    Route::get('/admin/campaigns', [\App\Domains\Communication\Http\Controllers\Admin\CampaignController::class, 'index']);
+    Route::post('/admin/campaigns', [\App\Domains\Communication\Http\Controllers\Admin\CampaignController::class, 'store']);
+    Route::get('/admin/campaigns/{campaign}', [\App\Domains\Communication\Http\Controllers\Admin\CampaignController::class, 'show']);
+    Route::post('/admin/campaigns/{campaign}/send', [\App\Domains\Communication\Http\Controllers\Admin\CampaignController::class, 'send']);
+    Route::delete('/admin/campaigns/{campaign}', [\App\Domains\Communication\Http\Controllers\Admin\CampaignController::class, 'destroy']);
+
+    // Marketing Promotions
+    Route::get('/admin/marketing/promotions', [\App\Domains\Marketing\Http\Controllers\Admin\AdminPromotionController::class, 'index']);
+    Route::post('/admin/marketing/promotions', [\App\Domains\Marketing\Http\Controllers\Admin\AdminPromotionController::class, 'store']);
+    Route::get('/admin/marketing/promotions/{promotion}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminPromotionController::class, 'show']);
+    Route::put('/admin/marketing/promotions/{promotion}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminPromotionController::class, 'update']);
+    Route::delete('/admin/marketing/promotions/{promotion}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminPromotionController::class, 'destroy']);
+
+    // Marketing Coupons
+    Route::get('/admin/marketing/coupons', [\App\Domains\Marketing\Http\Controllers\Admin\AdminCouponController::class, 'index']);
+    Route::post('/admin/marketing/coupons', [\App\Domains\Marketing\Http\Controllers\Admin\AdminCouponController::class, 'store']);
+    Route::get('/admin/marketing/coupons/{coupon}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminCouponController::class, 'show']);
+    Route::put('/admin/marketing/coupons/{coupon}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminCouponController::class, 'update']);
+    Route::delete('/admin/marketing/coupons/{coupon}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminCouponController::class, 'destroy']);
+
+    // Marketing Widgets
+    Route::get('/admin/marketing/widgets', [\App\Domains\Marketing\Http\Controllers\Admin\AdminWidgetController::class, 'index']);
+    Route::post('/admin/marketing/widgets', [\App\Domains\Marketing\Http\Controllers\Admin\AdminWidgetController::class, 'store']);
+    Route::get('/admin/marketing/widgets/{widget}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminWidgetController::class, 'show']);
+    Route::put('/admin/marketing/widgets/{widget}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminWidgetController::class, 'update']);
+    Route::delete('/admin/marketing/widgets/{widget}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminWidgetController::class, 'destroy']);
 });
 
 // Public Content Delivery API (Read-only)
-Route::get('/content/delivery/{contentTypeSlug}', [ContentDeliveryController::class, 'index']);
-Route::get('/content/delivery/{contentTypeSlug}/{entrySlug}', [ContentDeliveryController::class, 'show']);
+Route::middleware('api_key:content:read')->group(function (): void {
+    Route::get('/content/delivery/{contentTypeSlug}', [ContentDeliveryController::class, 'index']);
+    Route::get('/content/delivery/{contentTypeSlug}/{entrySlug}', [ContentDeliveryController::class, 'show']);
+});
 
 // Public Form Delivery & Submission API
-Route::get('/forms/{slug}', [\App\Domains\Forms\Http\Controllers\PublicFormController::class, 'show']);
-Route::post('/forms/{slug}/submit', [\App\Domains\Forms\Http\Controllers\PublicFormController::class, 'submit'])
-    ->middleware('throttle:5,1');
+Route::middleware('api_key:forms:read')->get('/forms/{slug}', [\App\Domains\Forms\Http\Controllers\PublicFormController::class, 'show']);
+Route::middleware(['api_key:forms:submit', 'throttle:5,1'])->post('/forms/{slug}/submit', [\App\Domains\Forms\Http\Controllers\PublicFormController::class, 'submit']);
 
 // Public Navigation API
-Route::get('/navigations/{key}', [\App\Domains\Navigation\Http\Controllers\PublicNavigationController::class, 'show']);
+Route::middleware('api_key:navigation:read')->get('/navigations/{key}', [\App\Domains\Navigation\Http\Controllers\PublicNavigationController::class, 'show']);
 
 // Public SEO Endpoints
-Route::get('/seo/redirects/resolve', [\App\Domains\SEO\Http\Controllers\Public\PublicSeoController::class, 'resolveRedirect']);
-Route::get('/seo/metadata/resolve', [\App\Domains\SEO\Http\Controllers\Public\PublicSeoController::class, 'resolvePathSeo']);
-Route::get('/seo/sitemap', [\App\Domains\SEO\Http\Controllers\Public\PublicSeoController::class, 'sitemap']);
+Route::middleware('api_key:seo:read')->group(function (): void {
+    Route::get('/seo/redirects/resolve', [\App\Domains\SEO\Http\Controllers\Public\PublicSeoController::class, 'resolveRedirect']);
+    Route::get('/seo/metadata/resolve', [\App\Domains\SEO\Http\Controllers\Public\PublicSeoController::class, 'resolvePathSeo']);
+    Route::get('/seo/sitemap', [\App\Domains\SEO\Http\Controllers\Public\PublicSeoController::class, 'sitemap']);
+});
 
 // Public Settings API
-Route::get('/settings/public', [\App\Domains\Settings\Http\Controllers\Public\PublicSettingsController::class, 'index']);
+Route::middleware('api_key:settings:read')->get('/settings/public', [\App\Domains\Settings\Http\Controllers\Public\PublicSettingsController::class, 'index']);
+
+// Public Subscriber Newsletter Endpoints
+Route::post('/subscribers/subscribe', [\App\Domains\Communication\Http\Controllers\Public\PublicSubscriberController::class, 'subscribe']);
+Route::get('/subscribers/unsubscribe/{subscriber}', [\App\Domains\Communication\Http\Controllers\Public\PublicSubscriberController::class, 'unsubscribe'])
+    ->name('subscribers.unsubscribe');
+
+// Public Marketing API
+Route::middleware('api_key:marketing:read')->group(function (): void {
+    Route::get('/marketing/promotions', [\App\Domains\Marketing\Http\Controllers\Public\PublicPromotionController::class, 'index']);
+    Route::post('/marketing/coupons/validate', [\App\Domains\Marketing\Http\Controllers\Public\PublicCouponController::class, 'validateCoupon']);
+    Route::post('/marketing/coupons/redeem', [\App\Domains\Marketing\Http\Controllers\Public\PublicCouponController::class, 'redeemCoupon']);
+    Route::get('/marketing/widgets/{key}', [\App\Domains\Marketing\Http\Controllers\Public\PublicWidgetController::class, 'show']);
+});

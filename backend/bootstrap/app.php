@@ -22,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Domains\Localization\Http\Middleware\SetLocaleMiddleware::class);
+        $middleware->alias([
+            'api_key' => \App\Domains\API\Http\Middleware\AuthenticateApiKey::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (RegistrationException $e, Request $request) {

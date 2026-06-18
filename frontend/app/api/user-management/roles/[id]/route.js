@@ -1,134 +1,75 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { getClientIP } from '@/lib/api';
-import { isUnique } from '@/lib/db';
-import { prisma } from '@/lib/prisma';
-import { systemLog } from '@/services/system-log';
-import { RoleSchema } from '@/app/(protected)/user-management/roles/forms/role-schema';
+import { backendFetch } from '@/lib/api-server';
 import authOptions from '@/app/api/auth/[...nextauth]/auth-options';
 
 // GET: Fetch a specific role by ID, including permissions
 export async function GET(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session) {
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const response = await backendFetch(`/api/admin/roles/${id}`);
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
+        { message: data.message || 'Failed to fetch role from backend.' },
+        { status: response.status }
       );
     }
 
-    const role = await prisma.userRole.findUnique({
-      where: { id: (await params).id },
-      include: {
-        permissions: {
-          include: {
-            permission: true, // Fetch full permission details
-          },
-        },
-      },
-    });
-
-    if (!role) {
-      return NextResponse.json({ message: 'Role not found' }, { status: 404 });
-    }
-
-    // Map permissions to a flat structure
-    const permissions = role.permissions.map((p) => p.permission);
-
-    return NextResponse.json({ ...role, permissions });
-  } catch {
+    return NextResponse.json(data.data);
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Oops! Something went wrong.' },
+      { status: 500 }
     );
   }
 }
 
 // PUT: Edit a specific role by ID
-export async function PUT(request, context) {
+export async function PUT(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
-      );
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
     }
 
-    // Await the params to resolve correctly
-    const { params } = context;
     const { id } = await params;
-
     if (!id) {
-      return NextResponse.json({ error: 'Invalid input.' }, { status: 400 });
-    }
-
-    // Check if record exists
-    const existingCategory = await prisma.userRole.findUnique({
-      where: { id },
-    });
-    if (!existingCategory) {
-      return NextResponse.json(
-        { message: 'Record not found. Someone might have deleted it already.' },
-        { status: 404 },
-      );
+      return NextResponse.json({ message: 'Invalid input.' }, { status: 400 });
     }
 
     const body = await request.json();
 
-    const parsedData = RoleSchema.safeParse(body);
-    if (!parsedData.success) {
-      return NextResponse.json(
-        { message: 'Invalid input. Please check your data and try again.' },
-        { status: 400 }, // Bad Request
-      );
-    }
-
-    const { name, slug, description, permissions } = parsedData.data;
-
-    // Check uniqueness for name and slug
-    const isUniqueRole = await isUnique('userRole', { slug, name }, { id });
-    if (!isUniqueRole) {
-      return NextResponse.json(
-        { message: 'Name or slug must be unique' },
-        { status: 400 },
-      );
-    }
-
-    // Perform database operations in a transaction
-    const updatedRole = await prisma.$transaction(async (tx) => {
-      // Update role details
-      const role = await tx.userRole.update({
-        where: { id },
-        data: { name, slug, description },
-      });
-
-      // Remove existing permissions regardless of whether `permissions` is empty or not
-      await tx.userRolePermission.deleteMany({
-        where: { roleId: id },
-      });
-
-      // Add new permissions if provided
-      if (permissions && permissions?.length > 0) {
-        const newPermissions = permissions.map((permissionId) => ({
-          roleId: id,
-          permissionId,
-        }));
-
-        await tx.userRolePermission.createMany({ data: newPermissions });
-      }
-
-      return role;
+    const response = await backendFetch(`/api/admin/roles/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        name: body.name,
+        slug: body.slug,
+        description: body.description,
+        permissions: body.permissions,
+      }),
     });
 
-    return NextResponse.json(updatedRole);
-  } catch {
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { message: data.message || 'Failed to update role on backend.' },
+        { status: response.status }
+      );
+    }
+
+    return NextResponse.json(data.data);
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Oops! Something went wrong.' },
+      { status: 500 }
     );
   }
 }
@@ -137,93 +78,33 @@ export async function PUT(request, context) {
 export async function DELETE(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
-      );
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
     }
 
-    const clientIp = getClientIP(request);
     const { id } = await params;
-
-    // Check if id passed
     if (!id) {
-      return NextResponse.json({ error: 'Invalid input.' }, { status: 400 });
+      return NextResponse.json({ message: 'Invalid input.' }, { status: 400 });
     }
 
-    // Check if record exists
-    const existingCategory = await prisma.userRole.findUnique({
-      where: { id },
+    const response = await backendFetch(`/api/admin/roles/${id}`, {
+      method: 'DELETE',
     });
-    if (!existingCategory) {
+
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Record not found. Someone might have deleted it already.' },
-        { status: 404 },
+        { message: data.message || 'Failed to delete role on backend.' },
+        { status: response.status }
       );
     }
 
-    // Check if the role exists
-    const role = await prisma.userRole.findUnique({
-      where: { id },
-    });
-
-    if (!role) {
-      return NextResponse.json({ message: 'Role not found' }, { status: 404 });
-    }
-
-    // Check if the role is protected
-    if (role.isProtected) {
-      return NextResponse.json(
-        { message: 'Cannot delete a protected role' },
-        { status: 403 },
-      );
-    }
-
-    // Check if the role is assigned to any user
-    const roleAssignedToUsers = await prisma.user.count({
-      where: { roleId: id },
-    });
-
-    if (roleAssignedToUsers > 0) {
-      return NextResponse.json(
-        { message: 'Role is assigned to users and cannot be deleted' },
-        { status: 403 },
-      );
-    }
-
-    // Delete the role and its associated permissions in a transaction
-    await prisma.$transaction(async (tx) => {
-      // Delete linked role permissions
-      await tx.userRolePermission.deleteMany({
-        where: { roleId: id },
-      });
-
-      // Delete the permission itself
-      await tx.userRole.delete({
-        where: { id },
-      });
-
-      // Log the event
-      await systemLog(
-        {
-          event: 'delete',
-          userId: session.user.id,
-          entityId: id,
-          entityType: 'user.role',
-          description: 'User role deleted.',
-          ipAddress: clientIp,
-        },
-        tx,
-      );
-    });
-
-    return NextResponse.json({ message: 'Role deleted successfully' });
-  } catch {
+    return NextResponse.json({ message: 'Role deleted successfully.' });
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Oops! Something went wrong.' },
+      { status: 500 }
     );
   }
 }

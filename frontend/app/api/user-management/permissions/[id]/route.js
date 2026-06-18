@@ -1,42 +1,32 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { getClientIP } from '@/lib/api';
-import { isUnique } from '@/lib/db';
-import { prisma } from '@/lib/prisma';
-import { systemLog } from '@/services/system-log';
-import { PermissionSchema } from '@/app/(protected)/user-management/permissions/forms/permission-schema';
+import { backendFetch } from '@/lib/api-server';
 import authOptions from '@/app/api/auth/[...nextauth]/auth-options';
 
 // GET: Fetch a specific permission by ID
 export async function GET(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
-      );
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
     }
 
     const { id } = await params;
+    const response = await backendFetch(`/api/admin/permissions/${id}`);
+    const data = await response.json();
 
-    const permission = await prisma.userPermission.findUnique({
-      where: { id },
-    });
-
-    if (!permission) {
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Record not found. Someone might have deleted it already.' },
-        { status: 404 },
+        { message: data.message || 'Failed to fetch permission from backend.' },
+        { status: response.status }
       );
     }
 
-    return NextResponse.json(permission);
-  } catch {
+    return NextResponse.json(data.data);
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Oops! Something went wrong.' },
+      { status: 500 }
     );
   }
 }
@@ -45,75 +35,39 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
-      );
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
     }
 
     const { id } = await params;
-    const clientIp = getClientIP(request);
-
-    // Ensure the ID is provided
     if (!id) {
-      return NextResponse.json({ error: 'Invalid input.' }, { status: 400 });
-    }
-
-    // Check if record exists
-    const existingPermission = await prisma.userPermission.findUnique({
-      where: { id },
-    });
-    if (!existingPermission) {
-      return NextResponse.json(
-        { message: 'Record not found. Someone might have deleted it already.' },
-        { status: 404 },
-      );
+      return NextResponse.json({ message: 'Invalid input.' }, { status: 400 });
     }
 
     const body = await request.json();
-    const parsedData = PermissionSchema.safeParse(body);
-    if (!parsedData.success) {
-      return NextResponse.json({ error: 'Invalid input.' }, { status: 400 });
-    }
 
-    const { name, description } = parsedData.data;
+    const response = await backendFetch(`/api/admin/permissions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        name: body.name,
+        description: body.description,
+      }),
+    });
 
-    // Check uniqueness for name only (slug is not updatable)
-    const isUniquePermission = await isUnique(
-      'userPermission',
-      { name },
-      { id },
-    );
-    if (!isUniquePermission) {
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Name and slug must be unique.' },
-        { status: 400 },
+        { message: data.message || 'Failed to update permission on backend.' },
+        { status: response.status }
       );
     }
 
-    // Update the permission (excluding slug)
-    const updatedPermission = await prisma.userPermission.update({
-      where: { id },
-      data: { name, description },
-    });
-
-    // Log the event
-    await systemLog({
-      event: 'update',
-      userId: session.user.id,
-      entityId: id,
-      entityType: 'user.permission',
-      description: 'User permission updated.',
-      ipAddress: clientIp,
-    });
-
-    return NextResponse.json(updatedPermission);
-  } catch {
+    return NextResponse.json(data.data);
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Oops! Something went wrong.' },
+      { status: 500 }
     );
   }
 }
@@ -122,66 +76,33 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
-      );
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
     }
 
     const { id } = await params;
-    const clientIp = getClientIP(request);
-
     if (!id) {
-      return NextResponse.json(
-        { message: 'Invalid input. Please check your data and try again.' },
-        { status: 400 },
-      );
+      return NextResponse.json({ message: 'Invalid input.' }, { status: 400 });
     }
 
-    // Check if the permission exists
-    const existingPermission = await prisma.userPermission.findUnique({
-      where: { id },
+    const response = await backendFetch(`/api/admin/permissions/${id}`, {
+      method: 'DELETE',
     });
-    if (!existingPermission) {
+
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Requested data not found.' },
-        { status: 404 },
+        { message: data.message || 'Failed to delete permission on backend.' },
+        { status: response.status }
       );
     }
-
-    // Perform deletion in a transaction to ensure atomicity
-    await prisma.$transaction(async (tx) => {
-      // Delete linked role permissions
-      await tx.userRolePermission.deleteMany({
-        where: { permissionId: id },
-      });
-
-      // Delete the permission itself
-      await tx.userPermission.delete({
-        where: { id },
-      });
-
-      // Log the event
-      await systemLog(
-        {
-          event: 'delete',
-          userId: session.user.id,
-          entityId: id,
-          entityType: 'user.permission',
-          description: 'User permission deleted.',
-          ipAddress: clientIp,
-        },
-        tx,
-      );
-    });
 
     return NextResponse.json({ message: 'Permission deleted successfully.' });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Oops! Something went wrong.' },
+      { status: 500 }
     );
   }
 }

@@ -18,23 +18,40 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(RolesAndPermissionsSeeder::class);
 
-        $user = User::factory()
-            ->state(fn () => [
-                'name' => 'Test User',
-                'email' => 'test@example.com',
-            ])
-            ->create();
+        $user = User::where('email', 'test@example.com')->first();
+        if (!$user) {
+            $user = User::factory()
+                ->state(fn () => [
+                    'name' => 'Test User',
+                    'email' => 'test@example.com',
+                ])
+                ->create();
+            $user->assignRole(\Spatie\Permission\Models\Role::where('name', 'super_admin')->get());
+        }
 
-        $user->assignRole('super_admin');
+        $demoUser = User::where('email', 'demo@kt.com')->first();
+        if (!$demoUser) {
+            $demoUser = User::factory()
+                ->state(fn () => [
+                    'name' => 'Demo User',
+                    'email' => 'demo@kt.com',
+                    'password' => Hash::make('demo123'),
+                ])
+                ->create();
+            $demoUser->assignRole(\Spatie\Permission\Models\Role::where('name', 'super_admin')->get());
+        }
 
-        $demoUser = User::factory()
-            ->state(fn () => [
-                'name' => 'Demo User',
-                'email' => 'demo@kt.com',
-                'password' => Hash::make('demo123'),
-            ])
-            ->create();
-
-        $demoUser->assignRole('super_admin');
+        if (!\App\Domains\API\Models\ApiKey::where('name', 'Default Development Key')->exists()) {
+            $rawKey = 'corecms_key_devkey1234567890abcdef1234567890';
+            $hashedKey = hash('sha256', $rawKey);
+            \App\Domains\API\Models\ApiKey::create([
+                'name' => 'Default Development Key',
+                'hashed_key' => $hashedKey,
+                'hint' => 'corecms_key_...cdef',
+                'scopes' => ['*'],
+                'expires_at' => null,
+                'is_active' => true,
+            ]);
+        }
     }
 }

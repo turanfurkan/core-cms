@@ -1,8 +1,10 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api';
 import { MENU_SIDEBAR } from '@/config/menu.config';
 import { cn } from '@/lib/utils';
 import {
@@ -18,6 +20,46 @@ import { Badge } from '@/components/ui/badge';
 
 export function SidebarMenu() {
   const pathname = usePathname();
+
+  // Fetch dynamic content types
+  const { data: contentTypes = [] } = useQuery({
+    queryKey: ['admin-content-types'],
+    queryFn: async () => {
+      try {
+        const res = await apiFetch('/api/admin/content-types');
+        if (!res.ok) return [];
+        const json = await res.json();
+        return json.data || [];
+      } catch (e) {
+        return [];
+      }
+    },
+  });
+
+  // Dynamically build/inject content types into Content Management children
+  const dynamicMenu = useMemo(() => {
+    return MENU_SIDEBAR.map(item => {
+      if (item.title === 'Content Management') {
+        const dynamicChildren = [
+          {
+            title: 'Content Types',
+            path: '/content-management/content-types',
+          }
+        ];
+        contentTypes.forEach(type => {
+          dynamicChildren.push({
+            title: type.name,
+            path: `/content-management/content-entries?type=${type.slug}`,
+          });
+        });
+        return {
+          ...item,
+          children: dynamicChildren
+        };
+      }
+      return item;
+    });
+  }, [contentTypes]);
 
   // Memoize matchPath to prevent unnecessary re-renders
   const matchPath = useCallback(
@@ -82,7 +124,7 @@ export function SidebarMenu() {
         >
           <Link
             href={item.path || '#'}
-            className="flex items-center justify-between grow gap-2"
+            className="flex items-center justify-start grow gap-2"
           >
             {item.icon && <item.icon data-slot="accordion-menu-icon" />}
             <span data-slot="accordion-menu-title">{item.title}</span>
@@ -203,7 +245,7 @@ export function SidebarMenu() {
         collapsible
         classNames={classNames}
       >
-        {buildMenu(MENU_SIDEBAR)}
+        {buildMenu(dynamicMenu)}
       </AccordionMenu>
     </div>
   );

@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { getClientIP } from '@/lib/api';
-import { prisma } from '@/lib/prisma';
-import { deleteFromS3, uploadToS3 } from '@/lib/s3-upload';
-import { systemLog } from '@/services/system-log';
-import { AccountProfileSchema } from '@/app/(protected)/user-management/account/forms/account-profile-schema';
+import { backendFetch } from '@/lib/api-server';
 import authOptions from '@/app/api/auth/[...nextauth]/auth-options';
 
 export async function POST(request) {
@@ -14,86 +10,63 @@ export async function POST(request) {
     if (!session) {
       return NextResponse.json(
         { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
+        { status: 401 },
       );
     }
 
-    const clientIp = getClientIP(request);
-
-    // Parse the form data
     const formData = await request.formData();
+    const name = formData.get('name');
+    const avatarFile = formData.get('avatarFile');
+    const avatarAction = formData.get('avatarAction');
 
-    // Extract form data
-    const parsedData = {
-      name: formData.get('name'),
-      avatarFile: formData.get('avatarFile'),
-      avatarAction: formData.get('avatarAction'),
-    };
+    // 1. Update Name/Email Profile
+    const profileRes = await backendFetch('/api/profile', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name,
+        email: session.user.email,
+      }),
+    });
 
-    // Validate the input using Zod schema
-    const validationResult = AccountProfileSchema.safeParse(parsedData);
-    if (!validationResult.success) {
-      return NextResponse.json({ error: 'Invalid input.' }, { status: 400 });
+    if (!profileRes.ok) {
+      const errData = await profileRes.json();
+      return NextResponse.json(
+        { message: errData.message || 'Profile update failed.' },
+        { status: profileRes.status }
+      );
     }
 
-    const { name, avatarFile, avatarAction } = validationResult.data;
+    // 2. Handle Avatar Update
+    if (avatarAction === 'save' && avatarFile && avatarFile.size > 0) {
+      const avatarFormData = new FormData();
+      avatarFormData.append('avatar', avatarFile);
 
-    // Handle avatar removal
-    if (avatarAction === 'remove' && session.user?.avatar) {
-      try {
-        await deleteFromS3(session.user.avatar);
-      } catch (error) {
-        console.error('Failed to remove avatar from S3:', error);
-      }
-    }
+      const avatarRes = await backendFetch('/api/profile/avatar', {
+        method: 'POST',
+        body: avatarFormData,
+      });
 
-    // Handle new avatar upload
-    let avatarUrl = session.user?.avatar || null;
-    if (
-      avatarAction === 'save' &&
-      avatarFile instanceof File &&
-      avatarFile.size > 0
-    ) {
-      try {
-        avatarUrl = await uploadToS3(avatarFile, 'avatars');
-      } catch (error) {
-        console.error('Failed to upload avatar to S3:', error);
+      if (!avatarRes.ok) {
+        const errData = await avatarRes.json();
         return NextResponse.json(
-          { message: 'Failed to upload avatar.' },
-          { status: 500 },
+          { message: errData.message || 'Avatar upload failed.' },
+          { status: avatarRes.status }
         );
       }
     }
 
-    // Save or update the user in the database
-    const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        name,
-        avatar:
-          avatarAction === 'remove'
-            ? null
-            : avatarAction === 'save'
-              ? avatarUrl
-              : undefined,
-      },
-    });
+    // Return the updated user info
+    const finalProfileRes = await backendFetch('/api/profile');
+    const finalData = await finalProfileRes.json();
 
-    // Log the event
-    await systemLog({
-      event: 'update',
-      userId: session.user.id,
-      entityId: session.user.id,
-      entityType: 'user.account',
-      description: 'User account updated.',
-      ipAddress: clientIp,
-    });
-
-    return NextResponse.json(updatedUser);
-  } catch {
+    return NextResponse.json(finalData.data || finalData);
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Oops! Something went wrong.' },
+      { status: 500 }
     );
   }
 }

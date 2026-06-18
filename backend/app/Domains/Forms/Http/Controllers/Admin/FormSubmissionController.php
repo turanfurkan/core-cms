@@ -13,7 +13,7 @@ class FormSubmissionController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = FormSubmission::with('form');
+        $query = FormSubmission::with(['form.fields']);
 
         if ($request->filled('form_id')) {
             $query->where('form_id', $request->input('form_id'));
@@ -30,7 +30,7 @@ class FormSubmissionController extends Controller
 
     public function show(FormSubmission $submission): FormSubmissionResource
     {
-        return new FormSubmissionResource($submission->load('form'));
+        return new FormSubmissionResource($submission->load(['form.fields']));
     }
 
     public function updateStatus(FormSubmission $submission, Request $request): FormSubmissionResource
@@ -43,7 +43,7 @@ class FormSubmissionController extends Controller
             'status' => $request->input('status'),
         ]);
 
-        return new FormSubmissionResource($submission->load('form'));
+        return new FormSubmissionResource($submission->load(['form.fields']));
     }
 
     public function destroy(FormSubmission $submission): JsonResponse

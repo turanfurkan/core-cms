@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider  = "mysql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 // User Modoule
@@ -154,17 +153,17 @@ model SystemSetting {
   notifyStockEmail               Boolean  @default(true)
   notifyStockWeb                 Boolean  @default(true)
   notifyStockThreshold           Int      @default(10)
-  notifyStockRoleIds             String[]
+  notifyStockRoleIds             Json
   notifyNewOrderEmail            Boolean  @default(true)
   notifyNewOrderWeb              Boolean  @default(true)
-  notifyNewOrderRoleIds          String[]
+  notifyNewOrderRoleIds          Json
   notifyOrderStatusUpdateEmail   Boolean  @default(true)
   notifyOrderStatusUpdateWeb     Boolean  @default(true)
-  notifyOrderStatusUpdateRoleIds String[]
+  notifyOrderStatusUpdateRoleIds Json
   notifyPaymentFailureEmail      Boolean  @default(true)
   notifyPaymentFailureWeb        Boolean  @default(true)
-  notifyPaymentFailureRoleIds    String[]
+  notifyPaymentFailureRoleIds    Json
   notifySystemErrorFailureEmail  Boolean  @default(true)
   notifySystemErrorWeb           Boolean  @default(true)
-  notifySystemErrorRoleIds       String[]
+  notifySystemErrorRoleIds       Json
 }

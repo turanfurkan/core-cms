@@ -27,6 +27,8 @@ use App\Domains\Identity\Models\User;
 use App\Domains\Identity\Policies\UserPolicy;
 use App\Domains\Identity\Sms\FakeSmsGateway;
 use App\Domains\Identity\Sms\LogSmsGateway;
+use App\Domains\Identity\Sms\NetgsmSmsGateway;
+use App\Domains\Identity\Sms\TwilioSmsGateway;
 use App\Domains\Identity\Support\OtpCodeGenerator;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Hashing\Hasher;
@@ -51,9 +53,19 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->singleton(SmsGateway::class, function () {
+        $this->app->singleton(SmsGateway::class, function ($app) {
             return match ((string) config('user.otp.sms.driver', 'log')) {
                 'fake' => new FakeSmsGateway(),
+                'netgsm' => new NetgsmSmsGateway(
+                    usercode: config('services.netgsm.usercode'),
+                    password: config('services.netgsm.password'),
+                    header: config('services.netgsm.header'),
+                ),
+                'twilio' => new TwilioSmsGateway(
+                    sid: config('services.twilio.sid'),
+                    authToken: config('services.twilio.auth_token'),
+                    from: config('services.twilio.from'),
+                ),
                 default => new LogSmsGateway(),
             };
         });

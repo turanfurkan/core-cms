@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { prisma } from '@/lib/prisma';
+import { backendFetch } from '@/lib/api-server';
 import authOptions from '@/app/api/auth/[...nextauth]/auth-options';
 
 export async function GET() {
@@ -14,23 +14,18 @@ export async function GET() {
       );
     }
 
-    // Fetch the user based on the email in the session
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: {
-        role: true,
-      },
-    });
+    const response = await backendFetch('/api/profile');
+    const data = await response.json();
 
-    // Check if record exists
-    if (!user) {
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Record not found. Someone might have deleted it already.' },
-        { status: 404 },
+        { message: data.message || 'Record not found.' },
+        { status: response.status },
       );
     }
 
-    return NextResponse.json(user);
+    // Wrap in expected shape
+    return NextResponse.json(data.data || data);
   } catch {
     return NextResponse.json(
       { message: 'Oops! Something went wrong. Please try again in a moment.' },

@@ -28,7 +28,23 @@ class EntryValidator
 
             // Merge rules defined in the database
             $schemaRules = $field->validation_rules ?? [];
-            $fieldRules = array_merge($fieldRules, $schemaRules);
+            if (is_array($schemaRules)) {
+                $cleanedRules = [];
+                foreach ($schemaRules as $k => $v) {
+                    if (is_numeric($k)) {
+                        $cleanedRules[] = $v;
+                    } else {
+                        if ($k === 'required' && $v) {
+                            $cleanedRules[] = 'required';
+                        } elseif ($k === 'max' && $v) {
+                            $cleanedRules[] = "max:{$v}";
+                        } elseif ($k === 'min' && $v) {
+                            $cleanedRules[] = "min:{$v}";
+                        }
+                    }
+                }
+                $fieldRules = array_merge($fieldRules, $cleanedRules);
+            }
 
             // If the rule list doesn't explicitly specify nullable/required, make it nullable
             if (!in_array('required', $fieldRules) && !in_array('nullable', $fieldRules)) {

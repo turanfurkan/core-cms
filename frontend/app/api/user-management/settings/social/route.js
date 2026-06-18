@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { getClientIP } from '@/lib/api';
-import { prisma } from '@/lib/prisma';
+import { getFrontendSettings, updateFrontendSettings } from '@/lib/api-server';
 import { systemLog } from '@/services/system-log';
 import { SocialSettingsSchema } from '@/app/(protected)/user-management/settings/forms/social-settings-schema';
 import authOptions from '@/app/api/auth/[...nextauth]/auth-options';
@@ -22,7 +22,7 @@ export async function POST(request) {
     // Parse the request body as JSON
     const body = await request.json();
 
-    const settings = await prisma.systemSetting.findFirst();
+    const settings = await getFrontendSettings();
     if (!settings) {
       return NextResponse.json(
         { message: 'Settings not found.' },
@@ -41,10 +41,7 @@ export async function POST(request) {
     }
 
     // Update only the social settings fields
-    await prisma.systemSetting.update({
-      where: { id: settings.id },
-      data: validationResult.data,
-    });
+    await updateFrontendSettings(validationResult.data);
 
     // Log the event
     await systemLog({

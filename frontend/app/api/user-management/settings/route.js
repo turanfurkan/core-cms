@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { prisma } from '@/lib/prisma';
+import { backendFetch, getFrontendSettings } from '@/lib/api-server';
 import authOptions from '@/app/api/auth/[...nextauth]/auth-options';
 
 export async function GET() {
@@ -10,24 +10,22 @@ export async function GET() {
     if (!session) {
       return NextResponse.json(
         { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
+        { status: 401 },
       );
     }
 
-    // Get settings
-    const settings = await prisma.systemSetting.findFirst();
+    const settings = await getFrontendSettings();
 
-    // Fetch all roles from the UserRole table and sort by name
-    const roles = await prisma.userRole.findMany({
-      select: { id: true, name: true }, // Adjust selection based on your schema
-      orderBy: { name: 'asc' }, // Sort by name in ascending order
+    const rolesRes = await backendFetch('/api/admin/roles');
+    const rolesData = await rolesRes.json();
+
+    return NextResponse.json({
+      settings,
+      roles: rolesData.data || [],
     });
-
-    // Return the setting and sorted role list data
-    return NextResponse.json({ settings, roles });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
+      { message: 'Oops! Something went wrong. Please try again in a moment.' + error.message },
       { status: 500 },
     );
   }

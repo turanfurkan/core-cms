@@ -15,8 +15,12 @@ class RoleResource extends JsonResource
         return [
             'id' => $this->id,
             'slug' => $this->name,
-            'name' => ucwords(str_replace('_', ' ', $this->name)),
+            'name' => ucwords(str_replace(['_', '-'], ' ', $this->name)),
+            'description' => $this->description,
+            'isDefault' => (bool)$this->is_default,
+            'isProtected' => (bool)$this->is_protected,
             'guard_name' => $this->guard_name,
+            'permissions' => PermissionResource::collection($this->relationLoaded('permissions') ? $this->permissions : $this->permissions()->get()),
         ];
     }
 }

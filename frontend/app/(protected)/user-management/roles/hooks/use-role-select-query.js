@@ -9,12 +9,14 @@ export const useRoleSelectQuery = () => {
     const response = await apiFetch('/api/user-management/roles/select');
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
       toast.error(
-        'Something went wrong while loading the records. Please try again.',
+        errorData.message || 'Something went wrong while loading the records. Please try again.',
         {
           position: 'top-center',
         },
       );
+      throw new Error(errorData.message || 'Failed to fetch roles.');
     }
 
     return response.json();

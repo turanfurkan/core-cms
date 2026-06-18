@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    'netgsm' => [
+        'usercode' => env('NETGSM_USERCODE'),
+        'password' => env('NETGSM_PASSWORD'),
+        'header' => env('NETGSM_HEADER'),
+    ],
+
+    'twilio' => [
+        'sid' => env('TWILIO_SID'),
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+        'from' => env('TWILIO_FROM'),
+    ],
+
 ];

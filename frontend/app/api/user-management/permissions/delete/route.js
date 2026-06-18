@@ -1,22 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { getClientIP } from '@/lib/api';
-import { prisma } from '@/lib/prisma'; // Adjust the import based on your Prisma setup
-import { systemLog } from '@/services/system-log';
+import { backendFetch } from '@/lib/api-server';
 import authOptions from '@/app/api/auth/[...nextauth]/auth-options';
 
 export async function DELETE(request) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session) {
-      return NextResponse.json(
-        { message: 'Unauthorized request' },
-        { status: 401 }, // Unauthorized
-      );
+      return NextResponse.json({ message: 'Unauthorized request' }, { status: 401 });
     }
 
-    const clientIp = getClientIP(request);
     const body = await request.json();
     const { permissionIds } = body;
 
@@ -24,53 +17,29 @@ export async function DELETE(request) {
       return NextResponse.json({ message: 'Invalid input.' }, { status: 400 });
     }
 
-    // Validation: Limit deletion to a maximum of 2 records to ensure a smooth demo experience for users.
-    if (permissionIds.length > 2) {
+    const response = await backendFetch('/api/admin/permissions/delete', {
+      method: 'POST',
+      body: JSON.stringify({
+        permission_ids: permissionIds,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json(
-        {
-          message: 'You cannot delete more than 2 records at once.',
-        },
-        { status: 400 },
+        { message: data.message || 'Failed to delete selected permissions on backend.' },
+        { status: response.status }
       );
     }
 
-    // Perform deletion in a transaction to ensure atomicity
-    await prisma.$transaction(async (tx) => {
-      // Delete linked role permissions
-      await tx.userRolePermission.deleteMany({
-        where: {
-          permissionId: { in: permissionIds },
-        },
-      });
-
-      // Delete the permissions themselves
-      await tx.userPermission.deleteMany({
-        where: {
-          id: { in: permissionIds },
-        },
-      });
-
-      // Log the event
-      await systemLog(
-        {
-          event: 'create',
-          userId: session.user.id,
-          entityId: permissionIds.join(', '),
-          entityType: 'user.permissions',
-          description: 'User permissions deleted.',
-          ipAddress: clientIp,
-        },
-        tx,
-      );
-    });
-
     return NextResponse.json({
-      message: 'Delete selected success',
+      message: 'Selected permissions successfully deleted.',
     });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Oops! Something went wrong. Please try again in a moment.' },
-      { status: 500 },
+      { message: error.message || 'Oops! Something went wrong.' },
+      { status: 500 }
     );
   }
 }

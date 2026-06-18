@@ -21,6 +21,7 @@ import {
   FileQuestion,
   FileText,
   Flag,
+  Globe,
   Ghost,
   Gift,
   Grid,
@@ -51,16 +52,16 @@ import {
   Users,
   Briefcase as WorkIcon,
   Zap,
+  FolderOpen,
+  ClipboardCheck,
+  Send,
 } from 'lucide-react';
 
 export const MENU_SIDEBAR = [
   {
     title: 'Dashboards',
     icon: LayoutGrid,
-    children: [
-      { title: 'Light Sidebar', path: '/' },
-      { title: 'Dark Sidebar', path: '/dark-sidebar' },
-    ],
+    path: '/'
   },
   { heading: 'User' },
   {
@@ -304,6 +305,85 @@ export const MENU_SIDEBAR = [
         title: 'Settings',
         path: '/user-management/settings',
       },
+      {
+        title: 'Navigations',
+        path: '/user-management/navigations',
+      },
+    ],
+  },
+  {
+    title: 'Content Management',
+    icon: FileText,
+    children: [
+      {
+        title: 'Content Types',
+        path: '/content-management/content-types',
+      },
+      {
+        title: 'Content Entries',
+        path: '/content-management/content-entries',
+      },
+    ],
+  },
+  {
+    title: 'Media Library',
+    icon: FolderOpen,
+    path: '/media-management',
+  },
+  {
+    title: 'Form Builder',
+    icon: ClipboardCheck,
+    children: [
+      { title: 'Forms', path: '/form-management/forms' },
+      { title: 'Submissions', path: '/form-management/submissions' },
+    ],
+  },
+  {
+    title: 'SEO Management',
+    icon: Globe,
+    children: [
+      { title: 'SEO Paths', path: '/seo-management/paths' },
+      { title: 'Redirects', path: '/seo-management/redirects' },
+    ],
+  },
+  {
+    title: 'Localization',
+    icon: Flag,
+    children: [
+      { title: 'Languages', path: '/localization/languages' },
+      { title: 'Translations', path: '/localization/translations' },
+    ],
+  },
+  {
+    title: 'Webhooks',
+    icon: Plug,
+    path: '/webhooks',
+  },
+  {
+    title: 'System Settings',
+    icon: Settings,
+    path: '/system-settings',
+  },
+  {
+    title: 'Notification Templates',
+    icon: Bell,
+    path: '/notification-templates',
+  },
+  {
+    title: 'Marketing',
+    icon: Gift,
+    children: [
+      { title: 'Promotions', path: '/marketing/promotions' },
+      { title: 'Coupons', path: '/marketing/coupons' },
+      { title: 'Widgets', path: '/marketing/widgets' },
+    ],
+  },
+  {
+    title: 'Communication',
+    icon: Send,
+    children: [
+      { title: 'Subscribers', path: '/communication/subscribers' },
+      { title: 'Campaigns', path: '/communication/campaigns' },
     ],
   },
   {
@@ -346,44 +426,6 @@ export const MENU_SIDEBAR = [
       { title: 'Order Receipt', path: '/store-client/order-receipt' },
     ],
   },
-  {
-    title: 'Store - Admin',
-    icon: Bolt,
-    disabled: true,
-    children: [
-      { title: 'Dashboard', path: '/store-admin/dashboard' },
-      {
-        title: 'Inventory',
-        children: [
-          {
-            title: 'All Products',
-            path: '/store-admin/inventory/all-products',
-          },
-          {
-            title: 'Current Stock',
-            path: '/store-admin/inventory/current-stock',
-          },
-          {
-            title: 'Inbound Stock',
-            path: '/store-admin/inventory/inbound-stock',
-          },
-          {
-            title: 'Outbound Stock',
-            path: '/store-admin/inventory/outbound-stock',
-          },
-          {
-            title: 'Stock Planner',
-            path: '/store-admin/inventory/stock-planner',
-          },
-          { title: 'Track Shipping', path: '/' },
-          { title: 'Create Shipping Label', path: '/' },
-        ],
-      },
-    ],
-  },
-  { title: 'Store - Services', icon: Codepen, disabled: true },
-  { title: 'AI Promt', icon: Theater, disabled: true },
-  { title: 'Invoice Generator', icon: ScrollText, disabled: true },
 ];
 
 export const MENU_SIDEBAR_CUSTOM = [
@@ -699,6 +741,70 @@ export const MENU_SIDEBAR_COMPACT = [
         title: 'Settings',
         path: '/user-management/settings',
       },
+      {
+        title: 'Navigations',
+        path: '/user-management/navigations',
+      },
+    ],
+  },
+  {
+    title: 'Content Management',
+    icon: FileText,
+    children: [
+      {
+        title: 'Content Types',
+        path: '/content-management/content-types',
+      },
+      {
+        title: 'Content Entries',
+        path: '/content-management/content-entries',
+      },
+    ],
+  },
+  {
+    title: 'Media Library',
+    icon: FolderOpen,
+    path: '/media-management',
+  },
+  {
+    title: 'Form Builder',
+    icon: ClipboardCheck,
+    children: [
+      { title: 'Forms', path: '/form-management/forms' },
+      { title: 'Submissions', path: '/form-management/submissions' },
+    ],
+  },
+  {
+    title: 'SEO Management',
+    icon: Globe,
+    children: [
+      { title: 'SEO Paths', path: '/seo-management/paths' },
+      { title: 'Redirects', path: '/seo-management/redirects' },
+    ],
+  },
+  {
+    title: 'Localization',
+    icon: Flag,
+    children: [
+      { title: 'Languages', path: '/localization/languages' },
+      { title: 'Translations', path: '/localization/translations' },
+    ],
+  },
+  {
+    title: 'Marketing',
+    icon: Gift,
+    children: [
+      { title: 'Promotions', path: '/marketing/promotions' },
+      { title: 'Coupons', path: '/marketing/coupons' },
+      { title: 'Widgets', path: '/marketing/widgets' },
+    ],
+  },
+  {
+    title: 'Communication',
+    icon: Send,
+    children: [
+      { title: 'Subscribers', path: '/communication/subscribers' },
+      { title: 'Campaigns', path: '/communication/campaigns' },
     ],
   },
   {
@@ -1125,6 +1231,10 @@ export const MENU_MEGA = [
                 title: 'Settings',
                 path: '/user-management/settings',
               },
+              {
+                title: 'Navigations',
+                path: '/user-management/navigations',
+              },
             ],
           },
         ],
@@ -1432,6 +1542,10 @@ export const MENU_MEGA_MOBILE = [
       {
         title: 'Settings',
         path: '/user-management/settings',
+      },
+      {
+        title: 'Navigations',
+        path: '/user-management/navigations',
       },
     ],
   },

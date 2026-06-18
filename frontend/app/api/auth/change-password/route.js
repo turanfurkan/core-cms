@@ -1,77 +1,55 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcrypt';
-import prisma from '@/lib/prisma';
 import { sendEmail } from '@/services/send-email';
 import { getChangePasswordApiSchema } from '@/app/(auth)/forms/change-password-schema';
+import { backendFetch } from '@/lib/api-server';
 
 export async function POST(req) {
   try {
-    // Parse and validate the request body
     const body = await req.json();
     const parsedData = getChangePasswordApiSchema().safeParse(body);
 
     if (!parsedData.success) {
       return NextResponse.json(
         { message: 'Invalid input. Please check your data and try again.' },
-        { status: 400 }, // Bad Request
+        { status: 400 }
       );
     }
 
     const { token, newPassword } = parsedData.data;
 
-    // Validate the token
-    const verificationToken = await prisma.verificationToken.findUnique({
-      where: { token },
+    const response = await backendFetch('/api/auth/frontend/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
     });
 
-    if (!verificationToken || verificationToken.expires < new Date()) {
+    const data = await response.json();
+
+    if (!response.ok) {
       return NextResponse.json(
-        { message: 'Invalid or expired token.' },
-        { status: 400 },
+        { message: data.message || 'Password reset failed.' },
+        { status: response.status }
       );
     }
 
-    // Fetch the user using the identifier
-    const user = await prisma.user.findUnique({
-      where: { id: verificationToken.identifier },
-    });
-
-    if (!user) {
-      return NextResponse.json({ message: 'User not found.' }, { status: 404 });
+    if (data.user) {
+      await sendEmail({
+        to: data.user.email,
+        subject: 'Password Reset Successful',
+        content: {
+          title: `Hello, ${data.user.name}`,
+          subtitle: 'Your password has been successfully updated.',
+        },
+      });
     }
-
-    // Hash the new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update the user's password
-    await prisma.user.update({
-      where: { id: verificationToken.identifier },
-      data: { password: hashedPassword },
-    });
-
-    // Delete the used verification token
-    await prisma.verificationToken.delete({
-      where: { token },
-    });
-
-    // Send the email notification
-    await sendEmail({
-      to: user.email, // Use the resolved email address
-      subject: 'Password Reset Successful',
-      content: {
-        title: `Hello, ${user.name}`,
-        subtitle: 'Your password has been successfully updated.',
-      },
-    });
 
     return NextResponse.json(
       { message: 'Password reset successful.' },
-      { status: 200 },
+      { status: 200 }
     );
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { message: 'Password reset failed.' },
-      { status: 500 },
+      { message: error.message || 'Password reset failed.' },
+      { status: 500 }
     );
   }
 }
