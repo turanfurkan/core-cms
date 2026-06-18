@@ -76,6 +76,8 @@ Route::post('/auth/frontend/verify-email', [FrontendVerificationController::clas
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/admin/users', [AdminUserController::class, 'index'])
         ->middleware('can:user.viewAny');
+    Route::get('/admin/activity-logs', [\App\Domains\Identity\Http\Controllers\Admin\ActivityLogController::class, 'index'])
+        ->middleware('can:user.viewAny');
     Route::get('/admin/users/{user}', [AdminUserController::class, 'show'])
         ->middleware('can:user.view.any');
     Route::post('/admin/users', [AdminUserController::class, 'store'])
