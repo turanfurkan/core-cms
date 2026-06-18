@@ -6,8 +6,16 @@ import {
   MegaMenuSubDefault,
   MegaMenuSubHighlighted,
 } from './components';
+import { useTranslation } from '@/hooks/useTranslation';
+
+const translateTitle = (title, t) => {
+  if (!title) return '';
+  const key = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  return t ? t(`sidebar.${key}`, title) : title;
+};
 
 const MegaMenuSubNetwork = ({ items }) => {
+  const { t } = useTranslation();
   const networkItem = items[3];
   const networkItemGeneral = networkItem.children
     ? networkItem.children[0]
@@ -19,11 +27,11 @@ const MegaMenuSubNetwork = ({ items }) => {
       <div className="flex flex-col lg:flex-row">
         <div className="flex flex-col gap-5 lg:w-[250px] mt-2 lg:mt-0 lg:border-e lg:border-border shrink-0 px-3 py-4 lg:p-7.5 bg-accent/30">
           <h3 className="text-sm text-foreground font-semibold leading-none ps-2.5 h-3.5">
-            {networkItemGeneral.title}
+            {translateTitle(networkItemGeneral.title, t)}
           </h3>
           <div className="flex flex-col">
             {networkItemGeneral.children &&
-              MegaMenuSubHighlighted(networkItemGeneral.children)}
+              MegaMenuSubHighlighted(networkItemGeneral.children, t)}
           </div>
         </div>
         <div className="pt-4 pb-2 lg:p-7.5 lg:pb-5 grow">
@@ -32,7 +40,7 @@ const MegaMenuSubNetwork = ({ items }) => {
               return (
                 <div key={`network-${index}`} className="flex flex-col gap-5">
                   <h3 className="flex items-center gap-1.5 text-sm text-foreground font-semibold leading-none ps-2.5 h-3.5">
-                    {item.title}
+                    {translateTitle(item.title, t)}
                     {item.badge && (
                       <Badge variant="primary" size="sm" appearance="light">
                         {item.badge}
@@ -40,7 +48,7 @@ const MegaMenuSubNetwork = ({ items }) => {
                     )}
                   </h3>
                   <div className="flex flex-col">
-                    {item.children && MegaMenuSubDefault(item.children)}
+                    {item.children && MegaMenuSubDefault(item.children, t)}
                   </div>
                 </div>
               );

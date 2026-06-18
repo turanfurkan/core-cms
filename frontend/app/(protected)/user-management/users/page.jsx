@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,26 +18,23 @@ import {
 } from '@/components/common/toolbar';
 import UserList from './components/user-list';
 
-export const metadata = {
-  title: 'Users',
-  description: 'Manage users.',
-};
+export default function Page() {
+  const { t } = useTranslation();
 
-export default async function Page() {
   return (
     <>
       <Container>
         <Toolbar>
           <ToolbarHeading>
-            <ToolbarTitle>Users</ToolbarTitle>
+            <ToolbarTitle>{t('users.title', 'Users')}</ToolbarTitle>
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  <BreadcrumbLink href="/">{t('sidebar.home', 'Home')}</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>User Management</BreadcrumbPage>
+                  <BreadcrumbPage>{t('users.breadcrumb_management', 'User Management')}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -49,3 +49,4 @@ export default async function Page() {
     </>
   );
 }
+

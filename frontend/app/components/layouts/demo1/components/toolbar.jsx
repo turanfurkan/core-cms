@@ -7,6 +7,20 @@ import { ChevronRight } from 'lucide-react';
 import { MENU_SIDEBAR } from '@/config/menu.config';
 import { cn } from '@/lib/utils';
 import { useMenu } from '@/hooks/use-menu';
+import { useTranslation } from '@/hooks/useTranslation';
+
+const translateTitle = (title, t) => {
+  if (!title) return '';
+  if (title.startsWith('Show ') && title.endsWith(' more')) {
+    const match = title.match(/Show (\d+) more/);
+    if (match) {
+      const count = match[1];
+      return t('sidebar.show_more_count', { count, defaultValue: `Show ${count} more` });
+    }
+  }
+  const key = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  return t(`sidebar.${key}`, title);
+};
 
 function Toolbar({ children }) {
   return (
@@ -24,6 +38,7 @@ function ToolbarBreadcrumbs() {
   const pathname = usePathname();
   const { getBreadcrumb, isActive } = useMenu(pathname);
   const items = getBreadcrumb(MENU_SIDEBAR);
+  const { t } = useTranslation();
 
   if (items.length === 0) {
     return null;
@@ -48,13 +63,13 @@ function ToolbarBreadcrumbs() {
                       : 'text-muted-foreground hover:text-primary',
                   )}
                 >
-                  {item.title}
+                  {translateTitle(item.title, t)}
                 </Link>
               ) : (
                 <span
                   className={cn(isLast ? 'text-mono' : 'text-muted-foreground')}
                 >
-                  {item.title}
+                  {translateTitle(item.title, t)}
                 </span>
               )}
               {!isLast && (
@@ -72,11 +87,12 @@ function ToolbarHeading({ title = '', description }) {
   const pathname = usePathname();
   const { getCurrentItem } = useMenu(pathname);
   const item = getCurrentItem(MENU_SIDEBAR);
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-col justify-center gap-2">
       <h1 className="text-xl font-medium leading-none text-mono">
-        {title || item?.title || 'Untitled'}
+        {title ? translateTitle(title, t) : (item?.title ? translateTitle(item.title, t) : 'Untitled')}
       </h1>
       {description && (
         <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground">

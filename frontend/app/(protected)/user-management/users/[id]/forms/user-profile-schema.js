@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
-export const UserProfileSchema = z.object({
+export const UserProfileSchema = (t) => z.object({
   name: z.string().nonempty({
-    message: 'Name is required.',
+    message: t('users.validation.name_required', 'Name is required.'),
   }),
   roleId: z.string().nonempty({
-    message: 'Role ID is required.',
+    message: t('users.validation.role_required', 'Role ID is required.'),
   }),
   status: z.string().nonempty({
-    message: 'Status is required.',
+    message: t('users.validation.status_required', 'Status is required.'),
   }),
 });

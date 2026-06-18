@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash, X, Save, Check } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { LoaderCircleIcon } from 'lucide-react';
 
 export default function ContentTypeDialog({ open, closeDialog, contentType }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = !!contentType;
 
@@ -46,13 +48,13 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
         setIsCollection(true);
         // Default base fields standard in CMS
         setFields([
-          { name: 'Başlık', slug: 'title', type: 'string', order: 1, validation_rules: { required: true } },
-          { name: 'Slug', slug: 'slug', type: 'string', order: 2, validation_rules: { required: true } },
-          { name: 'İçerik', slug: 'content', type: 'text', order: 3, validation_rules: { required: false } },
+          { name: t('content_types.default_fields.title', 'Title'), slug: 'title', type: 'string', order: 1, validation_rules: { required: true }, options: { localized: true } },
+          { name: t('content_types.default_fields.slug', 'Slug'), slug: 'slug', type: 'string', order: 2, validation_rules: { required: true }, options: { localized: true } },
+          { name: t('content_types.default_fields.content', 'Content'), slug: 'content', type: 'text', order: 3, validation_rules: { required: false }, options: { localized: true } },
         ]);
       }
     }
-  }, [open, contentType]);
+  }, [open, contentType, t]);
 
   // Handle auto slug generation
   const handleNameChange = (e) => {
@@ -78,6 +80,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
         type: 'string',
         order: fields.length + 1,
         validation_rules: { required: false },
+        options: { localized: false },
       },
     ]);
   };
@@ -138,7 +141,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
             <AlertIcon>
               <RiCheckboxCircleFill />
             </AlertIcon>
-            <AlertTitle>{isEdit ? 'İçerik şablonu güncellendi.' : 'Yeni içerik şablonu oluşturuldu.'}</AlertTitle>
+            <AlertTitle>{isEdit ? t('content_types.messages.success_edit', 'Content template updated successfully.') : t('content_types.messages.success_add', 'New content template created successfully.')}</AlertTitle>
           </Alert>
         ),
         { position: 'top-center' }
@@ -152,7 +155,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
             <AlertIcon>
               <RiErrorWarningFill />
             </AlertIcon>
-            <AlertTitle>{err.message || 'İşlem başarısız.'}</AlertTitle>
+            <AlertTitle>{err.message || t('content_types.messages.error_fallback', 'Action failed.')}</AlertTitle>
           </Alert>
         ),
         { position: 'top-center' }
@@ -163,14 +166,14 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name || !slug) {
-      toast.error('Şablon adı ve slug zorunludur.');
+      toast.error(t('content_types.messages.name_slug_required', 'Template name and slug are required.'));
       return;
     }
     
     // Validate fields list
     const hasEmptyField = fields.some(f => !f.name || !f.slug);
     if (hasEmptyField) {
-      toast.error('Tüm alanların adı ve slug değeri girilmelidir.');
+      toast.error(t('content_types.messages.field_details_required', 'Name and slug must be entered for all fields.'));
       return;
     }
 
@@ -186,7 +189,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
   const footerContent = (
     <>
       <Button type="button" variant="outline" onClick={closeDialog}>
-        İptal
+        {t('content_types.dialog.cancel', 'Cancel')}
       </Button>
       <Button
         type="submit"
@@ -198,7 +201,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
         ) : (
           <Save className="size-4 mr-1" />
         )}
-        Kaydet
+        {t('content_types.dialog.save', 'Save')}
       </Button>
     </>
   );
@@ -207,40 +210,40 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
     <RightDrawer
       open={open}
       onOpenChange={closeDialog}
-      title={isEdit ? 'Şablon Düzenle' : 'Yeni İçerik Şablonu'}
+      title={isEdit ? t('content_types.dialog.edit_title', 'Edit Template') : t('content_types.dialog.add_title', 'New Content Type')}
       size="xl"
       footer={footerContent}
     >
       <form id="content-type-form" onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="name">Şablon Adı</Label>
+            <Label htmlFor="name">{t('content_types.dialog.name_label', 'Template Name')}</Label>
             <Input
               id="name"
               value={name}
               onChange={handleNameChange}
-              placeholder="Örn: Blog Yazısı"
+              placeholder={t('content_types.dialog.name_placeholder', 'E.g. Blog Post')}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="slug">Slug Key</Label>
+            <Label htmlFor="slug">{t('content_types.dialog.slug_label', 'Slug Key')}</Label>
             <Input
               id="slug"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              placeholder="Örn: blog"
+              placeholder={t('content_types.dialog.slug_placeholder', 'E.g. blog')}
               disabled={isEdit}
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="description">Açıklama</Label>
+          <Label htmlFor="description">{t('content_types.dialog.description_label', 'Description')}</Label>
           <Input
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Bu şablon ne amaçla kullanılıyor?"
+            placeholder={t('content_types.dialog.description_placeholder', 'What is this template used for?')}
           />
         </div>
 
@@ -250,15 +253,15 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
             checked={isCollection}
             onCheckedChange={setIsCollection}
           />
-          <Label htmlFor="isCollection">Koleksiyon Mu? (Çoklu içerik eklemeyi aktif eder)</Label>
+          <Label htmlFor="isCollection">{t('content_types.dialog.is_collection', 'Is Collection? (Allows adding multiple entries)')}</Label>
         </div>
 
         {/* Dynamic fields builder */}
         <div className="space-y-3 pt-3 border-t border-border">
           <div className="flex justify-between items-center">
-            <h4 className="text-sm font-bold">Veri Alanları Şeması</h4>
+            <h4 className="text-sm font-bold">{t('content_types.dialog.fields_schema', 'Fields Schema')}</h4>
             <Button type="button" variant="dim" size="xs" onClick={handleAddField}>
-              <Plus className="size-3 mr-1" /> Alan Ekle
+              <Plus className="size-3 mr-1" /> {t('content_types.dialog.add_field', 'Add Field')}
             </Button>
           </div>
 
@@ -269,13 +272,13 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                   <Input
                     value={field.name}
                     onChange={(e) => handleFieldChange(idx, 'name', e.target.value)}
-                    placeholder="Alan Adı (örn: Fiyat)"
+                    placeholder={t('content_types.dialog.field_name_placeholder', 'Field Name (e.g. Price)')}
                     className="h-8 text-xs"
                   />
                   <Input
                     value={field.slug}
                     onChange={(e) => handleFieldChange(idx, 'slug', e.target.value)}
-                    placeholder="Slug (örn: fiyat)"
+                    placeholder={t('content_types.dialog.field_slug_placeholder', 'Slug (e.g. price)')}
                     className="h-8 text-xs font-mono"
                     disabled={field.slug === 'title' || field.slug === 'slug'}
                   />
@@ -285,20 +288,20 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                     disabled={field.slug === 'title' || field.slug === 'slug'}
                   >
                     <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Alan Tipi" />
+                      <SelectValue placeholder={t('content_types.dialog.field_type_placeholder', 'Field Type')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="string">Düz Metin (string)</SelectItem>
-                      <SelectItem value="text">Paragraf / Zengin Metin (text)</SelectItem>
-                      <SelectItem value="number">Sayı (number)</SelectItem>
-                      <SelectItem value="date">Tarih (date)</SelectItem>
-                      <SelectItem value="boolean">Doğru/Yanlış (boolean)</SelectItem>
-                      <SelectItem value="media">Dosya/Görsel (media)</SelectItem>
-                      <SelectItem value="gallery">Çoklu Medya / Galeri (gallery)</SelectItem>
-                      <SelectItem value="email">E-posta (email)</SelectItem>
-                      <SelectItem value="phone">Telefon (phone)</SelectItem>
-                      <SelectItem value="url">Web Bağlantısı (url)</SelectItem>
-                      <SelectItem value="json">JSON / Özel Nesne (json)</SelectItem>
+                      <SelectItem value="string">{t('content_types.field_types.string', 'Plain Text (string)')}</SelectItem>
+                      <SelectItem value="text">{t('content_types.field_types.text', 'Paragraph / Rich Text (text)')}</SelectItem>
+                      <SelectItem value="number">{t('content_types.field_types.number', 'Number (number)')}</SelectItem>
+                      <SelectItem value="date">{t('content_types.field_types.date', 'Date (date)')}</SelectItem>
+                      <SelectItem value="boolean">{t('content_types.field_types.boolean', 'True/False (boolean)')}</SelectItem>
+                      <SelectItem value="media">{t('content_types.field_types.media', 'File/Image (media)')}</SelectItem>
+                      <SelectItem value="gallery">{t('content_types.field_types.gallery', 'Multiple Media / Gallery (gallery)')}</SelectItem>
+                      <SelectItem value="email">{t('content_types.field_types.email', 'Email (email)')}</SelectItem>
+                      <SelectItem value="phone">{t('content_types.field_types.phone', 'Phone (phone)')}</SelectItem>
+                      <SelectItem value="url">{t('content_types.field_types.url', 'Web Link (url)')}</SelectItem>
+                      <SelectItem value="json">{t('content_types.field_types.json', 'JSON / Custom Object (json)')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -312,7 +315,23 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                       onChange={(e) => handleFieldValidationChange(idx, e.target.checked)}
                       className="h-3 w-3 rounded text-primary"
                     />
-                    <label htmlFor={`req-${idx}`} className="text-[10px] text-muted-foreground select-none">Req</label>
+                    <label htmlFor={`req-${idx}`} className="text-[10px] text-muted-foreground select-none">{t('content_types.dialog.required_abbr', 'Req')}</label>
+                  </div>
+
+                  <div className="flex items-center space-x-1">
+                    <input
+                      type="checkbox"
+                      id={`loc-${idx}`}
+                      checked={!!field.options?.localized}
+                      onChange={(e) => {
+                        const updated = [...fields];
+                        updated[idx].options = { ...updated[idx].options, localized: e.target.checked };
+                        setFields(updated);
+                      }}
+                      disabled={field.slug === 'title' || field.slug === 'slug'}
+                      className="h-3 w-3 rounded text-primary disabled:opacity-50"
+                    />
+                    <label htmlFor={`loc-${idx}`} className="text-[10px] text-muted-foreground select-none">{t('content_types.dialog.localized_abbr', 'Trans')}</label>
                   </div>
 
                   <Button
@@ -329,7 +348,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
               </div>
             ))}
             {fields.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-4">Herhangi bir alan tanımlı değil.</p>
+              <p className="text-xs text-muted-foreground text-center py-4">{t('content_types.dialog.no_fields', 'No fields defined.')}</p>
             )}
           </div>
         </div>

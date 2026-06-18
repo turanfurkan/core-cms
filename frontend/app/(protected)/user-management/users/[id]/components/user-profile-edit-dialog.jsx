@@ -8,6 +8,7 @@ import { LoaderCircleIcon, Check, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   Alert,
   AlertDescription,
@@ -44,13 +45,14 @@ import { UserStatusProps } from '../../constants/status';
 import { UserProfileSchema } from '../forms/user-profile-schema';
 
 const UserProfileEditDialog = ({ open, closeDialog, user }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   // Fetch available roles
   const { data: roleList } = useRoleSelectQuery();
 
   const form = useForm({
-    resolver: zodResolver(UserProfileSchema),
+    resolver: zodResolver(UserProfileSchema(t)),
     defaultValues: {
       name: user?.name || '',
       roleId: user?.roleId || '',
@@ -87,7 +89,7 @@ const UserProfileEditDialog = ({ open, closeDialog, user }) => {
       return response.json();
     },
     onSuccess: () => {
-      const message = 'User updated successfully';
+      const message = t('users.details.edit_dialog.success_message', 'User updated successfully');
 
       toast.custom(
         () => (
@@ -136,7 +138,7 @@ const UserProfileEditDialog = ({ open, closeDialog, user }) => {
     <Dialog open={open} onOpenChange={closeDialog}>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Edit User Details</DialogTitle>
+          <DialogTitle>{t('users.details.edit_dialog.title', 'Edit User Details')}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -153,9 +155,9 @@ const UserProfileEditDialog = ({ open, closeDialog, user }) => {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t('users.details.edit_dialog.name_label', 'Name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter user name" {...field} />
+                    <Input placeholder={t('users.details.edit_dialog.name_placeholder', 'Enter user name')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,14 +169,14 @@ const UserProfileEditDialog = ({ open, closeDialog, user }) => {
               name="roleId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>{t('users.details.edit_dialog.role_label', 'Role')}</FormLabel>
                   <FormControl>
                     <Select
                       onValueChange={(value) => field.onChange(value)}
                       defaultValue={field.value}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
+                        <SelectValue placeholder={t('users.details.edit_dialog.role_placeholder', 'Select a role')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
@@ -197,21 +199,21 @@ const UserProfileEditDialog = ({ open, closeDialog, user }) => {
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status</FormLabel>
+                  <FormLabel>{t('users.details.edit_dialog.status_label', 'Status')}</FormLabel>
                   <FormControl>
                     <Select
                       onValueChange={(value) => field.onChange(value)}
                       defaultValue={field.value}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a status" />
+                        <SelectValue placeholder={t('users.details.edit_dialog.status_placeholder', 'Select a status')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
                           {Object.entries(UserStatusProps).map(
                             ([status, { label }]) => (
                               <SelectItem key={status} value={status}>
-                                {label}
+                                {t('users.status.' + label.toLowerCase(), label)}
                               </SelectItem>
                             ),
                           )}
@@ -227,7 +229,7 @@ const UserProfileEditDialog = ({ open, closeDialog, user }) => {
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
                 <X />
-                Cancel
+                {t('users.details.edit_dialog.cancel', 'Cancel')}
               </Button>
               <Button
                 type="submit"
@@ -238,7 +240,7 @@ const UserProfileEditDialog = ({ open, closeDialog, user }) => {
                 ) : (
                   <Check />
                 )}
-                Save Changes
+                {t('users.details.edit_dialog.save', 'Save Changes')}
               </Button>
             </DialogFooter>
           </form>

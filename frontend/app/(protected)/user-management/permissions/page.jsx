@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,26 +18,29 @@ import {
 } from '@/components/common/toolbar';
 import PermissionList from './components/permission-list';
 
-export const metadata = {
-  title: 'Permissions',
-  description: 'Manage user permissions.',
-};
+export default function Page() {
+  const { t } = useTranslation();
 
-export default async function Page() {
   return (
     <>
       <Container>
         <Toolbar>
           <ToolbarHeading>
-            <ToolbarTitle>Permissions</ToolbarTitle>
+            <ToolbarTitle>{t('permissions.title', 'Permissions')}</ToolbarTitle>
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  <BreadcrumbLink href="/">{t('sidebar.home', 'Home')}</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Users</BreadcrumbPage>
+                  <BreadcrumbPage>
+                    {t('permissions.breadcrumb_management', 'User Management')}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{t('permissions.title', 'Permissions')}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

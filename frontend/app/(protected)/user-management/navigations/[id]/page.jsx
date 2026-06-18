@@ -73,11 +73,11 @@ export default function Page({ params }) {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>User Management</BreadcrumbPage>
+                  <BreadcrumbLink href="/user-management/navigations">Navigations</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/user-management/navigations">Navigations</BreadcrumbLink>
+                  <BreadcrumbPage>Menu Builder</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

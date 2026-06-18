@@ -9,6 +9,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { Edit, Trash, Plus, Search, X, Globe } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Container } from '@/components/common/container';
 import {
@@ -44,7 +45,16 @@ import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import ContentEntryDialog from './components/content-entry-dialog';
 
+const getLocalizedValue = (value, currentLang = 'tr') => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return value[currentLang] || value['tr'] || value['en'] || Object.values(value)[0] || '';
+  }
+  return String(value);
+};
+
 export default function ContentEntriesPage() {
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const typeParam = searchParams.get('type');
@@ -100,15 +110,15 @@ export default function ContentEntriesPage() {
     if (!searchQuery) return entries;
     const query = searchQuery.toLowerCase();
     return entries.filter((item) => {
-      const title = item.data?.title || item.title || '';
-      const slug = item.data?.slug || item.slug || '';
+      const title = getLocalizedValue(item.data?.title || item.title, i18n.language);
+      const slug = getLocalizedValue(item.data?.slug || item.slug, i18n.language);
       return (
         title.toLowerCase().includes(query) ||
         slug.toLowerCase().includes(query) ||
         String(item.id).includes(query)
       );
     });
-  }, [entries, searchQuery]);
+  }, [entries, searchQuery, i18n.language]);
 
   // Delete Entry Mutation
   const deleteMutation = useMutation({
@@ -116,7 +126,7 @@ export default function ContentEntriesPage() {
       const res = await apiFetch(`/api/admin/content-types/${selectedTypeId}/entries/${id}`, {
         method: 'DELETE',
       });
-      if (!res.ok) throw new Error('Failed to delete entry');
+      if (!res.ok) throw new Error(t('content_entries.messages.error_delete', 'Failed to delete content.'));
       return res.json();
     },
     onSuccess: () => {
@@ -127,7 +137,7 @@ export default function ContentEntriesPage() {
             <AlertIcon>
               <RiCheckboxCircleFill />
             </AlertIcon>
-            <AlertTitle>İçerik başarıyla silindi.</AlertTitle>
+            <AlertTitle>{t('content_entries.messages.success_delete', 'İçerik başarıyla silindi.')}</AlertTitle>
           </Alert>
         ),
         { position: 'top-center' }
@@ -140,7 +150,7 @@ export default function ContentEntriesPage() {
             <AlertIcon>
               <RiErrorWarningFill />
             </AlertIcon>
-            <AlertTitle>{err.message || 'Silme işlemi başarısız.'}</AlertTitle>
+            <AlertTitle>{err.message || t('content_entries.messages.error_fallback', 'İşlem başarısız.')}</AlertTitle>
           </Alert>
         ),
         { position: 'top-center' }
@@ -156,7 +166,7 @@ export default function ContentEntriesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
-      if (!res.ok) throw new Error('Failed to update status');
+      if (!res.ok) throw new Error(t('content_entries.messages.error_fallback', 'Failed to update status'));
       return res.json();
     },
     onSuccess: () => {
@@ -167,7 +177,7 @@ export default function ContentEntriesPage() {
             <AlertIcon>
               <RiCheckboxCircleFill />
             </AlertIcon>
-            <AlertTitle>İçerik yayın durumu güncellendi.</AlertTitle>
+            <AlertTitle>{t('content_entries.messages.success_publish_toggle', 'İçerik yayın durumu güncellendi.')}</AlertTitle>
           </Alert>
         ),
         { position: 'top-center' }
@@ -180,7 +190,7 @@ export default function ContentEntriesPage() {
             <AlertIcon>
               <RiErrorWarningFill />
             </AlertIcon>
-            <AlertTitle>{err.message || 'İşlem başarısız.'}</AlertTitle>
+            <AlertTitle>{err.message || t('content_entries.messages.error_fallback', 'İşlem başarısız.')}</AlertTitle>
           </Alert>
         ),
         { position: 'top-center' }
@@ -196,7 +206,7 @@ export default function ContentEntriesPage() {
 
   const handleDelete = (id, e) => {
     e.stopPropagation();
-    if (confirm('Bu içeriği silmek istediğinizden emin misiniz?')) {
+    if (confirm(t('content_entries.delete_confirm', 'Bu içeriği silmek istediğinizden emin misiniz?'))) {
       deleteMutation.mutate(id);
     }
   };
@@ -213,7 +223,7 @@ export default function ContentEntriesPage() {
         accessorKey: 'id',
         id: 'id',
         header: ({ column }) => (
-          <DataGridColumnHeader title="ID" visibility={true} column={column} />
+          <DataGridColumnHeader title={t('content_entries.columns.id', 'ID')} visibility={true} column={column} />
         ),
         cell: ({ row }) => <span className="text-xs text-muted-foreground font-mono">{row.original.id}</span>,
         size: 60,
@@ -222,12 +232,12 @@ export default function ContentEntriesPage() {
         accessorKey: 'title',
         id: 'title',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Başlık" visibility={true} column={column} />
+          <DataGridColumnHeader title={t('content_entries.columns.title', 'Başlık')} visibility={true} column={column} />
         ),
         cell: ({ row }) => {
           const data = row.original.data || {};
-          const title = data.title || row.original.title || 'Untitled';
-          const slug = data.slug || row.original.slug || '';
+          const title = getLocalizedValue(data.title || row.original.title, i18n.language) || 'Untitled';
+          const slug = getLocalizedValue(data.slug || row.original.slug, i18n.language);
           return (
             <div className="space-y-0.5">
               <div className="font-semibold text-sm">{title}</div>
@@ -241,14 +251,14 @@ export default function ContentEntriesPage() {
         accessorKey: 'status',
         id: 'status',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Durum" visibility={true} column={column} />
+          <DataGridColumnHeader title={t('content_entries.columns.status', 'Durum')} visibility={true} column={column} />
         ),
         cell: ({ row }) => {
           const status = row.original.status;
           const isPublished = status === 'published';
           return (
             <Badge variant={isPublished ? 'success' : 'secondary'} className="text-xs">
-              {isPublished ? 'Yayında' : 'Taslak'}
+              {isPublished ? t('content_entries.status.published', 'Yayında') : t('content_entries.status.draft', 'Taslak')}
             </Badge>
           );
         },
@@ -258,13 +268,13 @@ export default function ContentEntriesPage() {
         accessorKey: 'published_at',
         id: 'published_at',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Yayın Tarihi" visibility={true} column={column} />
+          <DataGridColumnHeader title={t('content_entries.columns.published_at', 'Yayın Tarihi')} visibility={true} column={column} />
         ),
         cell: ({ row }) => {
           const date = row.original.published_at || row.original.created_at;
           return (
             <span className="text-xs text-muted-foreground">
-              {date ? new Date(date).toLocaleString('tr-TR') : '-'}
+              {date ? new Date(date).toLocaleString(i18n.language === 'tr' ? 'tr-TR' : 'en-US') : '-'}
             </span>
           );
         },
@@ -280,7 +290,7 @@ export default function ContentEntriesPage() {
               size="sm"
               onClick={(e) => handleEdit(row.original, e)}
               className="h-7 w-7 p-0"
-              title="Düzenle"
+              title={t('content_entries.tooltips.edit', 'Düzenle')}
             >
               <Edit className="size-3.5" />
             </Button>
@@ -289,7 +299,7 @@ export default function ContentEntriesPage() {
               size="sm"
               onClick={(e) => handleTogglePublish(row.original, e)}
               className="h-7 w-7 p-0"
-              title={row.original.status === 'published' ? 'Taslağa Çek' : 'Yayınla'}
+              title={row.original.status === 'published' ? t('content_entries.tooltips.revert_draft', 'Taslağa Çek') : t('content_entries.tooltips.publish', 'Yayınla')}
               disabled={publishMutation.isPending}
             >
               <Globe className="size-3.5" />
@@ -300,7 +310,7 @@ export default function ContentEntriesPage() {
               onClick={(e) => handleDelete(row.original.id, e)}
               className="h-7 w-7 p-0"
               disabled={deleteMutation.isPending}
-              title="Sil"
+              title={t('content_entries.tooltips.delete', 'Sil')}
             >
               <Trash className="size-3.5" />
             </Button>
@@ -309,7 +319,7 @@ export default function ContentEntriesPage() {
         size: 120,
       },
     ],
-    [deleteMutation.isPending, publishMutation.isPending]
+    [deleteMutation.isPending, publishMutation.isPending, i18n.language, t]
   );
 
   const table = useReactTable({
@@ -332,7 +342,7 @@ export default function ContentEntriesPage() {
           <div className="relative">
             <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
             <Input
-              placeholder="İçerik ara..."
+              placeholder={t('content_entries.search_placeholder', 'İçerik ara...')}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -363,7 +373,7 @@ export default function ContentEntriesPage() {
             }}
           >
             <Plus className="size-4" />
-            Yeni İçerik Ekle
+            {t('content_entries.add_new', 'Yeni İçerik Ekle')}
           </Button>
         </div>
       </CardHeader>
@@ -375,19 +385,19 @@ export default function ContentEntriesPage() {
       <Container>
         <Toolbar>
           <ToolbarHeading>
-            <ToolbarTitle>İçerik Yönetimi (Content Entries)</ToolbarTitle>
+            <ToolbarTitle>{t('content_entries.title', 'İçerik Yönetimi')}</ToolbarTitle>
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  <BreadcrumbLink href="/">{t('common.home', 'Home')}</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Content Management</BreadcrumbPage>
+                  <BreadcrumbPage>{t('common.content_management', 'Content Management')}</BreadcrumbPage>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Content Entries</BreadcrumbPage>
+                  <BreadcrumbPage>{t('content_entries.title', 'Content Entries')}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -399,13 +409,13 @@ export default function ContentEntriesPage() {
         {/* Content Type Selector */}
         <Card className="p-5 flex flex-col md:flex-row items-center gap-4">
           <div className="w-full md:w-64 space-y-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">Düzenlenecek İçerik Şablonu</span>
+            <span className="text-xs font-semibold text-muted-foreground">{t('content_entries.select_template', 'Düzenlenecek İçerik Şablonu')}</span>
             <Select value={selectedTypeId} onValueChange={setSelectedTypeId}>
               <SelectTrigger>
-                <SelectValue placeholder="Bir şablon seçin..." />
+                <SelectValue placeholder={t('content_entries.select_placeholder', 'Bir şablon seçin...')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Seçiniz...</SelectItem>
+                <SelectItem value="all">{t('content_entries.select_option_none', 'Seçiniz...')}</SelectItem>
                 {contentTypes?.map((type) => (
                   <SelectItem key={type.id} value={String(type.id)}>
                     {type.name}

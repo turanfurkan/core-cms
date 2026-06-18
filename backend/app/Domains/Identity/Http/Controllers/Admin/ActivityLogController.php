@@ -28,6 +28,10 @@ class ActivityLogController extends Controller
             $query->where('log_name', $request->input('log_name'));
         }
 
+        if ($request->filled('causer_id')) {
+            $query->where('causer_id', $request->input('causer_id'));
+        }
+
         if ($request->filled('event')) {
             $query->where('event', $request->input('event'));
         }

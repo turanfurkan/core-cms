@@ -16,6 +16,7 @@ export async function GET(req) {
     const search = searchParams.get('search') || '';
     const logName = searchParams.get('log_name') || '';
     const event = searchParams.get('event') || '';
+    const causerId = searchParams.get('causer_id') || '';
 
     // Build query params for Laravel API
     const params = new URLSearchParams({
@@ -24,6 +25,7 @@ export async function GET(req) {
       search,
       log_name: logName,
       event,
+      ...(causerId ? { causer_id: causerId } : {}),
     });
 
     const response = await backendFetch(`/api/admin/activity-logs?${params.toString()}`);

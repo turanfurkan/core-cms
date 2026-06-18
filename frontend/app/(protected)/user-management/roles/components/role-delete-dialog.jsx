@@ -4,7 +4,7 @@ import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoaderCircleIcon, X, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { apiFetch } from '@/lib/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 
 const RoleDeleteDialog = ({ open, closeDialog, role }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   // Define the mutation for deleting the role
@@ -34,7 +35,7 @@ const RoleDeleteDialog = ({ open, closeDialog, role }) => {
       return response.json();
     },
     onSuccess: () => {
-      const message = 'Role deleted successfully';
+      const message = t('roles.dialog.success_delete', 'Role deleted successfully');
 
       toast.custom(
         () => (
@@ -74,19 +75,22 @@ const RoleDeleteDialog = ({ open, closeDialog, role }) => {
     },
   });
 
+  const deleteDesc = t('roles.delete_dialog.desc', { name: role.name, defaultValue: `Are you sure you want to delete the role ${role.name}?` });
+  const descParts = deleteDesc.split(role.name);
+
   return (
     <Dialog open={open} onOpenChange={closeDialog}>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogTitle>{t('roles.delete_dialog.title', 'Confirm Delete')}</DialogTitle>
         </DialogHeader>
         <DialogDescription>
-          Are you sure you want to delete the role <strong>{role.name}</strong>?
+          {descParts[0]}<strong>{role.name}</strong>{descParts[1] || ''}
         </DialogDescription>
         <DialogFooter>
           <Button variant="outline" onClick={closeDialog}>
             <X />
-            Cancel
+            {t('roles.delete_dialog.cancel', 'Cancel')}
           </Button>
           <Button
             variant="destructive"
@@ -98,7 +102,7 @@ const RoleDeleteDialog = ({ open, closeDialog, role }) => {
             ) : (
               <Trash2 />
             )}
-            Delete
+            {t('roles.delete_dialog.delete', 'Delete')}
           </Button>
         </DialogFooter>
       </DialogContent>

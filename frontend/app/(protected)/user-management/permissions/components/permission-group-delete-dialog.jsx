@@ -4,6 +4,7 @@ import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoaderCircleIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 
 const PermissionGroupDeleteDialog = ({ open, closeDialog, permissionIds }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   // Define the mutation for deleting permissions
@@ -41,7 +43,7 @@ const PermissionGroupDeleteDialog = ({ open, closeDialog, permissionIds }) => {
       return response.json();
     },
     onSuccess: () => {
-      const message = 'Permissions deleted successfully.';
+      const message = t('permissions.dialog.success_group_delete', 'Selected permissions deleted successfully.');
       toast.custom(
         () => (
           <Alert variant="mono" icon="success">
@@ -81,16 +83,16 @@ const PermissionGroupDeleteDialog = ({ open, closeDialog, permissionIds }) => {
 
   return (
     <Dialog open={open} onOpenChange={closeDialog}>
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogTitle>{t('permissions.group_delete_dialog.title', 'Delete Selected Permissions')}</DialogTitle>
         </DialogHeader>
         <DialogDescription>
-          Are you sure you want to delete selected permissions ?
+          {t('permissions.group_delete_dialog.desc', 'Are you sure you want to delete the {{count}} selected permissions? This action cannot be undone.', { count: permissionIds?.length })}
         </DialogDescription>
         <DialogFooter>
           <Button variant="outline" onClick={closeDialog}>
-            Cancel
+            {t('permissions.group_delete_dialog.cancel', 'Cancel')}
           </Button>
           <Button
             variant="destructive"
@@ -100,7 +102,7 @@ const PermissionGroupDeleteDialog = ({ open, closeDialog, permissionIds }) => {
             {mutation.status === 'pending' && (
               <LoaderCircleIcon className="animate-spin" />
             )}
-            Delete
+            {t('permissions.group_delete_dialog.delete', 'Delete Selected')}
           </Button>
         </DialogFooter>
       </DialogContent>

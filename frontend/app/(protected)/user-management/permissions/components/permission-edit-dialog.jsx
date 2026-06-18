@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -31,11 +32,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { PermissionSchema } from '../forms/permission-schema';
 
 const PermissionEditDialog = ({ open, closeDialog, permission }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   // Form initialization
   const form = useForm({
-    resolver: zodResolver(PermissionSchema),
+    resolver: zodResolver(PermissionSchema(t)),
     defaultValues: { name: '', slug: '', description: '' },
     mode: 'onSubmit',
   });
@@ -76,8 +78,8 @@ const PermissionEditDialog = ({ open, closeDialog, permission }) => {
     onSuccess: () => {
       const isEdit = !!permission?.id;
       const message = isEdit
-        ? 'Permission updated successfully'
-        : 'Permission added successfully';
+        ? t('permissions.dialog.success_edit', 'Permission updated successfully')
+        : t('permissions.dialog.success_add', 'Permission added successfully');
 
       toast.custom(
         () => (
@@ -129,7 +131,9 @@ const PermissionEditDialog = ({ open, closeDialog, permission }) => {
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>
-            {permission ? 'Edit Permission' : 'Add Permission'}
+            {permission
+              ? t('permissions.dialog.edit_title', 'Edit Permission')
+              : t('permissions.dialog.add_title', 'Add Permission')}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
@@ -142,9 +146,9 @@ const PermissionEditDialog = ({ open, closeDialog, permission }) => {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t('permissions.dialog.name_label', 'Permission Name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter name" {...field} />
+                    <Input placeholder={t('permissions.dialog.name_placeholder', 'Enter permission name')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -156,18 +160,17 @@ const PermissionEditDialog = ({ open, closeDialog, permission }) => {
               name="slug"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Slug</FormLabel>
+                  <FormLabel>{t('permissions.dialog.slug_label', 'Slug')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="E.g: users:delete"
+                      placeholder={t('permissions.dialog.slug_placeholder', 'E.g: users:view')}
                       {...field}
                       disabled={!!permission}
                     />
                   </FormControl>
                   <FormMessage />
                   <FormDescription>
-                    A unique key for the permission, cannot be edited after
-                    creation.
+                    {t('permissions.dialog.slug_description', 'A unique key for the permission, cannot be edited after creation.')}
                   </FormDescription>
                 </FormItem>
               )}
@@ -178,9 +181,9 @@ const PermissionEditDialog = ({ open, closeDialog, permission }) => {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t('permissions.dialog.description_label', 'Description')}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Enter description" {...field} />
+                    <Textarea placeholder={t('permissions.dialog.description_placeholder', 'Optional description')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -189,14 +192,16 @@ const PermissionEditDialog = ({ open, closeDialog, permission }) => {
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
-                Cancel
+                {t('permissions.dialog.cancel', 'Cancel')}
               </Button>
               <Button
                 type="submit"
                 disabled={isLoading || !form.formState.isDirty}
               >
                 {isLoading && <LoaderCircleIcon className="animate-spin" />}
-                Submit
+                {permission
+                  ? t('permissions.dialog.submit_edit', 'Update Permission')
+                  : t('permissions.dialog.submit_add', 'Add Permission')}
               </Button>
             </DialogFooter>
           </form>

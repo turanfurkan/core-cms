@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react';
 import { redirect } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from '@/hooks/useTranslation';
+
 import {
   getCoreRowModel,
   getFilteredRowModel,
@@ -35,6 +37,7 @@ import { getUserStatusProps, UserStatusProps } from '../constants/status';
 import UserInviteDialog from './user-add-dialog';
 
 const UserList = () => {
+  const { t } = useTranslation();
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -79,7 +82,7 @@ const UserList = () => {
 
     if (!response.ok) {
       throw new Error(
-        'Oops! Something didn’t go as planned. Please try again in a moment.',
+        t('messages.system_error', 'Oops! Something didn’t go as planned. Please try again in a moment.'),
       );
     }
 
@@ -135,7 +138,7 @@ const UserList = () => {
         id: 'name',
         header: ({ column }) => (
           <DataGridColumnHeader
-            title="User"
+            title={t('users.columns.user', 'User')}
             visibility={true}
             column={column}
           />
@@ -165,7 +168,7 @@ const UserList = () => {
         },
         size: 300,
         meta: {
-          headerTitle: 'Name',
+          headerTitle: t('users.columns.user', 'User'),
           skeleton: (
             <div className="flex items-center gap-3">
               <Skeleton className="size-8 rounded-full" />
@@ -184,7 +187,7 @@ const UserList = () => {
         id: 'role_nameme',
         header: ({ column }) => (
           <DataGridColumnHeader
-            title="Role"
+            title={t('users.columns.role', 'Role')}
             visibility={true}
             column={column}
           />
@@ -198,7 +201,7 @@ const UserList = () => {
           return <Badge variant="secondary">{role.name}</Badge>;
         },
         meta: {
-          headerTitle: 'Role',
+          headerTitle: t('users.columns.role', 'Role'),
           skeleton: <Skeleton className="w-28 h-7" />,
         },
         enableSorting: true,
@@ -209,7 +212,7 @@ const UserList = () => {
         id: 'status',
         header: ({ column }) => (
           <DataGridColumnHeader
-            title="Status"
+            title={t('users.columns.status', 'Status')}
             visibility={true}
             column={column}
           />
@@ -224,11 +227,11 @@ const UserList = () => {
             <div className="inline-flex gap-2.5">
               <Badge variant={variant} appearance="ghost">
                 <BadgeDot />
-                {statusProps.label}
+                {t('users.status.' + statusProps.label.toLowerCase(), statusProps.label)}
               </Badge>
               {isTrashed && (
                 <Badge variant="destructive" appearance="light">
-                  Trashed
+                  {t('users.status.trashed', 'Trashed')}
                 </Badge>
               )}
             </div>
@@ -236,7 +239,7 @@ const UserList = () => {
         },
         size: 125,
         meta: {
-          headerTitle: 'Status',
+          headerTitle: t('users.columns.status', 'Status'),
           skeleton: <Skeleton className="w-14 h-7" />,
         },
         enableSorting: true,
@@ -247,7 +250,7 @@ const UserList = () => {
         id: 'createdAt',
         header: ({ column }) => (
           <DataGridColumnHeader
-            title="Joined"
+            title={t('users.columns.joined', 'Joined')}
             visibility={true}
             column={column}
           />
@@ -256,7 +259,7 @@ const UserList = () => {
         cell: (info) => formatDate(new Date(info.getValue())),
         size: 150,
         meta: {
-          headerTitle: 'Joined',
+          headerTitle: t('users.columns.joined', 'Joined'),
           skeleton: <Skeleton className="w-20 h-7" />,
         },
         enableSorting: true,
@@ -267,7 +270,7 @@ const UserList = () => {
         id: 'lastSignInAt',
         header: ({ column }) => (
           <DataGridColumnHeader
-            title="Last Sign In"
+            title={t('users.columns.last_sign_in', 'Last Sign In')}
             visibility={true}
             column={column}
           />
@@ -277,7 +280,7 @@ const UserList = () => {
           info.getValue() ? formatDateTime(new Date(info.getValue())) : '-',
         size: 175,
         meta: {
-          headerTitle: 'Last Sign In',
+          headerTitle: t('users.columns.last_sign_in', 'Last Sign In'),
           skeleton: <Skeleton className="w-20 h-7" />,
         },
         enableSorting: true,
@@ -343,7 +346,7 @@ const UserList = () => {
           <div className="relative">
             <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
             <Input
-              placeholder="Search users"
+              placeholder={t('users.search_placeholder', 'Search users')}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -369,10 +372,10 @@ const UserList = () => {
             disabled={isLoading}
           >
             <SelectTrigger className="w-full sm:w-36">
-              <SelectValue placeholder="Filter by role" />
+              <SelectValue placeholder={t('users.filter_role', 'Filter by role')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All roles</SelectItem>
+              <SelectItem value="all">{t('users.all_roles', 'All roles')}</SelectItem>
               {roleList?.map((role) => (
                 <SelectItem key={role.id} value={role.id}>
                   {role.name}
@@ -387,13 +390,13 @@ const UserList = () => {
             disabled={isLoading}
           >
             <SelectTrigger className="w-full sm:w-36">
-              <SelectValue placeholder="Filter by status" />
+              <SelectValue placeholder={t('users.filter_status', 'Filter by status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All users</SelectItem>
+              <SelectItem value="all">{t('users.all_users', 'All users')}</SelectItem>
               {Object.entries(UserStatusProps).map(([status, { label }]) => (
                 <SelectItem key={status} value={status}>
-                  {label}
+                  {t('users.status.' + label.toLowerCase(), label)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -407,7 +410,7 @@ const UserList = () => {
             }}
           >
             <Plus />
-            Add user
+            {t('users.add_user', 'Add user')}
           </Button>
         </div>
       </CardHeader>

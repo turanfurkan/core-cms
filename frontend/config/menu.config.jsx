@@ -293,22 +293,6 @@ export const MENU_SIDEBAR = [
         title: 'Permissions',
         path: '/user-management/permissions',
       },
-      {
-        title: 'Account',
-        path: '/user-management/account',
-      },
-      {
-        title: 'Logs',
-        path: '/user-management/logs',
-      },
-      {
-        title: 'Settings',
-        path: '/user-management/settings',
-      },
-      {
-        title: 'Navigations',
-        path: '/user-management/navigations',
-      },
     ],
   },
   {
@@ -324,6 +308,11 @@ export const MENU_SIDEBAR = [
         path: '/content-management/content-entries',
       },
     ],
+  },
+  {
+    title: 'Navigations',
+    icon: Network,
+    path: '/user-management/navigations',
   },
   {
     title: 'Media Library',
@@ -425,6 +414,16 @@ export const MENU_SIDEBAR = [
       { title: 'My Orders', path: '/store-client/my-orders' },
       { title: 'Order Receipt', path: '/store-client/order-receipt' },
     ],
+  },
+  {
+    title: 'Logs',
+    icon: ScrollText,
+    path: '/user-management/logs',
+  },
+  {
+    title: 'Account',
+    icon: UserCircle,
+    path: '/user-management/account',
   },
 ];
 
@@ -729,22 +728,6 @@ export const MENU_SIDEBAR_COMPACT = [
         title: 'Permissions',
         path: '/user-management/permissions',
       },
-      {
-        title: 'Account',
-        path: '/user-management/account',
-      },
-      {
-        title: 'Logs',
-        path: '/user-management/logs',
-      },
-      {
-        title: 'Settings',
-        path: '/user-management/settings',
-      },
-      {
-        title: 'Navigations',
-        path: '/user-management/navigations',
-      },
     ],
   },
   {
@@ -760,6 +743,11 @@ export const MENU_SIDEBAR_COMPACT = [
         path: '/content-management/content-entries',
       },
     ],
+  },
+  {
+    title: 'Navigations',
+    icon: Network,
+    path: '/user-management/navigations',
   },
   {
     title: 'Media Library',
@@ -832,6 +820,16 @@ export const MENU_SIDEBAR_COMPACT = [
       { title: 'Error 404', path: '/error/404' },
       { title: 'Error 500', path: '/error/500' },
     ],
+  },
+  {
+    title: 'Logs',
+    icon: ScrollText,
+    path: '/user-management/logs',
+  },
+  {
+    title: 'Account',
+    icon: UserCircle,
+    path: '/user-management/account',
   },
 ];
 
@@ -1220,18 +1218,6 @@ export const MENU_MEGA = [
                 path: '/user-management/permissions',
               },
               {
-                title: 'Account',
-                path: '/user-management/account',
-              },
-              {
-                title: 'Logs',
-                path: '/user-management/logs',
-              },
-              {
-                title: 'Settings',
-                path: '/user-management/settings',
-              },
-              {
                 title: 'Navigations',
                 path: '/user-management/navigations',
               },
@@ -1532,18 +1518,6 @@ export const MENU_MEGA_MOBILE = [
         path: '/user-management/permissions',
       },
       {
-        title: 'Account',
-        path: '/user-management/account',
-      },
-      {
-        title: 'Logs',
-        path: '/user-management/logs',
-      },
-      {
-        title: 'Settings',
-        path: '/user-management/settings',
-      },
-      {
         title: 'Navigations',
         path: '/user-management/navigations',
       },
@@ -1626,6 +1600,16 @@ export const MENU_HELP = [
     title: 'Documentation',
     icon: FileQuestion,
     path: 'https://keenthemes.com/metronic/tailwind/docs',
+  },
+  {
+    title: 'Logs',
+    icon: ScrollText,
+    path: '/user-management/logs',
+  },
+  {
+    title: 'Account',
+    icon: UserCircle,
+    path: '/user-management/account',
   },
   { separator: true },
   { title: 'Contact Us', icon: Share2, path: 'https://keenthemes.com/contact' },

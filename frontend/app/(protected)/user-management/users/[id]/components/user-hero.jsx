@@ -7,6 +7,7 @@ import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   Tooltip,
   TooltipContent,
@@ -15,6 +16,8 @@ import {
 } from '@/components/ui/tooltip';
 
 const UserHero = ({ user, isLoading }) => {
+  const { t } = useTranslation();
+
   const Loading = () => {
     return (
       <div className="flex items-center gap-5 mb-5">
@@ -63,12 +66,12 @@ const UserHero = ({ user, isLoading }) => {
                     className="gap-1.5 px-2 py-0.5"
                     onClick={handleUserIdCopy}
                   >
-                    <span>User ID: {user.id}</span>
+                    <span>{t('users.details.user_id_label', { id: user.id, defaultValue: `User ID: ${user.id}` })}</span>
                     {showCopied && <Check className="text-success size-3" />}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent className="text-xs">
-                  Click to copy
+                  {t('users.details.click_to_copy', 'Click to copy')}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -82,3 +85,4 @@ const UserHero = ({ user, isLoading }) => {
 };
 
 export default UserHero;
+

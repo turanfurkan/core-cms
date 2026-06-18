@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { apiFetch } from '@/lib/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,23 +29,24 @@ import {
 import { Input } from '@/components/ui/input';
 
 // Validation schema for email confirmation
-const EmailConfirmationSchema = (userEmail) =>
+const EmailConfirmationSchema = (userEmail, t) =>
   z.object({
     confirmEmail: z
       .string()
-      .nonempty({ message: 'Email is required.' })
-      .email({ message: 'Please enter a valid email address.' })
+      .nonempty({ message: t('users.validation.email_required', 'Email is required.') })
+      .email({ message: t('users.validation.email_invalid', 'Please enter a valid email address.') })
       .refine((value) => value === userEmail, {
-        message: 'Email confirmation does not match.',
+        message: t('users.validation.email_mismatch', 'Email confirmation does not match.'),
       }),
   });
 
 const UserDeleteDialog = ({ open, closeDialog, user }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   // Set up the form using react-hook-form and zod validation
   const form = useForm({
-    resolver: zodResolver(EmailConfirmationSchema(user.email)),
+    resolver: zodResolver(EmailConfirmationSchema(user.email, t)),
     defaultValues: {
       confirmEmail: '',
     },
@@ -66,7 +68,7 @@ const UserDeleteDialog = ({ open, closeDialog, user }) => {
       return response.json();
     },
     onSuccess: () => {
-      const message = 'User deleted successfully.';
+      const message = t('users.details.danger_zone.delete_success', 'User deleted successfully.');
 
       toast.custom(
         () => (
@@ -112,18 +114,20 @@ const UserDeleteDialog = ({ open, closeDialog, user }) => {
     mutation.mutate();
   };
 
+  const deleteDesc = t('users.details.danger_zone.delete_dialog_desc', { email: user.email, defaultValue: `Deleting user ${user.email} will permanently remove the account and all related data. This action cannot be undone.` });
+  const descParts = deleteDesc.split(user.email);
+
   return (
     <Dialog open={open} onOpenChange={closeDialog}>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogTitle>{t('users.details.danger_zone.delete_dialog_title', 'Confirm Delete')}</DialogTitle>
         </DialogHeader>
         <div>
           <p className="text-sm text-accent-foreground mb-2.5">
-            Deleting user{' '}
-            <strong className="text-foreground">{user.email}</strong> will
-            permanently remove the account and all related data. This action
-            cannot be undone.
+            {descParts[0]}
+            <strong className="text-foreground">{user.email}</strong>
+            {descParts[1] || ''}
           </p>
 
           <Form {...form}>
@@ -137,10 +141,10 @@ const UserDeleteDialog = ({ open, closeDialog, user }) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-foreground font-semibold">
-                      Confirm the user&apos;s email address to proceed
+                      {t('users.details.danger_zone.delete_confirm_label', "Confirm the user's email address to proceed")}
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter email address" {...field} />
+                      <Input placeholder={t('users.details.danger_zone.delete_confirm_placeholder', 'Enter email address')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,7 +154,7 @@ const UserDeleteDialog = ({ open, closeDialog, user }) => {
               <DialogFooter>
                 <Button variant="outline" onClick={closeDialog}>
                   <X />
-                  Cancel
+                  {t('users.details.edit_dialog.cancel', 'Cancel')}
                 </Button>
                 <Button
                   variant="destructive"
@@ -166,7 +170,7 @@ const UserDeleteDialog = ({ open, closeDialog, user }) => {
                   ) : (
                     <Trash2 />
                   )}
-                  Delete user account
+                  {t('users.details.danger_zone.delete_confirm_button', 'Delete user account')}
                 </Button>
               </DialogFooter>
             </form>

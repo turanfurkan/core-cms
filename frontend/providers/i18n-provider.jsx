@@ -8,6 +8,7 @@ import deTranslations from '@/i18n/messages/de.json';
 // Import translation files
 import enTranslations from '@/i18n/messages/en.json';
 import esTranslations from '@/i18n/messages/es.json';
+import trTranslations from '@/i18n/messages/tr.json';
 import { DirectionProvider as RadixDirectionProvider } from '@radix-ui/react-direction';
 import i18n from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -22,6 +23,7 @@ function I18nProvider({ children }) {
       const resources = {
         en: { translation: enTranslations },
         ar: { translation: arTranslations },
+        tr: { translation: trTranslations },
         es: { translation: esTranslations },
         de: { translation: deTranslations },
         ch: { translation: chTranslations },

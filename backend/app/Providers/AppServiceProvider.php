@@ -93,6 +93,11 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(User::class, UserPolicy::class);
 
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'App\\Domains\\User\\Models\\User' => \App\Domains\Identity\Models\User::class,
+            'App\\Domains\\Identity\\Models\\User' => \App\Domains\Identity\Models\User::class,
+        ]);
+
         Event::listen(UserRegistered::class, LogRegisteredUser::class);
         Event::listen(UserLoggedIn::class, LogSuccessfulLogin::class);
         Event::listen(UserLoginFailed::class, LogFailedLogin::class);

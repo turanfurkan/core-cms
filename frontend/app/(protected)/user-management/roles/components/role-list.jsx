@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardFooter, CardHeader, CardTable } from '@/components/ui/card';
@@ -39,6 +40,8 @@ import RoleDeleteDialog from './role-delete-dialog';
 import RoleEditDialog from './role-edit-dialog';
 
 const RoleList = () => {
+  const { t } = useTranslation();
+
   // List state management
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -102,7 +105,7 @@ const RoleList = () => {
 
     if (!response.ok) {
       throw new Error(
-        'Oops! Something didn’t go as planned. Please try again in a moment.',
+        t('messages.system_error', 'Oops! Something didn’t go as planned. Please try again in a moment.'),
       );
     }
 
@@ -116,7 +119,7 @@ const RoleList = () => {
         accessorKey: 'name',
         id: 'name',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Role" column={column} visibility />
+          <DataGridColumnHeader title={t('roles.columns.role', 'Role')} column={column} visibility />
         ),
 
         cell: ({ row, getValue }) => {
@@ -130,13 +133,13 @@ const RoleList = () => {
               {isProtected && (
                 <Badge variant="outline">
                   <ShieldAlert className="text-destructive" />
-                  system
+                  {t('roles.badges.system', 'system')}
                 </Badge>
               )}
               {isDefault && (
                 <Badge variant="outline">
                   <UserRound className="text-success" />
-                  default
+                  {t('roles.badges.default', 'default')}
                 </Badge>
               )}
             </div>
@@ -146,7 +149,7 @@ const RoleList = () => {
         enableSorting: true,
         enableHiding: false,
         meta: {
-          headerTitle: 'Role',
+          headerTitle: t('roles.columns.role', 'Role'),
           skeleton: <Skeleton className="w-28 h-7" />,
         },
       },
@@ -154,7 +157,7 @@ const RoleList = () => {
         accessorKey: 'slug',
         id: 'slug',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Slug" column={column} visibility />
+          <DataGridColumnHeader title={t('roles.columns.slug', 'Slug')} column={column} visibility />
         ),
 
         size: 125,
@@ -166,14 +169,14 @@ const RoleList = () => {
         enableSorting: true,
         enableHiding: true,
         meta: {
-          headerTitle: 'slug',
+          headerTitle: t('roles.columns.slug', 'Slug'),
           skeleton: <Skeleton className="w-14 h-7" />,
         },
       },
       {
         accessorKey: 'permissions',
         id: 'permissions',
-        header: 'Permissions',
+        header: t('roles.columns.permissions', 'Permissions'),
         cell: (info) => {
           const permissions = info.getValue();
 
@@ -193,7 +196,9 @@ const RoleList = () => {
                 </Badge>
               ))}
               {extraPermissionsCount > 0 && (
-                <span className="text-muted-foreground text-xs ms-1">{`${extraPermissionsCount} more`}</span>
+                <span className="text-muted-foreground text-xs ms-1">
+                  {t('sidebar.show_more_count', { count: extraPermissionsCount, defaultValue: `${extraPermissionsCount} more` })}
+                </span>
               )}
             </div>
           );
@@ -202,13 +207,13 @@ const RoleList = () => {
         enableSorting: false,
         enableHiding: true,
         meta: {
-          headerTitle: 'Permissions',
+          headerTitle: t('roles.columns.permissions', 'Permissions'),
           skeleton: <Skeleton className="w-44 h-7" />,
         },
       },
       {
         id: 'actions',
-        header: 'Actions',
+        header: t('roles.columns.actions', 'Actions'),
         cell: ({ row }) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -223,7 +228,7 @@ const RoleList = () => {
                   setEditDialogOpen(true);
                 }}
               >
-                Edit role
+                {t('roles.dropdown.edit', 'Edit role')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={row.original.isProtected || row.original.isDefault}
@@ -232,7 +237,7 @@ const RoleList = () => {
                   setDefaultDialogOpen(true);
                 }}
               >
-                Set as default
+                {t('roles.dropdown.set_default', 'Set as default')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -243,7 +248,7 @@ const RoleList = () => {
                   setDeleteDialogOpen(true);
                 }}
               >
-                Delete role
+                {t('roles.dropdown.delete', 'Delete role')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -258,7 +263,7 @@ const RoleList = () => {
       },
     ],
 
-    [],
+    [t],
   );
 
   const table = useReactTable({
@@ -294,7 +299,7 @@ const RoleList = () => {
           <div className="relative">
             <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
             <Input
-              placeholder="Search users"
+              placeholder={t('roles.search_placeholder', 'Search roles...')}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -323,7 +328,7 @@ const RoleList = () => {
             }}
           >
             <Plus />
-            Add Role
+            {t('roles.add_role', 'Add Role')}
           </Button>
         </div>
       </CardHeader>

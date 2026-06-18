@@ -4,6 +4,7 @@ import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoaderCircleIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 
 const PermissionDeleteDialog = ({ open, closeDialog, permission }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   // Define the mutation for deleting the permission
@@ -37,7 +39,7 @@ const PermissionDeleteDialog = ({ open, closeDialog, permission }) => {
       return response.json();
     },
     onSuccess: () => {
-      const message = 'Permission deleted successfully';
+      const message = t('permissions.dialog.success_delete', 'Permission deleted successfully');
 
       toast.custom(
         () => (
@@ -80,14 +82,14 @@ const PermissionDeleteDialog = ({ open, closeDialog, permission }) => {
     <Dialog open={open} onOpenChange={closeDialog}>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogTitle>{t('permissions.delete_dialog.title', 'Confirm Delete')}</DialogTitle>
         </DialogHeader>
         <DialogDescription>
-          Are you sure you want to delete the permission ?
+          {t('permissions.delete_dialog.desc', 'Are you sure you want to delete the permission {{name}}?', { name: permission?.name })}
         </DialogDescription>
         <DialogFooter>
           <Button variant="outline" onClick={closeDialog}>
-            Cancel
+            {t('permissions.delete_dialog.cancel', 'Cancel')}
           </Button>
           <Button
             variant="destructive"
@@ -97,7 +99,7 @@ const PermissionDeleteDialog = ({ open, closeDialog, permission }) => {
             {mutation.status === 'pending' && (
               <LoaderCircleIcon className="animate-spin" />
             )}
-            Delete
+            {t('permissions.delete_dialog.delete', 'Delete')}
           </Button>
         </DialogFooter>
       </DialogContent>

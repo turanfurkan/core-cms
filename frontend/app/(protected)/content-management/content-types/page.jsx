@@ -8,6 +8,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { Edit, Trash, Plus, Search, X } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Container } from '@/components/common/container';
 import {
@@ -37,6 +38,7 @@ import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import ContentTypeDialog from './components/content-type-dialog';
 
 export default function ContentTypesPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState(null);
@@ -83,7 +85,7 @@ export default function ContentTypesPage() {
             <AlertIcon>
               <RiCheckboxCircleFill />
             </AlertIcon>
-            <AlertTitle>İçerik şablonu başarıyla silindi.</AlertTitle>
+            <AlertTitle>{t('content_types.messages.success_delete', 'Content type deleted successfully.')}</AlertTitle>
           </Alert>
         ),
         { position: 'top-center' }
@@ -96,7 +98,7 @@ export default function ContentTypesPage() {
             <AlertIcon>
               <RiErrorWarningFill />
             </AlertIcon>
-            <AlertTitle>{err.message || 'Bir hata oluştu.'}</AlertTitle>
+            <AlertTitle>{err.message || t('content_types.messages.error', 'An error occurred.')}</AlertTitle>
           </Alert>
         ),
         { position: 'top-center' }
@@ -114,7 +116,7 @@ export default function ContentTypesPage() {
     e.stopPropagation();
     if (
       confirm(
-        'Bu içerik şablonunu silmek istediğinizden emin misiniz? Bu işlem bağlı tüm içerikleri silecektir!'
+        t('content_types.delete_confirm', 'Are you sure you want to delete this content type? This action will delete all related content!')
       )
     ) {
       deleteMutation.mutate(id);
@@ -127,7 +129,7 @@ export default function ContentTypesPage() {
         accessorKey: 'name',
         id: 'name',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Şablon Adı" visibility={true} column={column} />
+          <DataGridColumnHeader title={t('content_types.columns.name', 'Template Name')} visibility={true} column={column} />
         ),
         cell: ({ row }) => (
           <div className="font-semibold text-sm">{row.original.name}</div>
@@ -138,7 +140,7 @@ export default function ContentTypesPage() {
         accessorKey: 'slug',
         id: 'slug',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Slug" visibility={true} column={column} />
+          <DataGridColumnHeader title={t('content_types.columns.slug', 'Slug')} visibility={true} column={column} />
         ),
         cell: ({ row }) => (
           <code className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-mono">
@@ -151,7 +153,7 @@ export default function ContentTypesPage() {
         accessorKey: 'description',
         id: 'description',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Açıklama" visibility={true} column={column} />
+          <DataGridColumnHeader title={t('content_types.columns.description', 'Description')} visibility={true} column={column} />
         ),
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground truncate block max-w-md">
@@ -164,7 +166,7 @@ export default function ContentTypesPage() {
         accessorKey: 'fields',
         id: 'fields',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Alanlar" visibility={true} column={column} />
+          <DataGridColumnHeader title={t('content_types.columns.fields', 'Fields')} visibility={true} column={column} />
         ),
         cell: ({ row }) => {
           const fields = row.original.fields || [];
@@ -176,7 +178,7 @@ export default function ContentTypesPage() {
                 </Badge>
               ))}
               {fields.length === 0 && (
-                <span className="text-xs text-muted-foreground">Tanımlı alan yok</span>
+                <span className="text-xs text-muted-foreground">{t('content_types.no_fields_defined', 'No fields defined')}</span>
               )}
             </div>
           );
@@ -210,7 +212,7 @@ export default function ContentTypesPage() {
         size: 80,
       },
     ],
-    [deleteMutation.isPending]
+    [deleteMutation.isPending, t]
   );
 
   const table = useReactTable({
@@ -233,7 +235,7 @@ export default function ContentTypesPage() {
           <div className="relative">
             <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
             <Input
-              placeholder="Şablon ara..."
+              placeholder={t('content_types.search_placeholder', 'Search templates...')}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -264,7 +266,7 @@ export default function ContentTypesPage() {
             }}
           >
             <Plus className="size-4" />
-            Yeni Şablon Ekle
+            {t('content_types.add_new', 'Add New Template')}
           </Button>
         </div>
       </CardHeader>
@@ -276,19 +278,19 @@ export default function ContentTypesPage() {
       <Container>
         <Toolbar>
           <ToolbarHeading>
-            <ToolbarTitle>İçerik Şablonları (Content Types)</ToolbarTitle>
+            <ToolbarTitle>{t('content_types.title', 'Content Types')}</ToolbarTitle>
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  <BreadcrumbLink href="/">{t('sidebar.home', 'Home')}</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Content Management</BreadcrumbPage>
+                  <BreadcrumbPage>{t('sidebar.content_management', 'Content Management')}</BreadcrumbPage>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Content Types</BreadcrumbPage>
+                  <BreadcrumbPage>{t('content_types.title', 'Content Types')}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

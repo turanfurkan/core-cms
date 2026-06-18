@@ -56,6 +56,9 @@ export async function POST(req) {
     const logoSetting = existingList.find((item) => item.key === 'site.logo');
     let logoUrl = logoSetting ? logoSetting.value : null;
 
+    const frontendSettingsItem = existingList.find((item) => item.key === 'frontend.system_settings');
+    const frontendSettings = (frontendSettingsItem && typeof frontendSettingsItem.value === 'object') ? frontendSettingsItem.value : {};
+
     // Parse incoming FormData
     const formData = await req.formData();
 
@@ -111,6 +114,15 @@ export async function POST(req) {
     const mailUsername = formData.get('mail_username') || '';
     const mailPassword = formData.get('mail_password') || '';
 
+    // General Settings fields to be stored in frontend.system_settings
+    const active = formData.get('site_active') === 'true';
+    const address = formData.get('site_address') || '';
+    const websiteURL = formData.get('site_website_url') || '';
+    const language = formData.get('site_language') || 'en';
+    const timezone = formData.get('site_timezone') || 'UTC';
+    const currency = formData.get('site_currency') || 'USD';
+    const currencyFormat = formData.get('site_currency_format') || '$ {value}';
+
     // Prepare settings dictionary for backend
     const settingsPayload = {
       settings: {
@@ -135,6 +147,20 @@ export async function POST(req) {
         'mail.port': mailPort,
         'mail.username': mailUsername,
         'mail.password': mailPassword,
+        'frontend.system_settings': {
+          ...frontendSettings,
+          logo: logoUrl,
+          name: nameTr,
+          active: active,
+          address: address,
+          websiteURL: websiteURL,
+          supportEmail: email,
+          supportPhone: phone,
+          language: language,
+          timezone: timezone,
+          currency: currency,
+          currencyFormat: currencyFormat,
+        }
       },
     };
 

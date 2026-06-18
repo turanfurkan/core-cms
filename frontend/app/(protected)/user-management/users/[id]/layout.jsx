@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Activity, MoveLeft, UserPen } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -27,6 +28,7 @@ import { UserProvider } from './components/user-context';
 import UserHero from './components/user-hero';
 
 export default function UserLayout({ params, children }) {
+  const { t } = useTranslation();
   // 1) Unwrap the params Promise
   const { id } = use(params);
   const pathname = usePathname();
@@ -39,17 +41,17 @@ export default function UserLayout({ params, children }) {
   const navRoutes = useMemo(
     () => ({
       general: {
-        title: 'Profile',
+        title: t('users.details.tab_profile', 'Profile'),
         icon: UserPen,
         path: `/user-management/users/${id}`,
       },
       logs: {
-        title: 'Activity Logs',
+        title: t('users.details.tab_logs', 'Activity Logs'),
         icon: Activity,
         path: `/user-management/users/${id}/logs`,
       },
     }),
-    [id],
+    [id, t],
   );
 
   // Set initial active tab based on the pathname
@@ -99,19 +101,19 @@ export default function UserLayout({ params, children }) {
       <Container>
         <Toolbar>
           <ToolbarHeading>
-            <ToolbarTitle>User</ToolbarTitle>
+            <ToolbarTitle>{t('users.details.title', 'User')}</ToolbarTitle>
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  <BreadcrumbLink href="/">{t('sidebar.home', 'Home')}</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>User Management</BreadcrumbPage>
+                  <BreadcrumbPage>{t('users.breadcrumb_management', 'User Management')}</BreadcrumbPage>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/user/users">Users</BreadcrumbLink>
+                  <BreadcrumbLink href="/user-management/users">{t('users.title', 'Users')}</BreadcrumbLink>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -119,7 +121,7 @@ export default function UserLayout({ params, children }) {
           <ToolbarActions>
             <Button asChild variant="outline">
               <Link href="/user-management/users">
-                <MoveLeft /> Back to users
+                <MoveLeft /> {t('users.details.back_to_users', 'Back to users')}
               </Link>
             </Button>
           </ToolbarActions>

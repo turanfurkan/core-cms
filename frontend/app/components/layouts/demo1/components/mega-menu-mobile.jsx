@@ -1,5 +1,4 @@
 'use client';
-'use client';
 
 import { useCallback } from 'react';
 import Link from 'next/link';
@@ -16,9 +15,30 @@ import {
   AccordionMenuSubTrigger,
 } from '@/components/ui/accordion-menu';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function MegaMenuMobile() {
   const pathname = usePathname();
+  const { t } = useTranslation();
+
+  const translateTitle = (title) => {
+    if (!title) return '';
+    if (title.startsWith('Show ') && title.endsWith(' more')) {
+      const match = title.match(/Show (\d+) more/);
+      if (match) {
+        const count = match[1];
+        return t('sidebar.show_more_count', { count, defaultValue: `Show ${count} more` });
+      }
+    }
+    const key = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return t(`sidebar.${key}`, title);
+  };
+
+  const translateHeading = (heading) => {
+    if (!heading) return '';
+    const key = heading.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return t(`sidebar.heading.${key}`, heading);
+  };
 
   // Memoize matchPath to prevent unnecessary re-renders
   const matchPath = useCallback(
@@ -61,7 +81,7 @@ export function MegaMenuMobile() {
           <AccordionMenuSubTrigger className="text-sm font-medium">
             {item.icon && <item.icon data-slot="accordion-menu-icon" />}
             <div className="flex items-center justify-between grow gap-2">
-              <span data-slot="accordion-menu-title">{item.title}</span>
+              <span data-slot="accordion-menu-title">{translateTitle(item.title)}</span>
               {item.badge && (
                 <Badge variant="secondary" size="sm" className="ms-auto">
                   {item.badge}
@@ -91,7 +111,7 @@ export function MegaMenuMobile() {
           <Link href={item.path || '#'} className="">
             {item.icon && <item.icon data-slot="accordion-menu-icon" />}
             <div className="flex items-center justify-between grow gap-2">
-              <span data-slot="accordion-menu-title">{item.title}</span>
+              <span data-slot="accordion-menu-title">{translateTitle(item.title)}</span>
               {item.badge && (
                 <Badge variant="secondary" size="sm" className="ms-auto">
                   {item.badge}
@@ -126,14 +146,14 @@ export function MegaMenuMobile() {
             {item.collapse ? (
               <span className="text-muted-foreground">
                 <span className="hidden [[data-state=open]>span>&]:inline">
-                  {item.collapseTitle}
+                  {translateTitle(item.collapseTitle)}
                 </span>
                 <span className="inline [[data-state=open]>span>&]:hidden">
-                  {item.expandTitle}
+                  {translateTitle(item.expandTitle)}
                 </span>
               </span>
             ) : (
-              item.title
+              translateTitle(item.title)
             )}
             {item.badge && (
               <Badge variant="secondary" size="sm" className="ms-auto">
@@ -166,7 +186,7 @@ export function MegaMenuMobile() {
           <Link href={item.path || '#'}>
             {item.icon && <item.icon data-slot="accordion-menu-icon" />}
             <div className="flex items-center justify-between grow gap-2">
-              <span>{item.title}</span>
+              <span>{translateTitle(item.title)}</span>
               {item.badge && (
                 <Badge variant="secondary" size="sm" className="ms-auto">
                   {item.badge}
@@ -180,7 +200,7 @@ export function MegaMenuMobile() {
   };
 
   const buildMenuHeading = (item, index) => {
-    return <AccordionMenuLabel key={index}>{item.heading}</AccordionMenuLabel>;
+    return <AccordionMenuLabel key={index}>{translateHeading(item.heading)}</AccordionMenuLabel>;
   };
 
   return (

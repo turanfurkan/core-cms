@@ -17,10 +17,19 @@ import {
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
 import { MegaMenuSubApps } from '@/app/components/partials/mega-menu/mega-menu-sub-apps';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function MegaMenu() {
   const pathname = usePathname();
   const { isActive, hasActiveChild } = useMenu(pathname);
+  const { t } = useTranslation();
+
+  const translateTitle = (title) => {
+    if (!title) return '';
+    const key = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return t(`sidebar.${key}`, title);
+  };
+
   const homeItem = MENU_MEGA[0];
   const publicProfilesItem = MENU_MEGA[1];
   const myAccountItem = MENU_MEGA[2];
@@ -46,7 +55,7 @@ export function MegaMenu() {
               className={cn(linkClass)}
               data-active={isActive(homeItem.path) || undefined}
             >
-              {homeItem.title}
+              {translateTitle(homeItem.title)}
             </Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
@@ -59,7 +68,7 @@ export function MegaMenu() {
               hasActiveChild(publicProfilesItem.children) || undefined
             }
           >
-            {publicProfilesItem.title}
+            {translateTitle(publicProfilesItem.title)}
           </NavigationMenuTrigger>
           <NavigationMenuContent className="p-0">
             <MegaMenuSubProfiles items={MENU_MEGA} />
@@ -72,7 +81,7 @@ export function MegaMenu() {
             className={cn(linkClass)}
             data-active={hasActiveChild(myAccountItem.children) || undefined}
           >
-            {myAccountItem.title}
+            {translateTitle(myAccountItem.title)}
           </NavigationMenuTrigger>
           <NavigationMenuContent className="p-0">
             <MegaMenuSubAccount items={MENU_MEGA} />
@@ -87,7 +96,7 @@ export function MegaMenu() {
               hasActiveChild(networkItem.children || []) || undefined
             }
           >
-            {networkItem.title}
+            {translateTitle(networkItem.title)}
           </NavigationMenuTrigger>
           <NavigationMenuContent className="p-0">
             <MegaMenuSubNetwork items={MENU_MEGA} />
@@ -100,7 +109,7 @@ export function MegaMenu() {
             className={cn(linkClass)}
             data-active={hasActiveChild(appsStore.children || []) || undefined}
           >
-            {appsStore.title}
+            {translateTitle(appsStore.title)}
           </NavigationMenuTrigger>
           <NavigationMenuContent className="p-0">
             <MegaMenuSubApps items={MENU_MEGA} />

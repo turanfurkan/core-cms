@@ -8,6 +8,7 @@ import { LoaderCircleIcon, UserPlus, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,13 +40,14 @@ import { useRoleSelectQuery } from '../../roles/hooks/use-role-select-query';
 import { UserAddSchema } from '../forms/user-add-schema';
 
 const UserAddDialog = ({ open, closeDialog }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   // Fetch available roles
   const { data: roleList } = useRoleSelectQuery();
 
   const form = useForm({
-    resolver: zodResolver(UserAddSchema),
+    resolver: zodResolver(UserAddSchema(t)),
     defaultValues: {
       name: '',
       email: '',
@@ -78,7 +80,7 @@ const UserAddDialog = ({ open, closeDialog }) => {
       return response.json();
     },
     onSuccess: () => {
-      const message = 'User added successfully';
+      const message = t('users.dialog.success_message', 'User added successfully');
       toast.custom(
         () => (
           <Alert variant="mono" icon="success" close={false}>
@@ -125,7 +127,7 @@ const UserAddDialog = ({ open, closeDialog }) => {
     <Dialog open={open} onOpenChange={closeDialog}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add User</DialogTitle>
+          <DialogTitle>{t('users.dialog.add_title', 'Add User')}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
@@ -135,9 +137,9 @@ const UserAddDialog = ({ open, closeDialog }) => {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>{t('users.dialog.name_label', 'Name')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter name" {...field} />
+                      <Input placeholder={t('users.dialog.name_placeholder', 'Enter name')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -149,9 +151,9 @@ const UserAddDialog = ({ open, closeDialog }) => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('users.dialog.email_label', 'Email')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter user email" {...field} />
+                      <Input placeholder={t('users.dialog.email_placeholder', 'Enter user email')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -163,14 +165,14 @@ const UserAddDialog = ({ open, closeDialog }) => {
                 name="roleId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Role</FormLabel>
+                    <FormLabel>{t('users.dialog.role_label', 'Role')}</FormLabel>
                     <FormControl>
                       <Select
                         onValueChange={(value) => field.onChange(value)}
                         defaultValue={field.value}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
+                          <SelectValue placeholder={t('users.dialog.role_placeholder', 'Select a role')} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
@@ -191,7 +193,7 @@ const UserAddDialog = ({ open, closeDialog }) => {
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
                 <X />
-                Cancel
+                {t('users.dialog.cancel', 'Cancel')}
               </Button>
               <Button
                 type="submit"
@@ -202,7 +204,7 @@ const UserAddDialog = ({ open, closeDialog }) => {
                 ) : (
                   <UserPlus />
                 )}
-                Add user
+                {t('users.dialog.submit_add', 'Add user')}
               </Button>
             </DialogFooter>
           </form>

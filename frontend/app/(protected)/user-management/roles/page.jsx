@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,26 +18,27 @@ import {
 } from '@/components/common/toolbar';
 import RoleList from './components/role-list';
 
-export const metadata = {
-  title: 'Roles',
-  description: 'Manage user roles.',
-};
+export default function Page() {
+  const { t } = useTranslation();
 
-export default async function Page() {
   return (
     <>
       <Container>
         <Toolbar>
           <ToolbarHeading>
-            <ToolbarTitle>Roles</ToolbarTitle>
+            <ToolbarTitle>{t('roles.title', 'Roles')}</ToolbarTitle>
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">Home</BreadcrumbLink>
+                  <BreadcrumbLink href="/">{t('sidebar.home', 'Home')}</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Users</BreadcrumbPage>
+                  <BreadcrumbPage>{t('users.breadcrumb_management', 'User Management')}</BreadcrumbPage>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{t('roles.title', 'Roles')}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

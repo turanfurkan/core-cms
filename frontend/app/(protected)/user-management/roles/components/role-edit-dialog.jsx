@@ -8,6 +8,7 @@ import { LoaderCircleIcon, X, Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { apiFetch } from '@/lib/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 import {
   Alert,
@@ -53,12 +54,13 @@ import { usePermissionSelectQuery } from '../../permissions/hooks/use-permission
 import { RoleSchema } from '../forms/role-schema';
 
 const RoleEditDialog = ({ open, closeDialog, role }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [selectedPermissions, setSelectedPermissions] = useState([]);
   const { data: permissionList } = usePermissionSelectQuery();
 
   const form = useForm({
-    resolver: zodResolver(RoleSchema),
+    resolver: zodResolver(RoleSchema(t)),
     defaultValues: {
       name: '',
       slug: '',
@@ -111,8 +113,8 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
     onSuccess: () => {
       const isEdit = !!role?.id;
       const message = isEdit
-        ? 'Role updated successfully'
-        : 'Role added successfully';
+        ? t('roles.dialog.success_edit', 'Role updated successfully')
+        : t('roles.dialog.success_add', 'Role added successfully');
 
       toast.custom(
         () => (
@@ -174,7 +176,7 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
     <Dialog open={open} onOpenChange={closeDialog}>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>{role ? 'Edit Role' : 'Add Role'}</DialogTitle>
+          <DialogTitle>{role ? t('roles.dialog.edit_title', 'Edit Role') : t('roles.dialog.add_title', 'Add Role')}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -191,9 +193,9 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role Name</FormLabel>
+                  <FormLabel>{t('roles.dialog.name_label', 'Role Name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter role name" {...field} />
+                    <Input placeholder={t('roles.dialog.name_placeholder', 'Enter role name')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -205,10 +207,10 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
               name="slug"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Slug</FormLabel>
+                  <FormLabel>{t('roles.dialog.slug_label', 'Slug')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="E.g: users:delete"
+                      placeholder={t('roles.dialog.slug_placeholder', 'E.g: users:delete')}
                       {...field}
                       disabled={!!role}
                     />
@@ -223,9 +225,9 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t('roles.dialog.description_label', 'Description')}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Optional description" {...field} />
+                    <Textarea placeholder={t('roles.dialog.description_placeholder', 'Optional description')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -237,7 +239,7 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
               name="permissions"
               render={() => (
                 <FormItem>
-                  <FormLabel>Permissions</FormLabel>
+                  <FormLabel>{t('roles.dialog.permissions_label', 'Permissions')}</FormLabel>
                   <div className="flex items-center flex-wrap gap-1.5 text-2sm text-muted-foreground border border-input rounded-md px-3 py-3">
                     {selectedPermissions.length > 0 ? (
                       selectedPermissions.map((permissionId) => {
@@ -259,7 +261,7 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
                       })
                     ) : (
                       <span className="text-sm text-muted-foreground">
-                        No permissions assigned.
+                        {t('roles.dialog.no_permissions_assigned', 'No permissions assigned.')}
                       </span>
                     )}
                   </div>
@@ -268,7 +270,7 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" role="combobox">
-                            Add Permissions
+                            {t('roles.dialog.add_permissions', 'Add Permissions')}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent
@@ -277,9 +279,9 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
                           side="bottom"
                         >
                           <Command>
-                            <CommandInput placeholder="Search permissions..." />
+                            <CommandInput placeholder={t('roles.dialog.permissions_placeholder', 'Search permissions...')} />
                             <CommandList>
-                              <CommandEmpty>No permissions found.</CommandEmpty>
+                              <CommandEmpty>{t('roles.dialog.no_permissions_found', 'No permissions found.')}</CommandEmpty>
                               <CommandGroup>
                                 <ScrollArea className="h-[200px]">
                                   {permissionList?.map((permission) => (
@@ -319,7 +321,7 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
             <DialogFooter>
               <Button type="button" variant="outline" onClick={closeDialog}>
                 <X />
-                Cancel
+                {t('roles.dialog.cancel', 'Cancel')}
               </Button>
               <Button type="submit" disabled={isProcessing}>
                 {isProcessing ? (
@@ -327,7 +329,7 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
                 ) : (
                   <Check />
                 )}
-                {role ? 'Update Role' : 'Create Role'}
+                {role ? t('roles.dialog.submit_edit', 'Update Role') : t('roles.dialog.submit_add', 'Create Role')}
               </Button>
             </DialogFooter>
           </form>

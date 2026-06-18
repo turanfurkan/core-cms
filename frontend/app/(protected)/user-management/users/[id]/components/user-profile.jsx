@@ -8,8 +8,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getUserStatusProps } from '../../constants/status';
 import UserProfileEditDialog from './user-profile-edit-dialog';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const UserProfile = ({ user, isLoading }) => {
+  const { t } = useTranslation();
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
 
   const Loading = () => (
@@ -79,57 +81,57 @@ const UserProfile = ({ user, isLoading }) => {
         <CardContent>
           <dl className="grid grid-cols-[auto_1fr] gap-3 text-sm mb-5 [&_dt]:text-muted-foreground">
             <div className="grid grid-cols-subgrid col-span-2 items-baseline">
-              <dt className="flex md:w-64">Full name:</dt>
-              <dd>{user.name || 'Not available'}</dd>
+              <dt className="flex md:w-64">{t('users.details.full_name', 'Full name:')}</dt>
+              <dd>{user.name || t('users.details.not_available', 'Not available')}</dd>
             </div>
             <div className="grid grid-cols-subgrid col-span-2 items-baseline">
-              <dt>Email address:</dt>
+              <dt>{t('users.details.email_address', 'Email address:')}</dt>
               <dd className="flex items-center gap-2.5">
                 <span>{user.email}</span>
                 {user.emailVerifiedAt ? (
                   <Badge variant="secondary" appearance="light">
-                    Verified
+                    {t('users.details.verified', 'Verified')}
                   </Badge>
                 ) : (
                   <Badge variant="warning" appearance="light">
-                    Not verified
+                    {t('users.details.not_verified', 'Not verified')}
                   </Badge>
                 )}
               </dd>
             </div>
             <div className="grid grid-cols-subgrid col-span-2 items-baseline">
-              <dt>Role:</dt>
+              <dt>{t('users.details.role', 'Role:')}</dt>
               <dd>
                 <span className="inline-flex items-center gap-1">
                   {user.role?.name}
                   {user.role?.isProtected && (
-                    <Badge variant="outline">System</Badge>
+                    <Badge variant="outline">{t('users.details.system_badge', 'System')}</Badge>
                   )}
                 </span>
               </dd>
             </div>
             <div className="grid grid-cols-subgrid col-span-2 items-baseline">
-              <dt>Status:</dt>
+              <dt>{t('users.details.status', 'Status:')}</dt>
               <dd>
                 <div className="inline-flex gap-2.5">
                   <Badge variant={statusVariant} appearance="ghost">
                     <BadgeDot />
-                    {statusPros.label}
+                    {t('users.status.' + statusPros.label.toLowerCase(), statusPros.label)}
                   </Badge>
                   {user.isTrashed && (
                     <Badge variant="destructive" appearance="light">
-                      Trashed
+                      {t('users.status.trashed', 'Trashed')}
                     </Badge>
                   )}
                 </div>
               </dd>
             </div>
             <div className="grid grid-cols-subgrid col-span-2 items-baseline">
-              <dt>Last Sign In:</dt>
+              <dt>{t('users.details.last_sign_in', 'Last Sign In:')}</dt>
               <dd>
                 {user.lastSignInAt
                   ? formatDateTime(new Date(user.lastSignInAt))
-                  : 'Never'}
+                  : t('users.details.never_signed_in', 'Never')}
               </dd>
             </div>
           </dl>
@@ -138,7 +140,7 @@ const UserProfile = ({ user, isLoading }) => {
             disabled={user.role?.isProtected}
             onClick={() => setEditDialogOpen(true)}
           >
-            Edit user details
+            {t('users.details.edit_details', 'Edit user details')}
           </Button>
         </CardContent>
       </Card>

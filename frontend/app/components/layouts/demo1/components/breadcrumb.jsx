@@ -6,11 +6,26 @@ import { ChevronRight } from 'lucide-react';
 import { MENU_SIDEBAR } from '@/config/menu.config';
 import { cn } from '@/lib/utils';
 import { useMenu } from '@/hooks/use-menu';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function Breadcrumb() {
   const pathname = usePathname();
   const { getBreadcrumb, isActive } = useMenu(pathname);
   const items = getBreadcrumb(MENU_SIDEBAR);
+  const { t } = useTranslation();
+
+  const translateTitle = (title) => {
+    if (!title) return '';
+    if (title.startsWith('Show ') && title.endsWith(' more')) {
+      const match = title.match(/Show (\d+) more/);
+      if (match) {
+        const count = match[1];
+        return t('sidebar.show_more_count', { count, defaultValue: `Show ${count} more` });
+      }
+    }
+    const key = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return t(`sidebar.${key}`, title);
+  };
 
   if (items.length === 0) {
     return null;
@@ -28,7 +43,7 @@ export function Breadcrumb() {
               className={cn(active ? 'text-mono' : 'text-secondary-foreground')}
               key={`item-${index}`}
             >
-              {item.title}
+              {translateTitle(item.title)}
             </span>
             {!last && (
               <ChevronRight

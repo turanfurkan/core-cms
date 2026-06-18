@@ -9,6 +9,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { Ellipsis, Plus, Search, X } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,8 @@ import PermissionEditDialog from './permission-edit-dialog';
 import PermissionGroupDeleteDialog from './permission-group-delete-dialog';
 
 const PermissionList = () => {
+  const { t } = useTranslation();
+
   // List state management
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -167,7 +170,7 @@ const PermissionList = () => {
         id: 'name',
         accessorKey: 'name',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Permission" column={column} />
+          <DataGridColumnHeader title={t('permissions.columns.permission', 'Permission')} column={column} />
         ),
 
         cell: (info) => info.getValue(),
@@ -175,7 +178,7 @@ const PermissionList = () => {
         enableSorting: true,
         enableHiding: false,
         meta: {
-          headerTitle: 'Permission',
+          headerTitle: t('permissions.columns.permission', 'Permission'),
           skeleton: <Skeleton className="w-28 h-8" />,
         },
       },
@@ -183,7 +186,7 @@ const PermissionList = () => {
         id: 'slug',
         accessorKey: 'slug',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Slug" column={column} />
+          <DataGridColumnHeader title={t('permissions.columns.slug', 'Slug')} column={column} />
         ),
 
         cell: (info) => {
@@ -195,7 +198,7 @@ const PermissionList = () => {
         enableSorting: true,
         enableHiding: false,
         meta: {
-          headerTitle: 'min-w-[200px]',
+          headerTitle: t('permissions.columns.slug', 'Slug'),
           skeleton: <Skeleton className="w-14 h-8" />,
         },
       },
@@ -203,19 +206,19 @@ const PermissionList = () => {
         id: 'description',
         accessorKey: 'description',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Description" column={column} />
+          <DataGridColumnHeader title={t('permissions.columns.description', 'Description')} column={column} />
         ),
 
         cell: (info) => {
           const value = info.getValue();
 
-          return <div className="truncate">{value}</div>;
+          return <div className="truncate">{value || '-'}</div>;
         },
         size: 300,
         enableSorting: false,
         enableHiding: false,
         meta: {
-          headerTitle: 'Description',
+          headerTitle: t('permissions.columns.description', 'Description'),
           skeleton: <Skeleton className="w-28 h-8" />,
         },
       },
@@ -223,23 +226,25 @@ const PermissionList = () => {
         id: 'createdAt',
         accessorKey: 'createdAt',
         header: ({ column }) => (
-          <DataGridColumnHeader title="Created At" column={column} />
+          <DataGridColumnHeader title={t('permissions.columns.created_at', 'Created At')} column={column} />
         ),
 
         cell: (info) => {
           const value = info.getValue();
-          return new Date(value).toLocaleString();
+          if (!value) return '-';
+          const date = new Date(value);
+          return isNaN(date.getTime()) ? '-' : date.toLocaleString();
         },
         enableSorting: true,
         enableHiding: false,
         meta: {
-          headerTitle: 'Created At',
+          headerTitle: t('permissions.columns.created_at', 'Created At'),
           skeleton: <Skeleton className="w-20 h-8" />,
         },
       },
       {
         id: 'actions',
-        header: 'Actions',
+        header: t('permissions.columns.actions', 'Actions'),
         cell: ({ row }) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -254,7 +259,7 @@ const PermissionList = () => {
                   setEditDialogOpen(true);
                 }}
               >
-                Edit permission
+                {t('permissions.dropdown.edit', 'Edit permission')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
@@ -263,7 +268,7 @@ const PermissionList = () => {
                   setDeleteDialogOpen(true);
                 }}
               >
-                Delete permission
+                {t('permissions.dropdown.delete', 'Delete permission')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -279,7 +284,7 @@ const PermissionList = () => {
       },
     ],
 
-    [],
+    [t],
   );
 
   const [columnOrder, setColumnOrder] = useState(
@@ -324,7 +329,7 @@ const PermissionList = () => {
           <div className="relative">
             <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
             <Input
-              placeholder="Search permissions"
+              placeholder={t('permissions.search_placeholder', 'Search permissions...')}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -350,10 +355,10 @@ const PermissionList = () => {
             defaultValue="all"
           >
             <SelectTrigger className="w-full sm:w-36">
-              <SelectValue placeholder="Filter by role" />
+              <SelectValue placeholder={t('permissions.filter_role', 'Filter by role')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All roles</SelectItem>
+              <SelectItem value="all">{t('permissions.all_roles', 'All roles')}</SelectItem>
               {roleList?.map((role) => (
                 <SelectItem key={role.id} value={role.id}>
                   {role.name}
@@ -370,7 +375,7 @@ const PermissionList = () => {
                 setGroupDeleteDialogOpen(true);
               }}
             >
-              Delete {deletePermissionIds.length} permissions
+              {t('permissions.group_delete_dialog.delete', 'Delete Selected')} ({deletePermissionIds.length})
             </Button>
           )}
           <Button
@@ -381,7 +386,7 @@ const PermissionList = () => {
             }}
           >
             <Plus />
-            Add Permission
+            {t('permissions.add_permission', 'Add Permission')}
           </Button>
         </CardToolbar>
       </CardHeader>

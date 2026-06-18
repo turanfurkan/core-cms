@@ -7,7 +7,13 @@ import { useMenu } from '@/hooks/use-menu';
 import { Badge } from '@/components/ui/badge';
 import { NavigationMenuLink } from '@/components/ui/navigation-menu';
 
-const MegaMenuSubHighlighted = (items) => {
+const translateTitle = (title, t) => {
+  if (!title) return '';
+  const key = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  return t ? t(`sidebar.${key}`, title) : title;
+};
+
+const MegaMenuSubHighlighted = (items, t) => {
   const pathname = usePathname();
   const { isActive } = useMenu(pathname);
 
@@ -27,7 +33,7 @@ const MegaMenuSubHighlighted = (items) => {
           >
             {item.icon && <item.icon className="size-4" />}
 
-            {item.title}
+            {translateTitle(item.title, t)}
 
             {item.disabled && (
               <Badge variant="secondary" size="sm">

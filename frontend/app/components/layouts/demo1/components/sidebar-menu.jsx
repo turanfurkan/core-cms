@@ -17,9 +17,33 @@ import {
   AccordionMenuSubTrigger,
 } from '@/components/ui/accordion-menu';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/hooks/useTranslation';
+import { LogOut } from 'lucide-react';
+import { signOut } from 'next-auth/react';
+
 
 export function SidebarMenu() {
   const pathname = usePathname();
+  const { t } = useTranslation();
+
+  const translateTitle = (title) => {
+    if (!title) return '';
+    if (title.startsWith('Show ') && title.endsWith(' more')) {
+      const match = title.match(/Show (\d+) more/);
+      if (match) {
+        const count = match[1];
+        return t('sidebar.show_more_count', { count, defaultValue: `Show ${count} more` });
+      }
+    }
+    const key = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return t(`sidebar.${key}`, title);
+  };
+
+  const translateHeading = (heading) => {
+    if (!heading) return '';
+    const key = heading.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return t(`sidebar.heading.${key}`, heading);
+  };
 
   // Fetch dynamic content types
   const { data: contentTypes = [] } = useQuery({
@@ -101,7 +125,7 @@ export function SidebarMenu() {
         <AccordionMenuSub key={index} value={item.path || `root-${index}`}>
           <AccordionMenuSubTrigger className="text-sm font-medium">
             {item.icon && <item.icon data-slot="accordion-menu-icon" />}
-            <span data-slot="accordion-menu-title">{item.title}</span>
+            <span data-slot="accordion-menu-title">{translateTitle(item.title)}</span>
           </AccordionMenuSubTrigger>
           <AccordionMenuSubContent
             type="single"
@@ -127,7 +151,7 @@ export function SidebarMenu() {
             className="flex items-center justify-start grow gap-2"
           >
             {item.icon && <item.icon data-slot="accordion-menu-icon" />}
-            <span data-slot="accordion-menu-title">{item.title}</span>
+            <span data-slot="accordion-menu-title">{translateTitle(item.title)}</span>
           </Link>
         </AccordionMenuItem>
       );
@@ -142,7 +166,7 @@ export function SidebarMenu() {
         className="text-sm font-medium"
       >
         {item.icon && <item.icon data-slot="accordion-menu-icon" />}
-        <span data-slot="accordion-menu-title">{item.title}</span>
+        <span data-slot="accordion-menu-title">{translateTitle(item.title)}</span>
         {item.disabled && (
           <Badge variant="secondary" size="sm" className="ms-auto me-[-10px]">
             Soon
@@ -173,14 +197,14 @@ export function SidebarMenu() {
             {item.collapse ? (
               <span className="text-muted-foreground">
                 <span className="hidden [[data-state=open]>span>&]:inline">
-                  {item.collapseTitle}
+                  {translateTitle(item.collapseTitle)}
                 </span>
                 <span className="inline [[data-state=open]>span>&]:hidden">
-                  {item.expandTitle}
+                  {translateTitle(item.expandTitle)}
                 </span>
               </span>
             ) : (
-              item.title
+              translateTitle(item.title)
             )}
           </AccordionMenuSubTrigger>
           <AccordionMenuSubContent
@@ -209,7 +233,7 @@ export function SidebarMenu() {
           value={item.path || ''}
           className="text-[13px]"
         >
-          <Link href={item.path || '#'}>{item.title}</Link>
+          <Link href={item.path || '#'}>{translateTitle(item.title)}</Link>
         </AccordionMenuItem>
       );
     }
@@ -222,7 +246,7 @@ export function SidebarMenu() {
         value={`disabled-child-${level}-${index}`}
         className="text-[13px]"
       >
-        <span data-slot="accordion-menu-title">{item.title}</span>
+        <span data-slot="accordion-menu-title">{translateTitle(item.title)}</span>
         {item.disabled && (
           <Badge variant="secondary" size="sm" className="ms-auto me-[-10px]">
             Soon
@@ -233,11 +257,11 @@ export function SidebarMenu() {
   };
 
   const buildMenuHeading = (item, index) => {
-    return <AccordionMenuLabel key={index}>{item.heading}</AccordionMenuLabel>;
+    return <AccordionMenuLabel key={index}>{translateHeading(item.heading)}</AccordionMenuLabel>;
   };
 
   return (
-    <div className="kt-scrollable-y-hover flex grow shrink-0 py-5 px-5 lg:max-h-[calc(100vh-5.5rem)]">
+    <div className="kt-scrollable-y-hover flex flex-col grow shrink-0 py-5 px-5 lg:max-h-[calc(100vh-5.5rem)]">
       <AccordionMenu
         selectedValue={pathname}
         matchPath={matchPath}
@@ -247,6 +271,16 @@ export function SidebarMenu() {
       >
         {buildMenu(dynamicMenu)}
       </AccordionMenu>
+
+      <div className="border-t border-border/50 mt-4 pt-4 shrink-0">
+        <button
+          onClick={() => signOut()}
+          className="flex items-center justify-start w-full h-9 px-2.5 text-xs font-semibold text-red-500 hover:text-red-600 hover:bg-red-500/5 rounded-lg transition-colors gap-2 cursor-pointer"
+        >
+          <LogOut className="size-4" />
+          <span>{t('sidebar.logout', 'Sign Out')}</span>
+        </button>
+      </div>
     </div>
   );
 }

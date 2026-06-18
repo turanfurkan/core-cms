@@ -54,13 +54,13 @@ const TimezoneSelect = ({ defaultValue = '', onChange }) => {
               <CommandGroup>
                 {timeZoneList.map(({ value: itemValue, label }) => (
                   <CommandItem
-                    key={itemValue}
-                    value={itemValue}
-                    onSelect={(currentValue) => {
-                      onChange(currentValue === value ? '' : currentValue);
-                      setValue(currentValue === value ? '' : currentValue);
-                      setOpen(false);
-                    }}
+                     key={itemValue}
+                     value={itemValue}
+                     onSelect={(currentValue) => {
+                       onChange(currentValue === value ? '' : currentValue);
+                       setValue(currentValue === value ? '' : currentValue);
+                       setOpen(false);
+                     }}
                   >
                     <span className="truncate">{label}</span>
                     {value === itemValue && (

@@ -16,6 +16,13 @@ export const I18N_LANGUAGES = [
     flag: '/media/flags/saudi-arabia.svg',
   },
   {
+    code: 'tr',
+    name: 'Turkish',
+    shortName: 'TR',
+    direction: 'ltr',
+    flag: '/media/flags/turkey.svg',
+  },
+  {
     code: 'es',
     name: 'Spanish',
     shortName: 'ES',

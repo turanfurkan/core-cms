@@ -18,6 +18,7 @@ class PermissionResource extends JsonResource
             'name' => ucwords(str_replace(['.', '_'], ' ', $this->name)),
             'description' => $this->description,
             'guard_name' => $this->guard_name,
+            'createdAt' => optional($this->created_at)?->toAtomString(),
         ];
     }
 }
