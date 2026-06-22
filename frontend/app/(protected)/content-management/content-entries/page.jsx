@@ -44,6 +44,16 @@ import { toast } from 'sonner';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import ContentEntryDialog from './components/content-entry-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const getLocalizedValue = (value, currentLang = 'tr') => {
   if (value === null || value === undefined) return '';
@@ -62,6 +72,8 @@ export default function ContentEntriesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [idToDelete, setIdToDelete] = useState(null);
 
   // Fetch all content types for dropdown selector
   const { data: contentTypes } = useQuery({
@@ -206,8 +218,15 @@ export default function ContentEntriesPage() {
 
   const handleDelete = (id, e) => {
     e.stopPropagation();
-    if (confirm(t('content_entries.delete_confirm', 'Bu içeriği silmek istediğinizden emin misiniz?'))) {
-      deleteMutation.mutate(id);
+    setIdToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (idToDelete) {
+      deleteMutation.mutate(idToDelete);
+      setDeleteConfirmOpen(false);
+      setIdToDelete(null);
     }
   };
 
@@ -454,6 +473,34 @@ export default function ContentEntriesPage() {
           entry={selectedEntry}
         />
       )}
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>İçeriği Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                'content_entries.delete_confirm',
+                'Bu içeriği kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!'
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button type="button" variant="outline" className="gap-1.5 h-9 rounded-lg">
+                <X className="size-4" />
+                Vazgeç
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild onClick={confirmDelete}>
+              <Button type="button" variant="destructive" className="gap-1.5 h-9 rounded-lg">
+                <Trash className="size-4" />
+                Kalıcı Olarak Sil
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
