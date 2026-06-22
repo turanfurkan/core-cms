@@ -37,6 +37,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -277,38 +278,13 @@ export default function ContentTypesPage() {
       <Container className="mb-6">
         <Card className="p-4 border border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Tabs Filter */}
-          <div className="flex bg-muted p-1 rounded-xl w-fit self-start md:self-auto">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'all'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {t('content_types.filters.all', 'Tümü')}
-            </button>
-            <button
-              onClick={() => setActiveTab('collections')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'collections'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {t('content_types.filters.collections', 'Koleksiyonlar')}
-            </button>
-            <button
-              onClick={() => setActiveTab('singles')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'singles'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {t('content_types.filters.singles', 'Tekil Tipler')}
-            </button>
-          </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList variant="default" size="sm" className="w-fit self-start md:self-auto rounded-xl">
+              <TabsTrigger value="all">{t('content_types.filters.all', 'Tümü')}</TabsTrigger>
+              <TabsTrigger value="collections">{t('content_types.filters.collections', 'Koleksiyonlar')}</TabsTrigger>
+              <TabsTrigger value="singles">{t('content_types.filters.singles', 'Tekil Tipler')}</TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           {/* Search, Sort and Add buttons */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">

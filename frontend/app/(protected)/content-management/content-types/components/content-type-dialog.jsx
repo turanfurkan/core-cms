@@ -34,6 +34,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { RightDrawer } from '@/components/common/right-drawer';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -598,58 +602,54 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
             </div>
 
             {/* Collapsible Appearance Customizer */}
-            <div className="border border-border rounded-xl overflow-hidden bg-muted/10">
-              <button 
-                type="button" 
-                onClick={() => setAppearanceOpen(!appearanceOpen)}
-                className="w-full px-4 py-3 flex items-center justify-between font-bold text-xs hover:bg-muted/30 transition-all text-muted-foreground hover:text-foreground"
-              >
-                <span>Görünüm Özelleştirme</span>
-                <ChevronDown className={`size-4 transition-transform duration-200 ${appearanceOpen ? 'rotate-180' : ''}`} />
-              </button>
-              
-              {appearanceOpen && (
-                <div className="p-4 border-t border-border bg-card space-y-4">
-                  {/* Icon choice grid */}
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Şablon Simgesi</Label>
-                    <div className="flex gap-2 flex-wrap">
-                      {ICONS_LIST.map((ic) => (
-                        <button
-                          key={ic}
-                          type="button"
-                          onClick={() => setIcon(ic)}
-                          className={`p-2 rounded-lg border transition-all ${
-                            icon === ic ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          <Database className="size-4" />
-                        </button>
-                      ))}
+            <Accordion type="single" collapsible variant="outline" className="w-full bg-card">
+              <AccordionItem value="appearance" className="border-none px-4 py-0">
+                <AccordionTrigger className="font-bold text-xs text-muted-foreground hover:text-foreground py-3 border-none flex items-center justify-between shrink-0">
+                  Görünüm Özelleştirme
+                </AccordionTrigger>
+                <AccordionContent className="pb-4 pt-0 border-t border-border mt-1">
+                  <div className="space-y-4 pt-4">
+                    {/* Icon choice grid */}
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Şablon Simgesi</Label>
+                      <div className="flex gap-2 flex-wrap">
+                        {ICONS_LIST.map((ic) => (
+                          <button
+                            key={ic}
+                            type="button"
+                            onClick={() => setIcon(ic)}
+                            className={`p-2 rounded-lg border transition-all ${
+                              icon === ic ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            <Database className="size-4" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Color selection circles */}
-                  <div className="space-y-2">
-                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">Renk Teması</Label>
-                    <div className="flex gap-2 flex-wrap">
-                      {COLORS_LIST.map((col) => (
-                        <button
-                          key={col.hex}
-                          type="button"
-                          onClick={() => setColor(col.hex)}
-                          className={`size-6 rounded-full border-2 transition-all ${
-                            color === col.hex ? 'border-foreground scale-110 shadow-sm' : 'border-transparent'
-                          }`}
-                          style={{ backgroundColor: col.hex }}
-                          title={col.name}
-                        />
-                      ))}
+                    {/* Color selection circles */}
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Renk Teması</Label>
+                      <div className="flex gap-2 flex-wrap">
+                        {COLORS_LIST.map((col) => (
+                          <button
+                            key={col.hex}
+                            type="button"
+                            onClick={() => setColor(col.hex)}
+                            className={`size-6 rounded-full border-2 transition-all ${
+                              color === col.hex ? 'border-foreground scale-110 shadow-sm' : 'border-transparent'
+                            }`}
+                            style={{ backgroundColor: col.hex }}
+                            title={col.name}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         )}
 
@@ -661,7 +661,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                 <h4 className="text-sm font-bold">Alan Şeması (Fields Schema)</h4>
                 <p className="text-xs text-muted-foreground">Şablon alanlarını oluşturun ve sıralayın.</p>
               </div>
-              <Button type="button" size="xs" onClick={() => setAddFieldModalOpen(true)} className="gap-1.5 h-8">
+              <Button type="button" size="sm" onClick={() => setAddFieldModalOpen(true)} className="gap-1.5 h-8">
                 <ListPlus className="size-4" /> Alan Ekle
               </Button>
             </div>
@@ -707,7 +707,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                       <Button 
                         type="button"
                         variant="ghost" 
-                        size="xs" 
+                        size="sm" 
                         onClick={() => moveField(idx, 'up')}
                         disabled={idx <= 2 || isLocked}
                         className="h-7 w-7 p-0 rounded-lg"
@@ -719,7 +719,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                       <Button 
                         type="button"
                         variant="ghost" 
-                        size="xs" 
+                        size="sm" 
                         onClick={() => moveField(idx, 'down')}
                         disabled={idx === fields.length - 1 || isLocked}
                         className="h-7 w-7 p-0 rounded-lg"
@@ -731,7 +731,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                       <Button 
                         type="button"
                         variant="dim" 
-                        size="xs" 
+                        size="sm" 
                         onClick={() => {
                           setFieldSettingsIndex(idx);
                           setSettingsDrawerOpen(true);
@@ -744,8 +744,8 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                       {/* Delete */}
                       <Button 
                         type="button"
-                        variant="danger" 
-                        size="xs" 
+                        variant="destructive" 
+                        size="sm" 
                         onClick={() => removeField(idx)}
                         disabled={isLocked}
                         className="h-7 w-7 p-0 rounded-lg"
@@ -768,66 +768,66 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-1">
                 Yayınlama ve Sürüm Yönetimi
               </h4>
-              <div className="space-y-4 pt-2">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="flex items-start gap-3 cursor-pointer p-4 border border-border rounded-xl bg-card hover:bg-muted/5 [&:has([data-state=checked])]:border-primary/50">
+                  <Checkbox
+                    id="draftPublish"
                     checked={draftPublish}
-                    onChange={(e) => setDraftPublish(e.target.checked)}
-                    className="rounded text-primary border-border focus:ring-primary size-4 mt-0.5"
+                    onCheckedChange={(checked) => setDraftPublish(!!checked)}
+                    className="mt-0.5"
                   />
-                  <div>
+                  <label htmlFor="draftPublish" className="cursor-pointer select-none">
                     <span className="text-xs font-bold text-foreground block">Draft & Publish</span>
-                    <span className="text-[10px] text-muted-foreground block">
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">
                       İçeriklerinizi yayınlamadan önce taslak olarak kaydedilmesine izin verin.
                     </span>
-                  </div>
-                </label>
+                  </label>
+                </div>
 
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
+                <div className="flex items-start gap-3 cursor-pointer p-4 border border-border rounded-xl bg-card hover:bg-muted/5 [&:has([data-state=checked])]:border-primary/50">
+                  <Checkbox
+                    id="versionHistory"
                     checked={versionHistory}
-                    onChange={(e) => setVersionHistory(e.target.checked)}
-                    className="rounded text-primary border-border focus:ring-primary size-4 mt-0.5"
+                    onCheckedChange={(checked) => setVersionHistory(!!checked)}
+                    className="mt-0.5"
                   />
-                  <div>
+                  <label htmlFor="versionHistory" className="cursor-pointer select-none">
                     <span className="text-xs font-bold text-foreground block">Version History</span>
-                    <span className="text-[10px] text-muted-foreground block">
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">
                       İçerik üzerinde yapılan her değişikliği yeni bir sürüm olarak izleyin.
                     </span>
-                  </div>
-                </label>
+                  </label>
+                </div>
 
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
+                <div className="flex items-start gap-3 cursor-pointer p-4 border border-border rounded-xl bg-card hover:bg-muted/5 [&:has([data-state=checked])]:border-primary/50">
+                  <Checkbox
+                    id="scheduledPublishing"
                     checked={scheduledPublishing}
-                    onChange={(e) => setScheduledPublishing(e.target.checked)}
-                    className="rounded text-primary border-border focus:ring-primary size-4 mt-0.5"
+                    onCheckedChange={(checked) => setScheduledPublishing(!!checked)}
+                    className="mt-0.5"
                   />
-                  <div>
+                  <label htmlFor="scheduledPublishing" className="cursor-pointer select-none">
                     <span className="text-xs font-bold text-foreground block">Scheduled Publishing</span>
-                    <span className="text-[10px] text-muted-foreground block">
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">
                       İçeriklerin gelecek bir saat ve tarihte otomatik olarak yayınlanmasını sağlayın.
                     </span>
-                  </div>
-                </label>
+                  </label>
+                </div>
 
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
+                <div className="flex items-start gap-3 cursor-pointer p-4 border border-border rounded-xl bg-card hover:bg-muted/5 [&:has([data-state=checked])]:border-primary/50">
+                  <Checkbox
+                    id="revisionRollback"
                     checked={revisionRollback}
-                    onChange={(e) => setRevisionRollback(e.target.checked)}
-                    className="rounded text-primary border-border focus:ring-primary size-4 mt-0.5"
+                    onCheckedChange={(checked) => setRevisionRollback(!!checked)}
+                    className="mt-0.5"
                   />
-                  <div>
+                  <label htmlFor="revisionRollback" className="cursor-pointer select-none">
                     <span className="text-xs font-bold text-foreground block">Revision Rollback</span>
-                    <span className="text-[10px] text-muted-foreground block">
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">
                       İçeriği geçmişteki herhangi bir sürüme tek tıkla geri yüklemeyi aktif edin.
                     </span>
-                  </div>
-                </label>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -871,21 +871,22 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                         const langNames = { tr: 'Türkçe', en: 'İngilizce', ar: 'Arapça', ru: 'Rusça' };
                         const isChecked = supportedLangs.includes(langCode);
                         return (
-                          <label key={langCode} className="flex items-center gap-2 text-xs cursor-pointer p-2 border border-border rounded-lg bg-card hover:bg-muted/10">
-                            <input
-                              type="checkbox"
+                          <div key={langCode} className="flex items-center gap-2 text-xs cursor-pointer p-2.5 border border-border rounded-lg bg-card hover:bg-muted/10 [&:has([data-state=checked])]:border-primary/50">
+                            <Checkbox
+                              id={`lang-${langCode}`}
                               checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
+                              onCheckedChange={(checked) => {
+                                if (checked) {
                                   setSupportedLangs([...supportedLangs, langCode]);
                                 } else {
                                   setSupportedLangs(supportedLangs.filter(l => l !== langCode));
                                 }
                               }}
-                              className="rounded text-primary border-border focus:ring-primary size-3.5"
                             />
-                            {langNames[langCode]}
-                          </label>
+                            <label htmlFor={`lang-${langCode}`} className="cursor-pointer select-none text-xs font-semibold">
+                              {langNames[langCode]}
+                            </label>
+                          </div>
                         );
                       })}
                     </div>
@@ -907,21 +908,22 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                   const roleLabel = { admin: 'Admin', editor: 'Editor', author: 'Author', moderator: 'Moderator' };
                   const isChecked = allowedRoles.includes(role);
                   return (
-                    <label key={role} className="flex items-center gap-2 text-xs cursor-pointer p-2.5 border border-border rounded-xl bg-muted/20 hover:bg-muted/40 [&:has(input:checked)]:border-primary/50">
-                      <input
-                        type="checkbox"
+                    <div key={role} className="flex items-center gap-2 text-xs cursor-pointer p-2.5 border border-border rounded-xl bg-card hover:bg-muted/10 [&:has([data-state=checked])]:border-primary/50">
+                      <Checkbox
+                        id={`role-${role}`}
                         checked={isChecked}
-                        onChange={(e) => {
-                          if (e.target.checked) {
+                        onCheckedChange={(checked) => {
+                          if (checked) {
                             setAllowedRoles([...allowedRoles, role]);
                           } else {
                             setAllowedRoles(allowedRoles.filter(r => r !== role));
                           }
                         }}
-                        className="rounded text-primary border-border focus:ring-primary size-4"
                       />
-                      <span className="font-semibold">{roleLabel[role]}</span>
-                    </label>
+                      <label htmlFor={`role-${role}`} className="cursor-pointer select-none text-xs font-semibold">
+                        {roleLabel[role]}
+                      </label>
+                    </div>
                   );
                 })}
               </div>
@@ -964,33 +966,23 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
       </RightDrawer>
 
       {/* Field Addition categories modal */}
-      {addFieldModalOpen && (
-        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border border-border shadow-2xl">
-            <div className="px-6 py-5 border-b border-border flex items-center justify-between shrink-0">
-              <h3 className="text-base font-bold">Yeni Alan Ekle</h3>
-              <Button variant="ghost" size="sm" onClick={() => setAddFieldModalOpen(false)} className="h-8 w-8 p-0 rounded-lg">
-                <X className="size-4" />
-              </Button>
-            </div>
-
-            <div className="flex bg-muted/40 border-b border-border p-1 shrink-0 overflow-x-auto">
-              {['basic', 'choice', 'media', 'advanced', 'structure', 'relations'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTabFieldModal(tab)}
-                  className={`px-4 py-2 text-xs font-bold rounded-lg capitalize shrink-0 transition-all ${
-                    activeTabFieldModal === tab ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {tab === 'relations' ? 'İlişkiler' : tab === 'basic' ? 'Temel Alanlar' : tab === 'choice' ? 'Seçimler' : tab === 'structure' ? 'Yapısal' : tab}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {activeTabFieldModal === 'basic' && (
-                <>
+      <Dialog open={addFieldModalOpen} onOpenChange={setAddFieldModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="px-6 py-5 border-b border-border mb-0 flex flex-row items-center justify-between shrink-0">
+            <DialogTitle className="text-base font-bold">Yeni Alan Ekle</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="flex-1 flex flex-col overflow-hidden p-0">
+            <Tabs value={activeTabFieldModal} onValueChange={setActiveTabFieldModal} className="flex-1 flex flex-col overflow-hidden">
+              <TabsList variant="line" size="sm" className="px-6 border-b border-border shrink-0 overflow-x-auto justify-start bg-transparent">
+                <TabsTrigger value="basic">Temel Alanlar</TabsTrigger>
+                <TabsTrigger value="choice">Seçimler</TabsTrigger>
+                <TabsTrigger value="media">Medya</TabsTrigger>
+                <TabsTrigger value="advanced">Gelişmiş</TabsTrigger>
+                <TabsTrigger value="structure">Yapısal</TabsTrigger>
+                <TabsTrigger value="relations">İlişkiler</TabsTrigger>
+              </TabsList>
+              <div className="flex-1 overflow-y-auto p-6">
+                <TabsContent value="basic" className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-0">
                   <div onClick={() => addFieldType('Text', 'string')} className="border p-3.5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all text-center space-y-1">
                     <span className="font-bold text-xs block text-foreground">Plain Text</span>
                     <span className="text-[10px] text-muted-foreground block">Tek satırlık düz metin</span>
@@ -1039,11 +1031,8 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                     <span className="font-bold text-xs block text-foreground">URL Link</span>
                     <span className="text-[10px] text-muted-foreground block">Web adresi köprü linki</span>
                   </div>
-                </>
-              )}
-
-              {activeTabFieldModal === 'choice' && (
-                <>
+                </TabsContent>
+                <TabsContent value="choice" className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-0">
                   <div onClick={() => addFieldType('Select', 'string', { input: 'select', choices: [] })} className="border p-3.5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all text-center space-y-1">
                     <span className="font-bold text-xs block text-foreground">Dropdown Select</span>
                     <span className="text-[10px] text-muted-foreground block">Açılır listeden tek seçim</span>
@@ -1060,11 +1049,8 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                     <span className="font-bold text-xs block text-foreground">Checkboxes</span>
                     <span className="text-[10px] text-muted-foreground block">Çoklu kutu işaretleme listesi</span>
                   </div>
-                </>
-              )}
-
-              {activeTabFieldModal === 'media' && (
-                <>
+                </TabsContent>
+                <TabsContent value="media" className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-0">
                   <div onClick={() => addFieldType('Image', 'media', { subtype: 'image' })} className="border p-3.5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all text-center space-y-1">
                     <span className="font-bold text-xs block text-foreground">Image Asset</span>
                     <span className="text-[10px] text-muted-foreground block">Kütüphaneden tek görsel</span>
@@ -1077,11 +1063,8 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                     <span className="font-bold text-xs block text-foreground">Document / File</span>
                     <span className="text-[10px] text-muted-foreground block">PDF, Zip, Belge yükleme</span>
                   </div>
-                </>
-              )}
-
-              {activeTabFieldModal === 'advanced' && (
-                <>
+                </TabsContent>
+                <TabsContent value="advanced" className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-0">
                   <div onClick={() => addFieldType('JSON', 'json')} className="border p-3.5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all text-center space-y-1">
                     <span className="font-bold text-xs block text-foreground">JSON Editor</span>
                     <span className="text-[10px] text-muted-foreground block">Ham JSON verisi saklama</span>
@@ -1098,11 +1081,8 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                     <span className="font-bold text-xs block text-foreground">Color Picker</span>
                     <span className="text-[10px] text-muted-foreground block">Renk kodu hex seçimi</span>
                   </div>
-                </>
-              )}
-
-              {activeTabFieldModal === 'structure' && (
-                <>
+                </TabsContent>
+                <TabsContent value="structure" className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-0">
                   <div onClick={() => addFieldType('Repeater', 'json', { structure: 'repeater', fields: [] })} className="border p-3.5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all text-center space-y-1">
                     <span className="font-bold text-xs block text-foreground">Repeater</span>
                     <span className="text-[10px] text-muted-foreground block">Tekrarlanabilir alan grupları (Örn: SSS)</span>
@@ -1115,21 +1095,18 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                     <span className="font-bold text-xs block text-foreground">Dynamic Zone</span>
                     <span className="text-[10px] text-muted-foreground block">Editörün dinamik blok seçip sayfa kurmasını sağlar</span>
                   </div>
-                </>
-              )}
-
-              {activeTabFieldModal === 'relations' && (
-                <>
+                </TabsContent>
+                <TabsContent value="relations" className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-0">
                   <div onClick={() => addFieldType('Relation', 'relation', { relation_type: 'one-to-one', target_content_type: '' })} className="border p-3.5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all text-center space-y-1">
                     <span className="font-bold text-xs block text-foreground">İlişkisel Alan (Relation)</span>
                     <span className="text-[10px] text-muted-foreground block">Diğer şablonlar ile bağlantı kurma (Örn: Yazar, Kategori)</span>
                   </div>
-                </>
-              )}
-            </div>
-          </Card>
-        </div>
-      )}
+                </TabsContent>
+              </div>
+            </Tabs>
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
 
       {/* Field Settings Sub-Drawer */}
       {settingsDrawerOpen && currentSettingsField && (
