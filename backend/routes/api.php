@@ -106,6 +106,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::get('/admin/permissions', [PermissionController::class, 'index']);
     Route::get('/admin/permissions/{id}', [PermissionController::class, 'show']);
+    Route::post('/admin/permissions', [PermissionController::class, 'store']);
     Route::put('/admin/permissions/{id}', [PermissionController::class, 'update']);
     Route::delete('/admin/permissions/{id}', [PermissionController::class, 'destroy']);
     Route::post('/admin/permissions/delete', [PermissionController::class, 'bulkDestroy']);

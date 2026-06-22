@@ -23,6 +23,42 @@ class PermissionController extends Controller
         return PermissionResource::collection($permissions);
     }
 
+    public function store(Request $request): JsonResponse
+    {
+        Gate::authorize('role.assign');
+
+        $validated = $request->validate([
+            'slug' => ['required', 'string', 'max:255', 'unique:permissions,name'],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        $slug = $validated['slug'];
+
+        $permission = DB::transaction(function () use ($slug, $validated) {
+            // Create for web guard
+            $webPermission = Permission::create([
+                'name' => $slug,
+                'guard_name' => 'web',
+                'description' => $validated['description'] ?? null,
+            ]);
+
+            // Create matching API guard permission
+            Permission::firstOrCreate([
+                'name' => $slug,
+                'guard_name' => 'api',
+            ], [
+                'description' => $validated['description'] ?? null,
+            ]);
+
+            return $webPermission;
+        });
+
+        return response()->json([
+            'message' => 'Permission created successfully.',
+            'data' => new PermissionResource($permission)
+        ], 201);
+    }
+
     public function show(string $id): PermissionResource
     {
         Gate::authorize('role.assign');
