@@ -15,6 +15,8 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { toast } from 'sonner';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 
 const getMediaIds = (value) => {
   if (value === null || value === undefined) return '';
@@ -264,22 +266,15 @@ export default function ContentEntryDialog({ open, closeDialog, contentType, ent
         <form id="content-entry-form" onSubmit={handleSubmit} className="space-y-4">
           {/* Multilingual Tabs */}
           {languages.length > 1 && (
-            <div className="flex border-b border-border select-none gap-1 bg-muted/20 p-1 rounded-lg">
-              {languages.map((lang) => (
-                <button
-                  key={lang.code}
-                  type="button"
-                  onClick={() => setActiveTab(lang.code)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                    activeTab === lang.code
-                      ? 'bg-background text-primary shadow-xs font-bold'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
-                  }`}
-                >
-                  {lang.name} ({lang.code.toUpperCase()})
-                </button>
-              ))}
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList variant="default" size="sm" className="w-full justify-start bg-muted/20 p-1 rounded-lg">
+                {languages.map((lang) => (
+                  <TabsTrigger key={lang.code} value={lang.code} className="cursor-pointer">
+                    {lang.name} ({lang.code.toUpperCase()})
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
           )}
 
           {fields.map((field) => {
@@ -315,13 +310,13 @@ export default function ContentEntryDialog({ open, closeDialog, contentType, ent
                     placeholder={t('content_entries.dialog.rich_text_placeholder', '{name} girin...').replace('{name}', field.name)}
                   />
                 ) : field.type === 'json' ? (
-                  <textarea
+                  <Textarea
                     id={field.slug}
                     value={val}
                     onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
                     placeholder='{"key": "value"}'
                     rows={4}
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 font-mono text-xs"
+                    className="font-mono text-xs"
                   />
                 ) : field.type === 'integer' || field.type === 'number' ? (
                   <Input
