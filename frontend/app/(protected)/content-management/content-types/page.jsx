@@ -48,6 +48,16 @@ import { toast } from 'sonner';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import ContentTypeDialog from './components/content-type-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function ContentTypesPage() {
   const { t } = useTranslation();
@@ -55,6 +65,8 @@ export default function ContentTypesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [idToDelete, setIdToDelete] = useState(null);
   const [activeTab, setActiveTab] = useState('all'); // all, collections, singles
   const [sortBy, setSortBy] = useState('last_updated'); // last_updated, created_at, alphabetical
 
@@ -176,15 +188,15 @@ export default function ContentTypesPage() {
 
   const handleDelete = (id, e) => {
     if (e) e.stopPropagation();
-    if (
-      confirm(
-        t(
-          'content_types.delete_confirm',
-          'Are you sure you want to delete this content type? This action will delete all related content!'
-        )
-      )
-    ) {
-      deleteMutation.mutate(id);
+    setIdToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (idToDelete) {
+      deleteMutation.mutate(idToDelete);
+      setDeleteConfirmOpen(false);
+      setIdToDelete(null);
     }
   };
 
@@ -510,6 +522,26 @@ export default function ContentTypesPage() {
           contentType={selectedType}
         />
       )}
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>İçerik Şablonunu Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                'content_types.delete_confirm',
+                'Bu içerik şablonunu silmek istediğinizden emin misiniz? Bu işlem bu şablona ait tüm içerik verilerini kalıcı olarak silecektir!'
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} variant="destructive">
+              Kalıcı Olarak Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
