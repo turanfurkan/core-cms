@@ -535,9 +535,17 @@ export default function ContentTypesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} variant="destructive">
-              Kalıcı Olarak Sil
+            <AlertDialogCancel asChild>
+              <Button type="button" variant="outline" className="gap-1.5 h-9 rounded-lg">
+                <X className="size-4" />
+                Vazgeç
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild onClick={confirmDelete}>
+              <Button type="button" variant="destructive" className="gap-1.5 h-9 rounded-lg">
+                <Trash className="size-4" />
+                Kalıcı Olarak Sil
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

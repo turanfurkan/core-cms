@@ -92,23 +92,25 @@ function AlertDialogDescription({ className, ...props }) {
   );
 }
 
-function AlertDialogAction({ className, variant, ...props }) {
+function AlertDialogAction({ className, variant, asChild, ...props }) {
   return (
     <AlertDialogPrimitive.Action
       data-slot="alert-dialog-action"
-      className={cn(buttonVariants({ variant }), className)}
+      asChild={asChild}
+      className={cn(!asChild && buttonVariants({ variant }), className)}
       {...props}
     />
   );
 }
 
-function AlertDialogCancel({ className, ...props }) {
+function AlertDialogCancel({ className, asChild, ...props }) {
   return (
     <AlertDialogPrimitive.Cancel
       data-slot="alert-dialog-cancel"
+      asChild={asChild}
       className={cn(
-        buttonVariants({ variant: 'outline' }),
-        'mt-2 sm:mt-0',
+        !asChild && buttonVariants({ variant: 'outline' }),
+        !asChild && 'mt-2 sm:mt-0',
         className,
       )}
       {...props}
