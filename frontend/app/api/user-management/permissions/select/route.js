@@ -29,7 +29,7 @@ export async function GET() {
     const permissions = (data.data || []).map((p) => ({
       id: String(p.id),
       name: p.name,
-      slug: p.name,
+      slug: p.slug,
     }));
 
     return NextResponse.json(permissions);
