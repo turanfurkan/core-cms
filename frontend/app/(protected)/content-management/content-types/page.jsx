@@ -2,12 +2,21 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  getCoreRowModel,
-  getFilteredRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { Edit, Trash, Plus, Search, X } from 'lucide-react';
+import { 
+  Edit, 
+  Trash, 
+  Plus, 
+  Search, 
+  X, 
+  Layers, 
+  Database, 
+  FileText, 
+  Copy, 
+  Calendar, 
+  ExternalLink,
+  ChevronDown,
+  LayoutGrid
+} from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Container } from '@/components/common/container';
@@ -24,14 +33,16 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Card, CardHeader, CardTable } from '@/components/ui/card';
-import { DataGrid } from '@/components/ui/data-grid';
-import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
-import { DataGridTable } from '@/components/ui/data-grid-table';
+import { Card, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
@@ -43,6 +54,8 @@ export default function ContentTypesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all'); // all, collections, singles
+  const [sortBy, setSortBy] = useState('last_updated'); // last_updated, created_at, alphabetical
 
   // Fetch all content types
   const { data, isLoading } = useQuery({
@@ -55,18 +68,52 @@ export default function ContentTypesPage() {
     },
   });
 
-  // Filter local data based on search query
-  const filteredData = useMemo(() => {
+  // Calculate statistics
+  const stats = useMemo(() => {
+    if (!data) return { total: 0, collections: 0, singles: 0, totalEntries: 0 };
+    return {
+      total: data.length,
+      collections: data.filter((t) => t.is_collection).length,
+      singles: data.filter((t) => !t.is_collection).length,
+      totalEntries: data.reduce((sum, t) => sum + (t.entries_count || 0), 0),
+    };
+  }, [data]);
+
+  // Filter & Sort local data
+  const filteredAndSortedData = useMemo(() => {
     if (!data) return [];
-    if (!searchQuery) return data;
-    const query = searchQuery.toLowerCase();
-    return data.filter(
-      (item) =>
-        item.name.toLowerCase().includes(query) ||
-        item.slug.toLowerCase().includes(query) ||
-        (item.description && item.description.toLowerCase().includes(query))
-    );
-  }, [data, searchQuery]);
+    
+    // 1. Filter by Search Query
+    let result = data;
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (item) =>
+          item.name.toLowerCase().includes(query) ||
+          item.slug.toLowerCase().includes(query) ||
+          (item.description && item.description.toLowerCase().includes(query))
+      );
+    }
+
+    // 2. Filter by Type Tab
+    if (activeTab === 'collections') {
+      result = result.filter((item) => item.is_collection);
+    } else if (activeTab === 'singles') {
+      result = result.filter((item) => !item.is_collection);
+    }
+
+    // 3. Sort Data
+    return [...result].sort((a, b) => {
+      if (sortBy === 'alphabetical') {
+        return a.name.localeCompare(b.name);
+      } else if (sortBy === 'created_at') {
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      } else {
+        // last_updated (default)
+        return new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0);
+      }
+    });
+  }, [data, searchQuery, activeTab, sortBy]);
 
   // Delete Content Type Mutation
   const deleteMutation = useMutation({
@@ -107,170 +154,37 @@ export default function ContentTypesPage() {
   });
 
   const handleEdit = (type, e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     setSelectedType(type);
     setDialogOpen(true);
   };
 
+  const handleDuplicate = (type, e) => {
+    if (e) e.stopPropagation();
+    
+    // De-associate ID and prefix the name for a clean client-side duplication
+    const duplicate = {
+      ...type,
+      id: undefined,
+      name: `${type.name} Copy`,
+      slug: `${type.slug}_copy`,
+    };
+    setSelectedType(duplicate);
+    setDialogOpen(true);
+  };
+
   const handleDelete = (id, e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     if (
       confirm(
-        t('content_types.delete_confirm', 'Are you sure you want to delete this content type? This action will delete all related content!')
+        t(
+          'content_types.delete_confirm',
+          'Are you sure you want to delete this content type? This action will delete all related content!'
+        )
       )
     ) {
       deleteMutation.mutate(id);
     }
-  };
-
-  const columns = useMemo(
-    () => [
-      {
-        accessorKey: 'name',
-        id: 'name',
-        header: ({ column }) => (
-          <DataGridColumnHeader title={t('content_types.columns.name', 'Template Name')} visibility={true} column={column} />
-        ),
-        cell: ({ row }) => (
-          <div className="font-semibold text-sm">{row.original.name}</div>
-        ),
-        size: 200,
-      },
-      {
-        accessorKey: 'slug',
-        id: 'slug',
-        header: ({ column }) => (
-          <DataGridColumnHeader title={t('content_types.columns.slug', 'Slug')} visibility={true} column={column} />
-        ),
-        cell: ({ row }) => (
-          <code className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground font-mono">
-            /{row.original.slug}
-          </code>
-        ),
-        size: 150,
-      },
-      {
-        accessorKey: 'description',
-        id: 'description',
-        header: ({ column }) => (
-          <DataGridColumnHeader title={t('content_types.columns.description', 'Description')} visibility={true} column={column} />
-        ),
-        cell: ({ row }) => (
-          <span className="text-xs text-muted-foreground truncate block max-w-md">
-            {row.original.description || '-'}
-          </span>
-        ),
-        size: 300,
-      },
-      {
-        accessorKey: 'fields',
-        id: 'fields',
-        header: ({ column }) => (
-          <DataGridColumnHeader title={t('content_types.columns.fields', 'Fields')} visibility={true} column={column} />
-        ),
-        cell: ({ row }) => {
-          const fields = row.original.fields || [];
-          return (
-            <div className="flex flex-wrap gap-1">
-              {fields.map((field) => (
-                <Badge key={field.id} variant="secondary" className="text-xs">
-                  {field.name} ({field.type})
-                </Badge>
-              ))}
-              {fields.length === 0 && (
-                <span className="text-xs text-muted-foreground">{t('content_types.no_fields_defined', 'No fields defined')}</span>
-              )}
-            </div>
-          );
-        },
-        size: 250,
-      },
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="dim"
-              size="sm"
-              onClick={(e) => handleEdit(row.original, e)}
-              className="h-7 w-7 p-0"
-            >
-              <Edit className="size-3.5" />
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={(e) => handleDelete(row.original.id, e)}
-              className="h-7 w-7 p-0"
-              disabled={deleteMutation.isPending}
-            >
-              <Trash className="size-3.5" />
-            </Button>
-          </div>
-        ),
-        size: 80,
-      },
-    ],
-    [deleteMutation.isPending, t]
-  );
-
-  const table = useReactTable({
-    columns,
-    data: filteredData,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-  });
-
-  const DataGridToolbar = () => {
-    const [inputValue, setInputValue] = useState(searchQuery);
-
-    const handleSearch = () => {
-      setSearchQuery(inputValue);
-    };
-
-    return (
-      <CardHeader className="flex-col flex-wrap sm:flex-row items-stretch sm:items-center py-5">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-          <div className="relative">
-            <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-            <Input
-              placeholder={t('content_types.search_placeholder', 'Search templates...')}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              disabled={isLoading}
-              className="ps-9 w-full sm:w-40 md:w-64"
-            />
-            {searchQuery.length > 0 && (
-              <Button
-                mode="icon"
-                variant="dim"
-                className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                onClick={() => {
-                  setInputValue('');
-                  setSearchQuery('');
-                }}
-              >
-                <X />
-              </Button>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center justify-end">
-          <Button
-            disabled={isLoading}
-            onClick={() => {
-              setSelectedType(null);
-              setDialogOpen(true);
-            }}
-          >
-            <Plus className="size-4" />
-            {t('content_types.add_new', 'Add New Template')}
-          </Button>
-        </div>
-      </CardHeader>
-    );
   };
 
   return (
@@ -298,23 +212,319 @@ export default function ContentTypesPage() {
         </Toolbar>
       </Container>
 
-      <Container>
-        <DataGrid
-          table={table}
-          recordCount={filteredData.length}
-          isLoading={isLoading}
-          tableClassNames={{ edgeCell: 'px-5' }}
-        >
-          <Card>
-            <DataGridToolbar />
-            <CardTable>
-              <ScrollArea>
-                <DataGridTable />
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
-            </CardTable>
+      {/* Stats Cards Section */}
+      <Container className="mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <Card className="p-5 flex items-center justify-between border border-border bg-card/60 backdrop-blur-md">
+            <div className="space-y-1">
+              <span className="text-2xl font-bold tracking-tight block">
+                {isLoading ? '...' : stats.total}
+              </span>
+              <span className="text-xs font-semibold text-muted-foreground block uppercase tracking-wider">
+                {t('content_types.stats.total_types', 'Total Content Types')}
+              </span>
+            </div>
+            <div className="p-3 bg-primary/10 rounded-xl text-primary shrink-0">
+              <Layers className="size-6" />
+            </div>
           </Card>
-        </DataGrid>
+
+          <Card className="p-5 flex items-center justify-between border border-border bg-card/60 backdrop-blur-md">
+            <div className="space-y-1">
+              <span className="text-2xl font-bold tracking-tight block">
+                {isLoading ? '...' : stats.collections}
+              </span>
+              <span className="text-xs font-semibold text-muted-foreground block uppercase tracking-wider">
+                {t('content_types.stats.collections', 'Collection Types')}
+              </span>
+            </div>
+            <div className="p-3 bg-success/10 rounded-xl text-success shrink-0">
+              <Database className="size-6" />
+            </div>
+          </Card>
+
+          <Card className="p-5 flex items-center justify-between border border-border bg-card/60 backdrop-blur-md">
+            <div className="space-y-1">
+              <span className="text-2xl font-bold tracking-tight block">
+                {isLoading ? '...' : stats.singles}
+              </span>
+              <span className="text-xs font-semibold text-muted-foreground block uppercase tracking-wider">
+                {t('content_types.stats.singles', 'Single Types')}
+              </span>
+            </div>
+            <div className="p-3 bg-info/10 rounded-xl text-info shrink-0">
+              <FileText className="size-6" />
+            </div>
+          </Card>
+
+          <Card className="p-5 flex items-center justify-between border border-border bg-card/60 backdrop-blur-md">
+            <div className="space-y-1">
+              <span className="text-2xl font-bold tracking-tight block">
+                {isLoading ? '...' : stats.totalEntries}
+              </span>
+              <span className="text-xs font-semibold text-muted-foreground block uppercase tracking-wider">
+                {t('content_types.stats.entries', 'Total Entries')}
+              </span>
+            </div>
+            <div className="p-3 bg-warning/10 rounded-xl text-warning shrink-0">
+              <Calendar className="size-6" />
+            </div>
+          </Card>
+        </div>
+      </Container>
+
+      {/* Filter and Search Bar Section */}
+      <Container className="mb-6">
+        <Card className="p-4 border border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Tabs Filter */}
+          <div className="flex bg-muted p-1 rounded-xl w-fit self-start md:self-auto">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'all'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t('content_types.filters.all', 'Tümü')}
+            </button>
+            <button
+              onClick={() => setActiveTab('collections')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'collections'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t('content_types.filters.collections', 'Koleksiyonlar')}
+            </button>
+            <button
+              onClick={() => setActiveTab('singles')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'singles'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t('content_types.filters.singles', 'Tekil Tipler')}
+            </button>
+          </div>
+
+          {/* Search, Sort and Add buttons */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative">
+              <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+              <Input
+                placeholder={t('content_types.search_placeholder', 'Search templates...')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                disabled={isLoading}
+                className="ps-9 w-full sm:w-48 md:w-64 h-9"
+              />
+              {searchQuery.length > 0 && (
+                <Button
+                  mode="icon"
+                  variant="dim"
+                  className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X className="size-3" />
+                </Button>
+              )}
+            </div>
+
+            {/* Sorting Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="dim" size="sm" className="h-9 border border-border px-3 gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Sırala:
+                  </span>
+                  <span className="text-xs font-bold">
+                    {sortBy === 'last_updated'
+                      ? 'Son Güncellenen'
+                      : sortBy === 'created_at'
+                      ? 'Oluşturulma Tarihi'
+                      : 'Alfabetik'}
+                  </span>
+                  <ChevronDown className="size-3.5 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => setSortBy('last_updated')}>
+                  Son Güncellenen
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('created_at')}>
+                  Oluşturulma Tarihi
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('alphabetical')}>
+                  Alfabetik
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Add New Template Button */}
+            <Button
+              disabled={isLoading}
+              onClick={() => {
+                setSelectedType(null);
+                setDialogOpen(true);
+              }}
+              size="sm"
+              className="h-9 gap-1.5"
+            >
+              <Plus className="size-4" />
+              {t('content_types.add_new', 'Add New Template')}
+            </Button>
+          </div>
+        </Card>
+      </Container>
+
+      {/* Cards Grid Section */}
+      <Container className="pb-12">
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((n) => (
+              <Card key={n} className="p-6 border border-border animate-pulse space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="size-11 rounded-xl bg-muted" />
+                  <div className="space-y-1.5 grow">
+                    <div className="h-4 bg-muted rounded w-1/2" />
+                    <div className="h-3 bg-muted rounded w-1/3" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3 bg-muted rounded w-full" />
+                  <div className="h-3 bg-muted rounded w-5/6" />
+                </div>
+                <div className="h-8 bg-muted rounded w-full pt-4" />
+              </Card>
+            ))}
+          </div>
+        ) : filteredAndSortedData.length === 0 ? (
+          <Card className="p-12 text-center border border-dashed border-border bg-card/20 flex flex-col items-center justify-center">
+            <LayoutGrid className="size-16 text-muted-foreground/30 mb-4" />
+            <h3 className="text-base font-bold mb-1">Şablon Bulunamadı</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mb-5">
+              Arama kriterlerinize uygun veya oluşturulmuş içerik şablonu bulunmamaktadır.
+            </p>
+            <Button
+              onClick={() => {
+                setSelectedType(null);
+                setDialogOpen(true);
+              }}
+              size="sm"
+            >
+              <Plus className="size-4 mr-1.5" />
+              Yeni Şablon Oluştur
+            </Button>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredAndSortedData.map((item) => {
+              const iconName = item.settings?.icon || 'Database';
+              const iconColor = item.settings?.color || '#3b82f6';
+              const fieldsCount = item.fields?.length || 0;
+              const entriesCount = item.entries_count || 0;
+              const formattedDate = item.updated_at
+                ? new Date(item.updated_at).toLocaleDateString()
+                : '-';
+
+              return (
+                <Card 
+                  key={item.id} 
+                  className="group hover:shadow-lg transition-all duration-300 border border-border bg-card flex flex-col justify-between overflow-hidden relative"
+                >
+                  <div className="p-6 space-y-4">
+                    {/* Card Header with Icon and Badges */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="size-11 rounded-xl flex items-center justify-center text-white font-bold"
+                          style={{ backgroundColor: iconColor }}
+                        >
+                          <Database className="size-5.5" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                            {item.name}
+                          </h3>
+                          <code className="text-[10px] text-muted-foreground font-mono">
+                            /{item.slug}
+                          </code>
+                        </div>
+                      </div>
+                      <Badge variant={item.is_collection ? 'success' : 'secondary'} className="text-[10px] font-bold px-2 py-0.5">
+                        {item.is_collection ? 'Collection' : 'Single'}
+                      </Badge>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs text-muted-foreground line-clamp-2 h-8">
+                      {item.description || t('content_types.no_description', 'Açıklama belirtilmemiş.')}
+                    </p>
+
+                    {/* Metrics Row */}
+                    <div className="grid grid-cols-2 gap-4 bg-muted/30 p-2.5 rounded-lg text-center border border-border/40">
+                      <div>
+                        <span className="text-[10px] font-semibold text-muted-foreground block uppercase">Alan Sayısı</span>
+                        <span className="text-sm font-bold text-foreground">{fieldsCount}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-semibold text-muted-foreground block uppercase">İçerik Adedi</span>
+                        <span className="text-sm font-bold text-foreground">{entriesCount}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Footer */}
+                  <div className="border-t border-border bg-muted/10 px-6 py-3.5 flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="size-3.5" />
+                      {formattedDate}
+                    </span>
+
+                    <div className="flex items-center gap-1">
+                      {/* Manage Content Button */}
+                      <Button
+                        variant="dim"
+                        size="xs"
+                        asChild
+                        className="h-7 px-2.5 rounded-lg"
+                        title="İçeriği Yönet"
+                      >
+                        <a href={`/content-management/content-entries?type=${item.slug}`} className="flex items-center gap-1 font-bold text-primary">
+                          <ExternalLink className="size-3" />
+                          Yönet
+                        </a>
+                      </Button>
+
+                      {/* Dropdown Actions */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="dim" size="xs" className="h-7 w-7 p-0 rounded-lg">
+                            <ChevronDown className="size-3.5 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-36">
+                          <DropdownMenuItem onClick={(e) => handleEdit(item, e)} className="gap-2">
+                            <Edit className="size-3.5" /> Düzenle
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => handleDuplicate(item, e)} className="gap-2">
+                            <Copy className="size-3.5" /> Kopyala
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => handleDelete(item.id, e)} className="gap-2 text-danger">
+                            <Trash className="size-3.5" /> Sil
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </Container>
 
       {dialogOpen && (

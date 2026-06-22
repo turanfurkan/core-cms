@@ -26,6 +26,7 @@ class ContentTypeRequest extends FormRequest
             ],
             'description' => ['nullable', 'string'],
             'is_collection' => ['boolean'],
+            'settings' => ['nullable', 'array'],
             'fields' => ['array'],
             'fields.*.name' => ['required', 'string', 'max:255'],
             'fields.*.slug' => ['required', 'string', 'max:255'],

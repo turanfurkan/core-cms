@@ -18,6 +18,8 @@ class ContentTypeResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description,
             'is_collection' => $this->is_collection,
+            'settings' => $this->settings,
+            'entries_count' => $this->entries_count ?? 0,
             'fields' => ContentFieldResource::collection($this->whenLoaded('fields')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

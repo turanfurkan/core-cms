@@ -8,7 +8,8 @@ class ContentTypeData
         public readonly string $name,
         public readonly string $slug,
         public readonly ?string $description = null,
-        public readonly bool $is_collection = true
+        public readonly bool $is_collection = true,
+        public readonly ?array $settings = null
     ) {}
 
     public static function fromArray(array $data): self
@@ -17,7 +18,8 @@ class ContentTypeData
             name: $data['name'],
             slug: $data['slug'],
             description: $data['description'] ?? null,
-            is_collection: (bool) ($data['is_collection'] ?? true)
+            is_collection: (bool) ($data['is_collection'] ?? true),
+            settings: $data['settings'] ?? null
         );
     }
 }

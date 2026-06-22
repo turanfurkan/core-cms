@@ -15,10 +15,12 @@ class ContentType extends Model
         'slug',
         'description',
         'is_collection',
+        'settings',
     ];
 
     protected $casts = [
         'is_collection' => 'boolean',
+        'settings' => 'array',
     ];
 
     public function fields(): HasMany

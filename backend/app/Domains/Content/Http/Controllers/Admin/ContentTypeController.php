@@ -24,7 +24,7 @@ class ContentTypeController extends Controller
 
     public function index(): AnonymousResourceCollection
     {
-        $types = ContentType::with('fields')->get();
+        $types = ContentType::with('fields')->withCount('entries')->get();
         return ContentTypeResource::collection($types);
     }
 
@@ -44,14 +44,14 @@ class ContentTypeController extends Controller
             $saveFieldsAction->execute($contentType, $fieldsDtoList);
         }
 
-        return (new ContentTypeResource($contentType->load('fields')))
+        return (new ContentTypeResource($contentType->load('fields')->loadCount('entries')))
             ->response()
             ->setStatusCode(211);
     }
 
     public function show(ContentType $contentType): ContentTypeResource
     {
-        return new ContentTypeResource($contentType->load('fields'));
+        return new ContentTypeResource($contentType->load('fields')->loadCount('entries'));
     }
 
     public function update(
@@ -71,7 +71,7 @@ class ContentTypeController extends Controller
             $saveFieldsAction->execute($updatedType, $fieldsDtoList);
         }
 
-        return new ContentTypeResource($updatedType->load('fields'));
+        return new ContentTypeResource($updatedType->load('fields')->loadCount('entries'));
     }
 
     public function destroy(ContentType $contentType, DeleteContentTypeAction $deleteAction): JsonResponse

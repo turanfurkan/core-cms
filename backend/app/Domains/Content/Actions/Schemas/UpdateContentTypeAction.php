@@ -14,6 +14,7 @@ class UpdateContentTypeAction
             'slug' => $data->slug,
             'description' => $data->description,
             'is_collection' => $data->is_collection,
+            'settings' => $data->settings,
         ]);
 
         return $contentType;
