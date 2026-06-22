@@ -8,7 +8,7 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Edit, Trash, Plus, Search, X, Globe } from 'lucide-react';
+import { Edit, Trash, Plus, Search, X, Globe, LoaderCircleIcon } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Container } from '@/components/common/container';
@@ -143,6 +143,8 @@ export default function ContentEntriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-content-entries', selectedTypeId] });
+      setDeleteConfirmOpen(false);
+      setIdToDelete(null);
       toast.custom(
         () => (
           <Alert variant="mono" icon="success" close={false}>
@@ -225,8 +227,6 @@ export default function ContentEntriesPage() {
   const confirmDelete = () => {
     if (idToDelete) {
       deleteMutation.mutate(idToDelete);
-      setDeleteConfirmOpen(false);
-      setIdToDelete(null);
     }
   };
 
@@ -492,9 +492,13 @@ export default function ContentEntriesPage() {
                 Vazgeç
               </Button>
             </AlertDialogCancel>
-            <AlertDialogAction asChild onClick={confirmDelete}>
-              <Button type="button" variant="destructive" className="gap-1.5 h-9 rounded-lg">
-                <Trash className="size-4" />
+            <AlertDialogAction asChild onClick={(e) => { e.preventDefault(); confirmDelete(); }}>
+              <Button type="button" variant="destructive" className="gap-1.5 h-9 rounded-lg" disabled={deleteMutation.isPending}>
+                {deleteMutation.isPending ? (
+                  <LoaderCircleIcon className="size-4 animate-spin" />
+                ) : (
+                  <Trash className="size-4" />
+                )}
                 Kalıcı Olarak Sil
               </Button>
             </AlertDialogAction>

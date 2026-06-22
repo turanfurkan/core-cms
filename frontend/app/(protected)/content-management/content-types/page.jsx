@@ -15,7 +15,8 @@ import {
   Calendar, 
   ExternalLink,
   ChevronDown,
-  LayoutGrid
+  LayoutGrid,
+  LoaderCircleIcon
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
@@ -139,6 +140,8 @@ export default function ContentTypesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-content-types'] });
+      setDeleteConfirmOpen(false);
+      setIdToDelete(null);
       toast.custom(
         () => (
           <Alert variant="mono" icon="success" close={false}>
@@ -195,8 +198,6 @@ export default function ContentTypesPage() {
   const confirmDelete = () => {
     if (idToDelete) {
       deleteMutation.mutate(idToDelete);
-      setDeleteConfirmOpen(false);
-      setIdToDelete(null);
     }
   };
 
@@ -541,9 +542,13 @@ export default function ContentTypesPage() {
                 Vazgeç
               </Button>
             </AlertDialogCancel>
-            <AlertDialogAction asChild onClick={confirmDelete}>
-              <Button type="button" variant="destructive" className="gap-1.5 h-9 rounded-lg">
-                <Trash className="size-4" />
+            <AlertDialogAction asChild onClick={(e) => { e.preventDefault(); confirmDelete(); }}>
+              <Button type="button" variant="destructive" className="gap-1.5 h-9 rounded-lg" disabled={deleteMutation.isPending}>
+                {deleteMutation.isPending ? (
+                  <LoaderCircleIcon className="size-4 animate-spin" />
+                ) : (
+                  <Trash className="size-4" />
+                )}
                 Kalıcı Olarak Sil
               </Button>
             </AlertDialogAction>
