@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoaderCircleIcon, X, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiFetch } from '@/lib/api';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
