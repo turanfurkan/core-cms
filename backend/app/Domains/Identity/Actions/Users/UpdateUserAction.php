@@ -10,13 +10,18 @@ class UpdateUserAction
     public function execute(User $user, array $data): User
     {
         return DB::transaction(function () use ($user, $data) {
-            $user->fill([
+            $fillData = [
                 'name' => $data['name'] ?? $user->name,
                 'email' => $data['email'] ?? $user->email,
                 'phone' => $data['phone'] ?? $user->phone,
                 'status' => $data['status'] ?? $user->status,
-            ]);
+            ];
 
+            if (!empty($data['password'])) {
+                $fillData['password'] = bcrypt($data['password']);
+            }
+
+            $user->fill($fillData);
             $user->save();
 
             // Sync Role if provided

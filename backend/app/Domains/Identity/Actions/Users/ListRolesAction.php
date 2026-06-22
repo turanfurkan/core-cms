@@ -9,6 +9,6 @@ class ListRolesAction
 {
     public function execute(): Collection
     {
-        return Role::all();
+        return Role::where('guard_name', 'web')->get();
     }
 }

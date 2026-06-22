@@ -30,10 +30,14 @@ class UserResource extends JsonResource
             'is_trashed' => $this->trashed(),
             'isTrashed' => $this->trashed(),
             'createdAt' => optional($this->created_at)?->toAtomString(),
-            'lastSignInAt' => null, // Placeholder or we can query activity log
+            'lastSignInAt' => \Spatie\Activitylog\Models\Activity::where('causer_id', $this->id)
+                ->where('causer_type', $this->getMorphClass())
+                ->where('log_name', 'user.login')
+                ->latest()
+                ->value('created_at')?->toAtomString(),
             'role' => $firstRole ? [
                 'id' => (string) $firstRole->id,
-                'name' => $firstRole->name,
+                'name' => ucwords(str_replace(['_', '-'], ' ', $firstRole->name)),
             ] : null,
             'roles' => $this->getRoleNames()->values(),
         ];

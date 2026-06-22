@@ -28,14 +28,21 @@ export async function GET(req) {
     }
 
     // Map backend User structure to frontend Select expectation
-    const mapped = (data.data || []).map(u => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      avatar: u.avatar || u.avatar_url || null,
-      status: u.status,
-      createdAt: u.createdAt,
-    }));
+    const mapped = (data.data || []).map(u => {
+      let mappedStatus = 'INACTIVE';
+      if (u.status === 'active') mappedStatus = 'ACTIVE';
+      else if (u.status === 'blocked') mappedStatus = 'BLOCKED';
+      else if (u.status === 'suspended') mappedStatus = 'INACTIVE';
+
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        avatar: u.avatar || u.avatar_url || null,
+        status: mappedStatus,
+        createdAt: u.createdAt,
+      };
+    });
 
     return NextResponse.json(mapped);
   } catch {

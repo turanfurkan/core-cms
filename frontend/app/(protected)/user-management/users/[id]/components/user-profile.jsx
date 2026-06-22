@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Pencil } from 'lucide-react';
 import { formatDateTime } from '@/lib/helpers';
 import { Badge, BadgeDot } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -140,6 +141,7 @@ const UserProfile = ({ user, isLoading }) => {
             disabled={user.role?.isProtected}
             onClick={() => setEditDialogOpen(true)}
           >
+            <Pencil />
             {t('users.details.edit_details', 'Edit user details')}
           </Button>
         </CardContent>

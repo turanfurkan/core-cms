@@ -8,7 +8,7 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Ellipsis, Plus, Search, X } from 'lucide-react';
+import { Ellipsis, Plus, Search, Trash2, X } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
@@ -375,6 +375,7 @@ const PermissionList = () => {
                 setGroupDeleteDialogOpen(true);
               }}
             >
+              <Trash2 />
               {t('permissions.group_delete_dialog.delete', 'Delete Selected')} ({deletePermissionIds.length})
             </Button>
           )}

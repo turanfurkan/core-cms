@@ -370,7 +370,7 @@
       "verified": "Doğrulanmış",
       "not_verified": "Doğrulanmamış",
       "never_signed_in": "Hiçbir zaman",
-      "edit_details": "Kullanıcı detaylarını düzenle",
+      "edit_details": "Profili Düzenle",
       "not_available": "Mevcut değil",
       "system_badge": "Sistem",
       "click_to_copy": "Kopyalamak için tıklayın",
@@ -379,11 +379,11 @@
         "title": "Tehlike Bölgesi",
         "delete_title": "Kullanıcı hesabını sil",
         "delete_desc": "Bu işlem kullanıcıyı ve ilgili tüm verileri kalıcı olarak silecektir. Bu işlem geri alınamaz.",
-        "delete_button": "Kullanıcıyı sil",
+        "delete_button": "Kullanıcıyı Sil",
         "restore_title": "Hesabı Geri Yükle",
         "restore_section_title": "Kullanıcı hesabını geri yükle",
         "restore_desc": "Bu hesap şu anda çöp kutusundadır. Hesabı geri yüklemek, kullanıcıyı ve ilgili tüm verileri yeniden etkinleştirecektir.",
-        "restore_button": "Kullanıcıyı geri yükle",
+        "restore_button": "Kullanıcıyı Geri Yükle",
         "delete_dialog_title": "Silmeyi Onayla",
         "delete_dialog_desc": "{{email}} kullanıcısını silmek, hesabı ve ilgili tüm verileri kalıcı olarak kaldıracaktır. Bu işlem geri alınamaz.",
         "delete_confirm_label": "Devam etmek için kullanıcının e-posta adresini doğrulayın",
@@ -406,8 +406,12 @@
         "status_label": "Durum",
         "status_placeholder": "Bir durum seçin",
         "cancel": "İptal",
-        "save": "Değişiklikleri Kaydet",
-        "success_message": "Kullanıcı başarıyla güncellendi"
+        "save": "Güncelle",
+        "success_message": "Kullanıcı başarıyla güncellendi",
+        "send_reset_email": "Sıfırlama E-postası Gönder",
+        "password_label": "Yeni Şifre",
+        "password_placeholder": "Mevcut şifreyi korumak için boş bırakın",
+        "password_help": "En az 8 karakter uzunluğunda olmalı, büyük harf, küçük harf ve rakam içermelidir."
       }
     }
   },

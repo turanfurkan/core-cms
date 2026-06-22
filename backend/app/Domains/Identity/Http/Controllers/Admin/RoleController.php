@@ -53,13 +53,20 @@ class RoleController extends Controller
             ]);
 
             // Create matching API guard role too for API security compatibility
-            Role::firstOrCreate([
+            $apiRole = Role::firstOrCreate([
                 'name' => $validated['slug'],
                 'guard_name' => 'api'
             ]);
 
             if (!empty($validated['permissions'])) {
                 $role->syncPermissions($validated['permissions']);
+                // Sync permissions for API role too
+                $apiPermissions = Permission::whereIn('id', $validated['permissions'])
+                    ->orWhereIn('name', $validated['permissions'])
+                    ->where('guard_name', 'api')
+                    ->pluck('name')
+                    ->toArray();
+                $apiRole->syncPermissions($apiPermissions);
             }
 
             return $role;

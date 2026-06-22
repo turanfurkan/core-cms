@@ -9,6 +9,7 @@ export const UserAddSchema = (t) => z.object({
   email: z.string().email({
     message: t('users.validation.email_invalid', 'Please enter a valid email address.'),
   }),
+  phone: z.string().optional().or(z.literal('')),
   roleId: z.string().nonempty({
     message: t('users.validation.role_required', 'Role ID is required.'),
   }),

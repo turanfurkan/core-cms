@@ -46,9 +46,9 @@ class UserController extends Controller
         $user = $action->execute(
             data: [
                 'name' => $validated['name'],
-                'phone' => $validated['phone'],
+                'phone' => $validated['phone'] ?? null,
                 'email' => $validated['email'] ?? null,
-                'password' => $validated['password'],
+                'password' => $validated['password'] ?? null,
             ],
             actor: $request->user(),
             assignRole: $validated['role'],

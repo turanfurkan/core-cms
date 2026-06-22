@@ -4,20 +4,14 @@ import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LoaderCircleIcon } from 'lucide-react';
+import { Check, LoaderCircleIcon, Plus, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { RightDrawer } from '@/components/common/right-drawer';
 import {
   Form,
   FormControl,
@@ -127,87 +121,94 @@ const PermissionEditDialog = ({ open, closeDialog, permission }) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={closeDialog}>
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>
-            {permission
-              ? t('permissions.dialog.edit_title', 'Edit Permission')
-              : t('permissions.dialog.add_title', 'Add Permission')}
-          </DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-6"
+    <RightDrawer
+      open={open}
+      onOpenChange={closeDialog}
+      title={permission
+        ? t('permissions.dialog.edit_title', 'Edit Permission')
+        : t('permissions.dialog.add_title', 'Add Permission')}
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={closeDialog}>
+            <X />
+            {t('permissions.dialog.cancel', 'Cancel')}
+          </Button>
+          <Button
+            type="submit"
+            form="permission-edit-form"
+            disabled={isLoading || !form.formState.isDirty}
           >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('permissions.dialog.name_label', 'Permission Name')}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t('permissions.dialog.name_placeholder', 'Enter permission name')} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {isLoading ? (
+              <LoaderCircleIcon className="animate-spin" />
+            ) : permission ? (
+              <Check />
+            ) : (
+              <Plus />
+            )}
+            {permission
+              ? t('permissions.dialog.submit_edit', 'Update Permission')
+              : t('permissions.dialog.submit_add', 'Add Permission')}
+          </Button>
+        </>
+      }
+    >
+      <Form {...form}>
+        <form
+          id="permission-edit-form"
+          onSubmit={form.handleSubmit(handleSubmit)}
+          className="space-y-6"
+        >
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('permissions.dialog.name_label', 'Permission Name')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('permissions.dialog.name_placeholder', 'Enter permission name')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('permissions.dialog.slug_label', 'Slug')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('permissions.dialog.slug_placeholder', 'E.g: users:view')}
-                      {...field}
-                      disabled={!!permission}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                  <FormDescription>
-                    {t('permissions.dialog.slug_description', 'A unique key for the permission, cannot be edited after creation.')}
-                  </FormDescription>
-                </FormItem>
-              )}
-            />
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('permissions.dialog.slug_label', 'Slug')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('permissions.dialog.slug_placeholder', 'E.g: users:view')}
+                    {...field}
+                    disabled={!!permission}
+                  />
+                </FormControl>
+                <FormMessage />
+                <FormDescription>
+                  {t('permissions.dialog.slug_description', 'A unique key for the permission, cannot be edited after creation.')}
+                </FormDescription>
+              </FormItem>
+            )}
+          />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('permissions.dialog.description_label', 'Description')}</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder={t('permissions.dialog.description_placeholder', 'Optional description')} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={closeDialog}>
-                {t('permissions.dialog.cancel', 'Cancel')}
-              </Button>
-              <Button
-                type="submit"
-                disabled={isLoading || !form.formState.isDirty}
-              >
-                {isLoading && <LoaderCircleIcon className="animate-spin" />}
-                {permission
-                  ? t('permissions.dialog.submit_edit', 'Update Permission')
-                  : t('permissions.dialog.submit_add', 'Add Permission')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('permissions.dialog.description_label', 'Description')}</FormLabel>
+                <FormControl>
+                  <Textarea placeholder={t('permissions.dialog.description_placeholder', 'Optional description')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </form>
+      </Form>
+    </RightDrawer>
   );
 };
 

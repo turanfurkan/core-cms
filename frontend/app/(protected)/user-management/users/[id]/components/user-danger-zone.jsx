@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Trash, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,6 +43,7 @@ const UserDangerZone = ({ user, isLoading }) => {
             onClick={() => setDeleteDialogOpen(true)}
             disabled={user.role?.isProtected}
           >
+            <Trash />
             {t('users.details.danger_zone.delete_button', 'Delete user')}
           </Button>
         </CardContent>
@@ -65,6 +67,7 @@ const UserDangerZone = ({ user, isLoading }) => {
             {t('users.details.danger_zone.restore_desc', 'This account is currently trashed. Restoring the account will reactivate the user and all related data.')}
           </p>
           <Button variant="outline" onClick={() => setRestoreDialogOpen(true)}>
+            <RotateCcw />
             {t('users.details.danger_zone.restore_button', 'Restore user')}
           </Button>
         </CardContent>

@@ -2,7 +2,7 @@
 
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LoaderCircleIcon } from 'lucide-react';
+import { LoaderCircleIcon, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
@@ -89,6 +89,7 @@ const PermissionDeleteDialog = ({ open, closeDialog, permission }) => {
         </DialogDescription>
         <DialogFooter>
           <Button variant="outline" onClick={closeDialog}>
+            <X />
             {t('permissions.delete_dialog.cancel', 'Cancel')}
           </Button>
           <Button
@@ -96,8 +97,10 @@ const PermissionDeleteDialog = ({ open, closeDialog, permission }) => {
             onClick={() => mutation.mutate()}
             disabled={mutation.status === 'pending'}
           >
-            {mutation.status === 'pending' && (
+            {mutation.status === 'pending' ? (
               <LoaderCircleIcon className="animate-spin" />
+            ) : (
+              <Trash2 />
             )}
             {t('permissions.delete_dialog.delete', 'Delete')}
           </Button>

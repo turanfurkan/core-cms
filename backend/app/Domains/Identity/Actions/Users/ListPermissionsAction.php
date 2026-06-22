@@ -9,6 +9,6 @@ class ListPermissionsAction
 {
     public function execute(): Collection
     {
-        return Permission::all();
+        return Permission::where('guard_name', 'web')->get();
     }
 }

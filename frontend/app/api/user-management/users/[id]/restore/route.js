@@ -28,10 +28,19 @@ export async function PATCH(request, { params }) {
       );
     }
 
+    const user = data.user;
+    if (user) {
+      let mappedStatus = 'INACTIVE';
+      if (user.status === 'active') mappedStatus = 'ACTIVE';
+      else if (user.status === 'blocked') mappedStatus = 'BLOCKED';
+      else if (user.status === 'suspended') mappedStatus = 'INACTIVE';
+      user.status = mappedStatus;
+    }
+
     return NextResponse.json(
       {
         message: 'User successfully restored.',
-        user: data.user,
+        user,
       },
       { status: 200 }
     );

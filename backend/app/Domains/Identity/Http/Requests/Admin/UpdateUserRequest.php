@@ -38,7 +38,7 @@ class UpdateUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:191'],
             'phone' => [
                 'sometimes',
-                'required',
+                'nullable',
                 'string',
                 'max:20',
                 new PhoneNumber(),
@@ -54,6 +54,7 @@ class UpdateUserRequest extends FormRequest
             ],
             'status' => ['required', 'string', 'in:active,blocked,suspended'],
             'role' => ['nullable', 'string', 'exists:roles,name'],
+            'password' => ['nullable', 'string', new \App\Domains\Identity\Rules\StrongPassword()],
         ];
     }
 

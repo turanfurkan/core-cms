@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/alert';
 import { Badge, BadgeButton } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { RightDrawer } from '@/components/common/right-drawer';
 import {
   Command,
   CommandCheck,
@@ -27,13 +28,6 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -72,15 +66,15 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
 
   useEffect(() => {
     if (open) {
-      const permissionIds = role?.permissions?.map((p) => p.id) ?? [];
+      const permissionSlugs = role?.permissions?.map((p) => p.slug) ?? [];
 
       form.reset({
         name: role?.name || '',
         slug: role?.slug || '',
         description: role?.description ?? '',
-        permissions: permissionIds,
+        permissions: permissionSlugs,
       });
-      setSelectedPermissions(permissionIds);
+      setSelectedPermissions(permissionSlugs);
     }
   }, [form, open, role]);
 
@@ -164,178 +158,179 @@ const RoleEditDialog = ({ open, closeDialog, role }) => {
     mutation.mutate(payload);
   };
 
-  const togglePermissionSelection = (permissionId) => {
+  const togglePermissionSelection = (permissionSlug) => {
     setSelectedPermissions((prev) =>
-      prev.includes(permissionId)
-        ? prev.filter((id) => id !== permissionId)
-        : [...prev, permissionId],
+      prev.includes(permissionSlug)
+        ? prev.filter((slug) => slug !== permissionSlug)
+        : [...prev, permissionSlug],
     );
   };
 
   return (
-    <Dialog open={open} onOpenChange={closeDialog}>
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>{role ? t('roles.dialog.edit_title', 'Edit Role') : t('roles.dialog.add_title', 'Add Role')}</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-6"
-          >
-            {mutation.status === 'error' && (
-              <Alert variant="destructive">
-                <AlertDescription>{mutation.error.message}</AlertDescription>
-              </Alert>
+    <RightDrawer
+      open={open}
+      onOpenChange={closeDialog}
+      title={role ? t('roles.dialog.edit_title', 'Edit Role') : t('roles.dialog.add_title', 'Add Role')}
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={closeDialog}>
+            <X />
+            {t('roles.dialog.cancel', 'Cancel')}
+          </Button>
+          <Button type="submit" form="role-edit-form" disabled={isProcessing}>
+            {isProcessing ? (
+              <LoaderCircleIcon className="animate-spin" />
+            ) : (
+              <Check />
             )}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('roles.dialog.name_label', 'Role Name')}</FormLabel>
+            {role ? t('roles.dialog.submit_edit', 'Update Role') : t('roles.dialog.submit_add', 'Create Role')}
+          </Button>
+        </>
+      }
+    >
+      <Form {...form}>
+        <form
+          id="role-edit-form"
+          onSubmit={form.handleSubmit(handleSubmit)}
+          className="space-y-6"
+        >
+          {mutation.status === 'error' && (
+            <Alert variant="destructive">
+              <AlertDescription>{mutation.error.message}</AlertDescription>
+            </Alert>
+          )}
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('roles.dialog.name_label', 'Role Name')}</FormLabel>
+                <FormControl>
+                  <Input placeholder={t('roles.dialog.name_placeholder', 'Enter role name')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('roles.dialog.slug_label', 'Slug')}</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder={t('roles.dialog.slug_placeholder', 'E.g: users:delete')}
+                    {...field}
+                    disabled={!!role}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('roles.dialog.description_label', 'Description')}</FormLabel>
+                <FormControl>
+                  <Textarea placeholder={t('roles.dialog.description_placeholder', 'Optional description')} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="permissions"
+            render={() => (
+              <FormItem>
+                <FormLabel>{t('roles.dialog.permissions_label', 'Permissions')}</FormLabel>
+                <div className="flex items-center flex-wrap gap-1.5 text-2sm text-muted-foreground border border-input rounded-md px-3 py-3">
+                  {selectedPermissions.length > 0 ? (
+                    selectedPermissions.map((permissionSlug) => {
+                      const permission = permissionList?.find(
+                        (p) => p.slug === permissionSlug,
+                      );
+                      return (
+                        <Badge key={permissionSlug} variant="secondary">
+                          {permission?.slug}
+                          <BadgeButton
+                            onClick={() =>
+                              togglePermissionSelection(permissionSlug)
+                            }
+                          >
+                            <X />
+                          </BadgeButton>
+                        </Badge>
+                      );
+                    })
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      {t('roles.dialog.no_permissions_assigned', 'No permissions assigned.')}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-0 pt-1">
                   <FormControl>
-                    <Input placeholder={t('roles.dialog.name_placeholder', 'Enter role name')} {...field} />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox">
+                          {t('roles.dialog.add_permissions', 'Add Permissions')}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-[200px] p-0 m-0"
+                        align="start"
+                        side="bottom"
+                      >
+                        <Command>
+                          <CommandInput placeholder={t('roles.dialog.permissions_placeholder', 'Search permissions...')} />
+                          <CommandList>
+                            <CommandEmpty>{t('roles.dialog.no_permissions_found', 'No permissions found.')}</CommandEmpty>
+                            <CommandGroup>
+                              <ScrollArea className="h-[200px]">
+                                {permissionList?.map((permission) => (
+                                  <CommandItem
+                                    key={permission.slug}
+                                    onSelect={() =>
+                                      togglePermissionSelection(permission.slug)
+                                    }
+                                  >
+                                    <span className="grow">
+                                      {permission.slug}
+                                    </span>
+                                    <CommandCheck
+                                      className={cn(
+                                        selectedPermissions.includes(
+                                          permission.slug,
+                                        )
+                                          ? 'opacity-100'
+                                          : 'opacity-0',
+                                      )}
+                                    />
+                                  </CommandItem>
+                                ))}
+                              </ScrollArea>
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('roles.dialog.slug_label', 'Slug')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('roles.dialog.slug_placeholder', 'E.g: users:delete')}
-                      {...field}
-                      disabled={!!role}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('roles.dialog.description_label', 'Description')}</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder={t('roles.dialog.description_placeholder', 'Optional description')} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="permissions"
-              render={() => (
-                <FormItem>
-                  <FormLabel>{t('roles.dialog.permissions_label', 'Permissions')}</FormLabel>
-                  <div className="flex items-center flex-wrap gap-1.5 text-2sm text-muted-foreground border border-input rounded-md px-3 py-3">
-                    {selectedPermissions.length > 0 ? (
-                      selectedPermissions.map((permissionId) => {
-                        const permission = permissionList?.find(
-                          (p) => p.id === permissionId,
-                        );
-                        return (
-                          <Badge key={permissionId} variant="secondary">
-                            {permission?.slug}
-                            <BadgeButton
-                              onClick={() =>
-                                togglePermissionSelection(permissionId)
-                              }
-                            >
-                              <X />
-                            </BadgeButton>
-                          </Badge>
-                        );
-                      })
-                    ) : (
-                      <span className="text-sm text-muted-foreground">
-                        {t('roles.dialog.no_permissions_assigned', 'No permissions assigned.')}
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-0 pt-1">
-                    <FormControl>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" role="combobox">
-                            {t('roles.dialog.add_permissions', 'Add Permissions')}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="w-[200px] p-0 m-0"
-                          align="start"
-                          side="bottom"
-                        >
-                          <Command>
-                            <CommandInput placeholder={t('roles.dialog.permissions_placeholder', 'Search permissions...')} />
-                            <CommandList>
-                              <CommandEmpty>{t('roles.dialog.no_permissions_found', 'No permissions found.')}</CommandEmpty>
-                              <CommandGroup>
-                                <ScrollArea className="h-[200px]">
-                                  {permissionList?.map((permission) => (
-                                    <CommandItem
-                                      key={permission.id}
-                                      onSelect={() =>
-                                        togglePermissionSelection(permission.id)
-                                      }
-                                    >
-                                      <span className="grow">
-                                        {permission.slug}
-                                      </span>
-                                      <CommandCheck
-                                        className={cn(
-                                          selectedPermissions.includes(
-                                            permission.id,
-                                          )
-                                            ? 'opacity-100'
-                                            : 'opacity-0',
-                                        )}
-                                      />
-                                    </CommandItem>
-                                  ))}
-                                </ScrollArea>
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={closeDialog}>
-                <X />
-                {t('roles.dialog.cancel', 'Cancel')}
-              </Button>
-              <Button type="submit" disabled={isProcessing}>
-                {isProcessing ? (
-                  <LoaderCircleIcon className="animate-spin" />
-                ) : (
-                  <Check />
-                )}
-                {role ? t('roles.dialog.submit_edit', 'Update Role') : t('roles.dialog.submit_add', 'Create Role')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </form>
+      </Form>
+    </RightDrawer>
   );
 };
 

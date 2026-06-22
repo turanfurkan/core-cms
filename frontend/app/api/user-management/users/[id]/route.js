@@ -22,8 +22,17 @@ export async function GET(request, { params }) {
       );
     }
 
+    const user = data.data;
+    if (user) {
+      let mappedStatus = 'INACTIVE';
+      if (user.status === 'active') mappedStatus = 'ACTIVE';
+      else if (user.status === 'blocked') mappedStatus = 'BLOCKED';
+      else if (user.status === 'suspended') mappedStatus = 'INACTIVE';
+      user.status = mappedStatus;
+    }
+
     // Unwrap Laravel API Resource wrapping
-    return NextResponse.json(data.data);
+    return NextResponse.json(user);
   } catch (error) {
     return NextResponse.json(
       { message: error.message || 'Something went wrong.' },
@@ -42,7 +51,7 @@ export async function PUT(request, { params }) {
 
     const { id } = await params;
     const body = await request.json();
-    const { name, status, roleId } = body;
+    const { name, status, roleId, password, phone } = body;
 
     if (!id || !name || !status || !roleId) {
       return NextResponse.json({ message: 'Invalid input.' }, { status: 400 });
@@ -62,13 +71,25 @@ export async function PUT(request, { params }) {
     const matchedRole = rolesData.data.find((r) => String(r.id) === String(roleId));
     const roleSlug = matchedRole ? matchedRole.slug : 'user';
 
+    let backendStatus = 'suspended';
+    if (status === 'ACTIVE') backendStatus = 'active';
+    else if (status === 'BLOCKED') backendStatus = 'blocked';
+    else if (status === 'INACTIVE') backendStatus = 'suspended';
+
+    const payload = {
+      name,
+      status: backendStatus,
+      role: roleSlug,
+      phone: phone || null,
+    };
+
+    if (password) {
+      payload.password = password;
+    }
+
     const response = await backendFetch(`/api/admin/users/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({
-        name,
-        status,
-        role: roleSlug,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();

@@ -19,6 +19,11 @@ export async function GET(req) {
     const status = searchParams.get('status') || '';
     const roleId = searchParams.get('roleId') || '';
 
+    let backendStatus = status;
+    if (status === 'ACTIVE') backendStatus = 'active';
+    else if (status === 'INACTIVE') backendStatus = 'suspended';
+    else if (status === 'BLOCKED') backendStatus = 'blocked';
+
     // Build query params for Laravel API
     const params = new URLSearchParams({
       page,
@@ -26,7 +31,7 @@ export async function GET(req) {
       query,
       sort,
       dir,
-      status,
+      status: backendStatus,
       role_id: roleId,
     });
 
@@ -40,9 +45,20 @@ export async function GET(req) {
       );
     }
 
+    const mappedUsers = (data.data || []).map(user => {
+      let mappedStatus = 'INACTIVE';
+      if (user.status === 'active') mappedStatus = 'ACTIVE';
+      else if (user.status === 'blocked') mappedStatus = 'BLOCKED';
+      else if (user.status === 'suspended') mappedStatus = 'INACTIVE';
+      return {
+        ...user,
+        status: mappedStatus
+      };
+    });
+
     // Transform Laravel pagination to Next.js expectation
     return NextResponse.json({
-      data: data.data,
+      data: mappedUsers,
       pagination: {
         total: data.meta?.total || 0,
         page: data.meta?.current_page ? parseInt(data.meta.current_page, 10) : parseInt(page, 10),
@@ -65,7 +81,7 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { name, email, roleId } = body;
+    const { name, email, roleId, phone } = body;
 
     if (!name || !email || !roleId) {
       return NextResponse.json({ message: 'Invalid input.' }, { status: 400 });
@@ -90,6 +106,7 @@ export async function POST(request) {
       body: JSON.stringify({
         name,
         email,
+        phone: phone || null,
         role: roleSlug,
       }),
     });
