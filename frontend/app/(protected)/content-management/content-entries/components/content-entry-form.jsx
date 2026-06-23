@@ -64,11 +64,7 @@ const getMediaIds = (value) => {
 
 function DynamicZoneField({ field, value, onChange, languages, activeTab, defaultLangCode, contentTypesList }) {
   const allowedBlocks = field.options?.allowed_blocks || [];
-  const [expandedIds, setExpandedIds] = useState({});
-
-  const toggleExpand = (id) => {
-    setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }));
-  };
+  const [editingBlock, setEditingBlock] = useState(null);
 
   const addBlock = (blockType) => {
     const blockSchema = allowedBlocks.find(b => b.type === blockType);
@@ -102,7 +98,7 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
 
     const newBlocksList = [...value, newBlock];
     onChange(newBlocksList);
-    setExpandedIds(prev => ({ ...prev, [newBlock.id]: true }));
+    setEditingBlock(newBlock); // Open modal immediately for newly added block
   };
 
   const removeBlock = (id) => {
@@ -124,24 +120,39 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
       return { ...b, data: updatedData };
     });
     onChange(newBlocksList);
+    
+    // Also update the editingBlock state to keep the input values in sync in the modal
+    if (editingBlock && editingBlock.id === blockId) {
+      setEditingBlock(prev => {
+        const updatedData = { ...prev.data };
+        if (isLocalized) {
+          updatedData[subSlug] = {
+            ...(updatedData[subSlug] || {}),
+            [activeTab]: val
+          };
+        } else {
+          updatedData[subSlug] = val;
+        }
+        return { ...prev, data: updatedData };
+      });
+    }
   };
 
   return (
-    <div className="space-y-5 border border-slate-200/80 p-5 rounded-2xl bg-slate-50/20">
+    <div className="space-y-6">
       <div className="flex flex-col gap-1 border-b border-slate-200/60 pb-3">
         <span className="text-sm font-bold text-slate-800 tracking-wide flex items-center gap-1.5">
-          ✨ Sayfa Bölümleri ve Dinamik Bloklar
+          ✨ Sayfa Bölümleri ve Düzeni
         </span>
         <span className="text-[10px] text-slate-400">
           Sürükle-bırak yöntemiyle sayfa bölümlerini sıralayın ve içeriklerini doldurun.
         </span>
       </div>
 
-      <Sortable value={value} onValueChange={onChange} getItemValue={(item) => item.id} className="space-y-3.5">
+      <Sortable value={value} onValueChange={onChange} getItemValue={(item) => item.id} className="space-y-3">
         {value.map((item, index) => {
           const blockSchema = allowedBlocks.find(b => b.type === item.type);
           if (!blockSchema) return null;
-          const isExpanded = !!expandedIds[item.id];
 
           let leftBorderColor = 'border-l-blue-500';
           let displayName = '🖼️ Giriş Alanı (Hero)';
@@ -186,7 +197,7 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
           return (
             <SortableItem key={item.id} value={item.id}>
               <Card className={`border border-slate-200 border-l-4 ${leftBorderColor} overflow-hidden shadow-xs hover:shadow-sm transition-all bg-white`}>
-                <div className="bg-slate-50/80 px-4 py-3 flex items-center justify-between gap-3 border-b border-slate-100">
+                <div className="px-4 py-3 flex items-center justify-between gap-3 bg-white">
                   <div className="flex items-center gap-3">
                     <SortableItemHandle className="cursor-grab text-slate-400 hover:text-slate-600 active:cursor-grabbing p-1 rounded hover:bg-slate-100 transition-colors">
                       <Grid className="size-4" />
@@ -201,11 +212,10 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
                       type="button" 
                       variant="ghost" 
                       size="xs" 
-                      onClick={() => toggleExpand(item.id)} 
-                      className="h-7 px-2 text-[10px] font-bold text-slate-500 hover:text-foreground flex items-center gap-1 bg-slate-100/50 rounded-lg"
+                      onClick={() => setEditingBlock(item)} 
+                      className="h-7 px-2.5 text-[10px] font-bold text-slate-600 hover:text-primary flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg hover:border-primary/20 hover:bg-primary/5 transition-all"
                     >
-                      {isExpanded ? 'Bölümü Kapat' : 'Düzenle'}
-                      {isExpanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+                      İçeriği Düzenle
                     </Button>
                     <Button 
                       type="button" 
@@ -218,95 +228,6 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
                     </Button>
                   </div>
                 </div>
-
-                {isExpanded && (
-                  <div className="p-5 space-y-4 bg-white/50 border-t border-slate-100">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {blockSchema.fields?.map(sub => {
-                        const isSubLocalized = !!(sub.options?.localized || sub.localized);
-                        const subVal = isSubLocalized 
-                          ? (item.data?.[sub.slug]?.[activeTab] ?? '') 
-                          : (item.data?.[sub.slug] ?? '');
-                        const subRequired = !!(sub.validation_rules?.required);
-                        const isSubReq = subRequired && (!isSubLocalized || activeTab === defaultLangCode);
-                        const isFullWidth = sub.type === 'text' || sub.slug === 'content' || sub.slug === 'subtitle' || sub.type === 'media' || sub.type === 'gallery';
-
-                        return (
-                          <div key={sub.slug} className={`space-y-1.5 ${isFullWidth ? 'col-span-2' : 'col-span-1'}`}>
-                            <Label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
-                              {sub.name}
-                              {isSubReq && <span className="text-red-500">*</span>}
-                              {isSubLocalized && <Globe className="size-2.5 text-primary" title="Çevrilebilir alan" />}
-                            </Label>
-
-                            {sub.type === 'boolean' ? (
-                              <div className="pt-1">
-                                <Switch
-                                  checked={!!subVal}
-                                  onCheckedChange={(checked) => handleSubFieldChange(item.id, sub.slug, checked, isSubLocalized)}
-                                />
-                              </div>
-                            ) : sub.type === 'text' ? (
-                              <RichTextEditor
-                                value={subVal}
-                                onChange={(html) => handleSubFieldChange(item.id, sub.slug, html, isSubLocalized)}
-                                placeholder={`${sub.name} girin...`}
-                              />
-                            ) : sub.type === 'media' || sub.type === 'gallery' || sub.type === 'media_gallery' ? (
-                              <FileUpload
-                                value={getMediaIds(subVal)}
-                                onChange={(newVal) => handleSubFieldChange(item.id, sub.slug, newVal, isSubLocalized)}
-                                isMultiple={sub.type !== 'media'}
-                                placeholder={`${sub.name} yüklemek için tıklayın veya sürükleyin`}
-                              />
-                            ) : sub.type === 'relation_content_type' || sub.slug === 'target_content_type_id' || sub.type === 'relation' ? (
-                              <Select
-                                value={subVal || ''}
-                                onValueChange={(val) => handleSubFieldChange(item.id, sub.slug, val, isSubLocalized)}
-                              >
-                                <SelectTrigger className="bg-card h-9 text-xs">
-                                  <SelectValue placeholder="Koleksiyon seçin..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {contentTypesList?.filter(t => t.is_collection).map(t => (
-                                    <SelectItem key={t.id} value={t.slug} className="text-xs">
-                                      {t.name} (/{t.slug})
-                                    </SelectItem>
-                                  ))}
-                                  {(!contentTypesList || contentTypesList.length === 0) && (
-                                    <SelectItem value="_empty" disabled>Koleksiyon bulunamadı</SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            ) : sub.type === 'select' ? (
-                              <Select
-                                value={subVal || ''}
-                                onValueChange={(val) => handleSubFieldChange(item.id, sub.slug, val, isSubLocalized)}
-                              >
-                                <SelectTrigger className="bg-card h-9 text-xs">
-                                  <SelectValue placeholder="Seçim yapın..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {sub.options?.choices?.map(c => (
-                                    <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <Input
-                                type={sub.type === 'number' ? 'number' : 'text'}
-                                value={subVal}
-                                onChange={(e) => handleSubFieldChange(item.id, sub.slug, sub.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value, isSubLocalized)}
-                                placeholder={`${sub.name} girin...`}
-                                className="h-9 text-xs"
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </Card>
             </SortableItem>
           );
@@ -319,27 +240,62 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
       </Sortable>
 
       {/* Visual Add Blocks Grid Panel */}
-      <div className="pt-4 border-t border-slate-200/50 mt-6">
-        <div className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider mb-3">
+      <div className="pt-5 border-t border-slate-200/50 mt-6">
+        <div className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider mb-4">
           ➕ Sayfaya Yeni Bölüm Ekle
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {allowedBlocks.map(b => {
             let blockIcon = '🗂️';
             let blockColorClass = 'hover:border-amber-400 hover:bg-amber-50/10 hover:text-amber-600';
+            
             if (b.type === 'hero_banner') {
               blockIcon = '🖼️';
               blockColorClass = 'hover:border-blue-400 hover:bg-blue-50/10 hover:text-blue-600';
             } else if (b.type === 'rich_text') {
               blockIcon = '✍️';
               blockColorClass = 'hover:border-purple-400 hover:bg-purple-50/10 hover:text-purple-600';
+            } else if (b.type === 'collection_display') {
+              blockIcon = '🗂️';
+              blockColorClass = 'hover:border-amber-500 hover:bg-amber-50/10 hover:text-amber-700';
+            } else if (b.type === 'entry_callout') {
+              blockIcon = '📢';
+              blockColorClass = 'hover:border-emerald-500 hover:bg-emerald-50/10 hover:text-emerald-700';
+            } else if (b.type === 'statistics_block') {
+              blockIcon = '📊';
+              blockColorClass = 'hover:border-rose-500 hover:bg-rose-50/10 hover:text-rose-700';
+            } else if (b.type === 'faq_accordion') {
+              blockIcon = '❓';
+              blockColorClass = 'hover:border-teal-500 hover:bg-teal-50/10 hover:text-teal-700';
+            } else if (b.type === 'features_grid') {
+              blockIcon = '🚀';
+              blockColorClass = 'hover:border-indigo-500 hover:bg-indigo-50/10 hover:text-indigo-700';
+            } else if (b.type === 'integrations_logos') {
+              blockIcon = '🔌';
+              blockColorClass = 'hover:border-sky-500 hover:bg-sky-50/10 hover:text-sky-700';
+            } else if (b.type === 'testimonial_card') {
+              blockIcon = '💬';
+              blockColorClass = 'hover:border-pink-500 hover:bg-pink-50/10 hover:text-pink-700';
+            } else if (b.type === 'timeline_milestones') {
+              blockIcon = '📅';
+              blockColorClass = 'hover:border-amber-600 hover:bg-amber-50/10 hover:text-amber-800';
+            } else if (b.type === 'event_banner') {
+              blockIcon = '🎟️';
+              blockColorClass = 'hover:border-violet-500 hover:bg-violet-50/10 hover:text-violet-700';
+            } else if (b.type === 'team_grid') {
+              blockIcon = '👥';
+              blockColorClass = 'hover:border-slate-500 hover:bg-slate-50/10 hover:text-slate-700';
+            } else if (b.type === 'campaign_banner') {
+              blockIcon = '📈';
+              blockColorClass = 'hover:border-fuchsia-500 hover:bg-fuchsia-50/10 hover:text-fuchsia-700';
             }
+
             return (
               <button
                 key={b.type}
                 type="button"
                 onClick={() => addBlock(b.type)}
-                className={`p-3.5 rounded-xl border border-dashed border-slate-300 text-center flex flex-col items-center justify-center gap-1.5 transition-all hover:shadow-xs group cursor-pointer ${blockColorClass}`}
+                className={`p-3.5 rounded-xl border border-dashed border-slate-300 text-center flex flex-col items-center justify-center gap-1.5 transition-all hover:shadow-xs group cursor-pointer ${blockColorClass} bg-white`}
               >
                 <span className="text-lg group-hover:scale-110 transition-transform">{blockIcon}</span>
                 <div>
@@ -351,6 +307,143 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
           })}
         </div>
       </div>
+
+      {/* Modern Dialog Modal Editor for block fields */}
+      {editingBlock && (() => {
+        const blockSchema = allowedBlocks.find(b => b.type === editingBlock.type);
+        if (!blockSchema) return null;
+
+        let displayBlockName = blockSchema.name;
+
+        return (
+          <Dialog open={!!editingBlock} onOpenChange={(open) => !open && setEditingBlock(null)}>
+            <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden p-0 rounded-2xl">
+              <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                <DialogTitle className="text-sm font-extrabold flex items-center gap-2 text-slate-800">
+                  ⚙️ Bölüm İçeriğini Düzenle: {displayBlockName}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-400">
+                  Bu bölüme ait parametreleri girin. Değişiklikler anında sayfa düzenine yansıtılır.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Languages selectors inside modal if fields are localized */}
+                {languages.length > 1 && blockSchema.fields?.some(sub => !!(sub.options?.localized || sub.localized)) && (
+                  <div className="p-1 bg-slate-100 rounded-lg flex gap-1 max-w-xs mb-2">
+                    {languages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => {}} // Active tab is managed globally at ContentEntryForm level
+                        className={`flex-1 text-center py-1 rounded text-[10px] font-bold transition-all ${activeTab === lang.code ? 'bg-white shadow-xs text-slate-800' : 'text-slate-400'}`}
+                        disabled // Keep disabled inside modal to follow global language tab state, or let it sync
+                      >
+                        {lang.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4.5">
+                  {blockSchema.fields?.map(sub => {
+                    const isSubLocalized = !!(sub.options?.localized || sub.localized);
+                    const subVal = isSubLocalized 
+                      ? (editingBlock.data?.[sub.slug]?.[activeTab] ?? '') 
+                      : (editingBlock.data?.[sub.slug] ?? '');
+                    const subRequired = !!(sub.validation_rules?.required);
+                    const isSubReq = subRequired && (!isSubLocalized || activeTab === defaultLangCode);
+                    const isFullWidth = sub.type === 'text' || sub.slug === 'content' || sub.slug === 'subtitle' || sub.type === 'media' || sub.type === 'gallery';
+
+                    return (
+                      <div key={sub.slug} className={`space-y-1.5 ${isFullWidth ? 'col-span-2' : 'col-span-1'}`}>
+                        <Label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                          {sub.name}
+                          {isSubReq && <span className="text-red-500">*</span>}
+                          {isSubLocalized && <Globe className="size-2.5 text-primary" title="Çevrilebilir alan" />}
+                        </Label>
+
+                        {sub.type === 'boolean' ? (
+                          <div className="pt-1">
+                            <Switch
+                              checked={!!subVal}
+                              onCheckedChange={(checked) => handleSubFieldChange(editingBlock.id, sub.slug, checked, isSubLocalized)}
+                            />
+                          </div>
+                        ) : sub.type === 'text' ? (
+                          <RichTextEditor
+                            value={subVal}
+                            onChange={(html) => handleSubFieldChange(editingBlock.id, sub.slug, html, isSubLocalized)}
+                            placeholder={`${sub.name} girin...`}
+                          />
+                        ) : sub.type === 'media' || sub.type === 'gallery' || sub.type === 'media_gallery' ? (
+                          <FileUpload
+                            value={getMediaIds(subVal)}
+                            onChange={(newVal) => handleSubFieldChange(editingBlock.id, sub.slug, newVal, isSubLocalized)}
+                            isMultiple={sub.type !== 'media'}
+                            placeholder={`${sub.name} yüklemek için tıklayın veya sürükleyin`}
+                          />
+                        ) : sub.type === 'relation_content_type' || sub.slug === 'target_content_type_id' || sub.type === 'relation' ? (
+                          <Select
+                            value={subVal || ''}
+                            onValueChange={(val) => handleSubFieldChange(editingBlock.id, sub.slug, val, isSubLocalized)}
+                          >
+                            <SelectTrigger className="bg-card h-9 text-xs">
+                              <SelectValue placeholder="Koleksiyon seçin..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {contentTypesList?.filter(t => t.is_collection).map(t => (
+                                <SelectItem key={t.id} value={t.slug} className="text-xs">
+                                  {t.name} (/{t.slug})
+                                </SelectItem>
+                              ))}
+                              {(!contentTypesList || contentTypesList.length === 0) && (
+                                <SelectItem value="_empty" disabled>Koleksiyon bulunamadı</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        ) : sub.type === 'select' ? (
+                          <Select
+                            value={subVal || ''}
+                            onValueChange={(val) => handleSubFieldChange(editingBlock.id, sub.slug, val, isSubLocalized)}
+                          >
+                            <SelectTrigger className="bg-card h-9 text-xs">
+                              <SelectValue placeholder="Seçim yapın..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {sub.options?.choices?.map(c => (
+                                <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            type={sub.type === 'number' ? 'number' : 'text'}
+                            value={subVal}
+                            onChange={(e) => handleSubFieldChange(editingBlock.id, sub.slug, sub.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value, isSubLocalized)}
+                            placeholder={`${sub.name} girin...`}
+                            className="h-9 text-xs"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <Button 
+                  type="button" 
+                  onClick={() => setEditingBlock(null)} 
+                  className="h-8.5 rounded-lg px-4 text-xs font-bold bg-primary text-white"
+                >
+                  Tamam
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </div>
   );
 }
@@ -371,11 +464,30 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
     meta_keywords: '',
   });
 
+  const [activeFormTab, setActiveFormTab] = useState('general');
+  const [splitPreview, setSplitPreview] = useState(false);
+
   // UI Panel Toggle States
   const [revisionsOpen, setRevisionsOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewDevice, setPreviewDevice] = useState('desktop'); // desktop, tablet, mobile
   const [compareRevision, setCompareRevision] = useState(null);
+
+  const toggleSplitPreview = () => {
+    setSplitPreview((prev) => {
+      const next = !prev;
+      if (next) setRevisionsOpen(false);
+      return next;
+    });
+  };
+
+  const toggleRevisions = () => {
+    setRevisionsOpen((prev) => {
+      const next = !prev;
+      if (next) setSplitPreview(false);
+      return next;
+    });
+  };
 
   // Auto-save states
   const [autosaveStatus, setAutosaveStatus] = useState('saved'); // saved, saving, idle
@@ -570,6 +682,170 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
         };
       }
     });
+  };
+
+  const renderField = (field) => {
+    const isLocalized = !!field.options?.localized;
+    const val = isLocalized
+      ? (dataValues[field.slug]?.[activeTab] ?? '')
+      : (dataValues[field.slug] ?? '');
+    const isRequired = !!field.validation_rules?.required;
+    const isFieldRequired = isRequired && (!isLocalized || activeTab === defaultLangCode);
+    const isAiAvailable = field.type === 'string' || field.type === 'text' || field.type === 'varchar';
+
+    return (
+      <div key={field.id} className="space-y-1.5 relative group/field">
+        <div className="flex items-center justify-between">
+          <Label htmlFor={field.slug} className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            {field.name}
+            {isFieldRequired && <span className="text-red-500">*</span>}
+            {isLocalized && (
+              <Globe className="size-3 text-primary/80" title={t('content_entries.translatable_field', 'Çevrilebilir alan')} />
+            )}
+          </Label>
+
+          {/* Gemini AI Action Button Trigger */}
+          {isAiAvailable && (
+            <div className="opacity-0 group-hover/field:opacity-100 focus-within:opacity-100 transition-opacity flex items-center gap-1 select-none">
+              <Select onValueChange={(action) => handleAiAction(field.slug, action)}>
+                <SelectTrigger className="h-6 px-1.5 border border-border text-[9px] font-bold text-primary flex gap-1 bg-primary/5 hover:bg-primary/10 rounded">
+                  {aiLoadingField === field.slug ? (
+                    <LoaderCircleIcon className="size-2.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-2.5 text-primary" />
+                  )}
+                  <span>GEMINI AI</span>
+                </SelectTrigger>
+                <SelectContent align="end" className="text-xs w-44">
+                  <SelectItem value="generate">🤖 İçerik Üret</SelectItem>
+                  <SelectItem value="refine">✏️ Profesyonelleştir / Geliştir</SelectItem>
+                  {isLocalized && (
+                    <SelectItem value="translate">🌐 Diğer Dile Çevir (Typewriter)</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
+        {/* Render based on field type schema */}
+        {field.type === 'boolean' ? (
+          <div className="flex items-center pt-1">
+            <Switch
+              id={field.slug}
+              checked={!!val}
+              onCheckedChange={(checked) => handleValueChange(field.slug, checked, activeTab)}
+            />
+          </div>
+        ) : field.type === 'dynamic_zone' ? (
+          <DynamicZoneField
+            field={field}
+            value={val || []}
+            onChange={(newVal) => handleValueChange(field.slug, newVal, activeTab)}
+            languages={languages}
+            activeTab={activeTab}
+            defaultLangCode={defaultLangCode}
+            contentTypesList={contentTypesList}
+          />
+        ) : field.type === 'text' ? (
+          <div className={aiLoadingField === field.slug ? 'opacity-60 pointer-events-none' : ''}>
+            <RichTextEditor
+              value={val}
+              onChange={(html) => handleValueChange(field.slug, html, activeTab)}
+              placeholder={t('content_entries.dialog.rich_text_placeholder', '{name} girin...').replace('{name}', field.name)}
+            />
+          </div>
+        ) : field.type === 'json' ? (
+          <Textarea
+            id={field.slug}
+            value={val}
+            onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
+            placeholder='{"key": "value"}'
+            rows={4}
+            className="font-mono text-xs"
+          />
+        ) : field.type === 'integer' || field.type === 'number' ? (
+          <Input
+            id={field.slug}
+            type="number"
+            value={val}
+            onChange={(e) => handleValueChange(field.slug, e.target.value === '' ? '' : (parseInt(e.target.value, 10) || 0), activeTab)}
+            placeholder="0"
+          />
+        ) : field.type === 'date' ? (
+          <Input
+            id={field.slug}
+            type="date"
+            value={val}
+            onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
+          />
+        ) : field.type === 'email' ? (
+          <Input
+            id={field.slug}
+            type="email"
+            value={val}
+            onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
+            placeholder="example@domain.com"
+          />
+        ) : field.type === 'phone' ? (
+          <Input
+            id={field.slug}
+            type="tel"
+            value={val}
+            onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
+            placeholder="+90 555 555 55 55"
+          />
+        ) : field.type === 'url' ? (
+          <Input
+            id={field.slug}
+            type="url"
+            value={val}
+            onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
+            placeholder="https://example.com"
+          />
+        ) : field.type === 'gallery' || field.type === 'media_gallery' ? (
+          <FileUpload
+            value={getMediaIds(val)}
+            onChange={(newVal) => handleValueChange(field.slug, newVal, activeTab)}
+            isMultiple={true}
+            placeholder={`${field.name} eklemek için tıklayın veya sürükleyin`}
+          />
+        ) : field.type === 'media' ? (
+          <FileUpload
+            value={getMediaIds(val)}
+            onChange={(newVal) => handleValueChange(field.slug, newVal, activeTab)}
+            isMultiple={false}
+            placeholder={`${field.name} yüklemek için tıklayın veya sürükleyin`}
+          />
+        ) : (
+          // Default string/varchar input
+          <Input
+            id={field.slug}
+            type="text"
+            value={val}
+            onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
+            placeholder={`${field.name} girin...`}
+            disabled={aiLoadingField === field.slug}
+            className={aiLoadingField === field.slug ? 'animate-pulse' : ''}
+            onBlur={(e) => {
+              if (field.slug === 'title') {
+                const currentSlugVal = isLocalized 
+                  ? dataValues.slug?.[activeTab] 
+                  : dataValues.slug;
+                if (!currentSlugVal) {
+                  const slugified = e.target.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9 -]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-');
+                  handleValueChange('slug', slugified, activeTab);
+                }
+              }
+            }}
+          />
+        )}
+      </div>
+    );
   };
 
   // Auto-Save Effect
@@ -1533,7 +1809,19 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Live Preview Trigger */}
+            {/* Live Preview Toggle */}
+            <Button
+              type="button"
+              variant={splitPreview ? 'default' : 'dim'}
+              size="xs"
+              className="h-8 gap-1.5 font-bold text-xs rounded-lg px-2.5"
+              onClick={toggleSplitPreview}
+            >
+              <Grid className="size-3.5" />
+              İki Bölmeli Görünüm (Split View)
+            </Button>
+
+            {/* Fullscreen Live Preview Trigger */}
             <Button
               type="button"
               variant="dim"
@@ -1552,7 +1840,7 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
                 variant="dim"
                 size="xs"
                 className={`h-8 gap-1 font-bold text-xs rounded-lg px-2.5 ${revisionsOpen ? 'bg-primary/10 text-primary border-primary/20' : ''}`}
-                onClick={() => setRevisionsOpen(!revisionsOpen)}
+                onClick={toggleRevisions}
               >
                 <History className="size-3.5" />
                 Revizyon Geçmişi
@@ -1563,324 +1851,254 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
 
         {/* Dynamic Split Layout: Revisions history sidebar column */}
         <div className="grid grid-cols-12 gap-6 items-start">
-          <div className={`space-y-5 transition-all duration-300 ${revisionsOpen ? 'col-span-8' : 'col-span-12'}`}>
+          <div className={`space-y-5 transition-all duration-300 ${splitPreview ? 'col-span-6' : revisionsOpen ? 'col-span-8' : 'col-span-12'}`}>
             <form id="content-entry-form" onSubmit={handleSubmit} className="space-y-4">
-              {/* Dynamically shown only if monetization is enabled */}
-              {contentType?.settings?.monetization?.enabled && (
-                <div className="p-4 border border-border rounded-xl bg-primary/5 grid grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.access_type', 'Erişim Tipi')}</Label>
-                    <Select 
-                      value={dataValues.access_type ?? 'free'} 
-                      onValueChange={(val) => handleValueChange('access_type', val)}
+              
+              {/* Form Section Tabs */}
+              <Tabs value={activeFormTab} onValueChange={setActiveFormTab} className="w-full">
+                <TabsList className="w-full justify-start border-b border-border pb-px mb-5 gap-6 bg-transparent p-0 rounded-none h-auto">
+                  <TabsTrigger 
+                    value="general" 
+                    className="cursor-pointer border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700 data-[state=active]:text-primary rounded-none shadow-none"
+                  >
+                    📝 Genel İçerik
+                  </TabsTrigger>
+                  {fields.some(f => f.type === 'dynamic_zone') && (
+                    <TabsTrigger 
+                      value="layout" 
+                      className="cursor-pointer border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700 data-[state=active]:text-primary rounded-none shadow-none"
                     >
-                      <SelectTrigger className="bg-card h-9 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="free">{t('content_entries.monetization.free', 'Ücretsiz')}</SelectItem>
-                        <SelectItem value="protected">{t('content_entries.monetization.members_only', 'Sadece Üye')}</SelectItem>
-                        <SelectItem value="premium">{t('content_entries.monetization.single_purchase', 'Tekil Satış (Premium)')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {dataValues.access_type === 'premium' && (
-                    <>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.price', 'Fiyat')}</Label>
-                        <Input
-                          type="number"
-                          value={dataValues.price ?? 0}
-                          onChange={(e) => handleValueChange('price', Number(e.target.value))}
-                          className="h-9 text-xs"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.currency', 'Para Birimi')}</Label>
-                        <Select 
-                          value={dataValues.currency ?? 'TRY'} 
-                          onValueChange={(val) => handleValueChange('currency', val)}
-                        >
-                          <SelectTrigger className="bg-card h-9 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="TRY">{t('content_entries.monetization.currency_try', 'TL (TRY)')}</SelectItem>
-                            <SelectItem value="USD">{t('content_entries.monetization.currency_usd', 'Dolar (USD)')}</SelectItem>
-                            <SelectItem value="EUR">{t('content_entries.monetization.currency_eur', 'Euro (EUR)')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </>
+                      🧩 Sayfa Tasarımı (Bloklar)
+                    </TabsTrigger>
                   )}
-                </div>
-              )}
+                  {contentType?.settings?.seo_enabled && (
+                    <TabsTrigger 
+                      value="seo" 
+                      className="cursor-pointer border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700 data-[state=active]:text-primary rounded-none shadow-none"
+                    >
+                      🔍 SEO & Sosyal Medya
+                    </TabsTrigger>
+                  )}
+                </TabsList>
 
-              {/* Multilingual Tabs */}
-              {languages.length > 1 && (
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList variant="default" size="sm" className="w-full justify-start bg-muted/20 p-1 rounded-lg">
-                    {languages.map((lang) => (
-                      <TabsTrigger key={lang.code} value={lang.code} className="cursor-pointer">
-                        {lang.name} ({lang.code.toUpperCase()})
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-              )}
+                <TabsContent value="general" className="space-y-5 focus-visible:outline-hidden mt-0">
+                  {/* Multilingual Tabs */}
+                  {languages.length > 1 && (
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-2">
+                      <TabsList variant="default" size="sm" className="w-full justify-start bg-muted/20 p-1 rounded-lg">
+                        {languages.map((lang) => (
+                          <TabsTrigger key={lang.code} value={lang.code} className="cursor-pointer">
+                            {lang.name} ({lang.code.toUpperCase()})
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </Tabs>
+                  )}
 
-              {fields.map((field) => {
-                const isLocalized = !!field.options?.localized;
-                const val = isLocalized
-                  ? (dataValues[field.slug]?.[activeTab] ?? '')
-                  : (dataValues[field.slug] ?? '');
-                const isRequired = !!field.validation_rules?.required;
-                const isFieldRequired = isRequired && (!isLocalized || activeTab === defaultLangCode);
-                const isAiAvailable = field.type === 'string' || field.type === 'text' || field.type === 'varchar';
-
-                return (
-                  <div key={field.id} className="space-y-1.5 relative group/field">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor={field.slug} className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                        {field.name}
-                        {isFieldRequired && <span className="text-red-500">*</span>}
-                        {isLocalized && (
-                          <Globe className="size-3 text-primary/80" title={t('content_entries.translatable_field', 'Çevrilebilir alan')} />
-                        )}
-                      </Label>
-
-                      {/* Gemini AI Action Button Trigger */}
-                      {isAiAvailable && (
-                        <div className="opacity-0 group-hover/field:opacity-100 focus-within:opacity-100 transition-opacity flex items-center gap-1 select-none">
-                          <Select onValueChange={(action) => handleAiAction(field.slug, action)}>
-                            <SelectTrigger className="h-6 px-1.5 border border-border text-[9px] font-bold text-primary flex gap-1 bg-primary/5 hover:bg-primary/10 rounded">
-                              {aiLoadingField === field.slug ? (
-                                <LoaderCircleIcon className="size-2.5 animate-spin" />
-                              ) : (
-                                <Sparkles className="size-2.5 text-primary" />
-                              )}
-                              <span>GEMINI AI</span>
+                  {/* Dynamically shown only if monetization is enabled */}
+                  {contentType?.settings?.monetization?.enabled && (
+                    <Card className="border border-border bg-slate-50/50 overflow-hidden shadow-xs">
+                      <CardHeader className="py-3 px-5 border-b border-border bg-slate-100/50">
+                        <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          💰 Monetizasyon ve Erişim Ayarları
+                        </h4>
+                      </CardHeader>
+                      <CardContent className="p-4 grid grid-cols-3 gap-4 bg-white">
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.access_type', 'Erişim Tipi')}</Label>
+                          <Select 
+                            value={dataValues.access_type ?? 'free'} 
+                            onValueChange={(val) => handleValueChange('access_type', val)}
+                          >
+                            <SelectTrigger className="bg-card h-9 text-xs">
+                              <SelectValue />
                             </SelectTrigger>
-                            <SelectContent align="end" className="text-xs w-44">
-                              <SelectItem value="generate">🤖 İçerik Üret</SelectItem>
-                              <SelectItem value="refine">✏️ Profesyonelleştir / Geliştir</SelectItem>
-                              {isLocalized && (
-                                <SelectItem value="translate">🌐 Diğer Dile Çevir (Typewriter)</SelectItem>
-                              )}
+                            <SelectContent>
+                              <SelectItem value="free">{t('content_entries.monetization.free', 'Ücretsiz')}</SelectItem>
+                              <SelectItem value="protected">{t('content_entries.monetization.members_only', 'Sadece Üye')}</SelectItem>
+                              <SelectItem value="premium">{t('content_entries.monetization.single_purchase', 'Tekil Satış (Premium)')}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-                      )}
-                    </div>
 
-                    {/* Render based on field type schema */}
-                    {field.type === 'boolean' ? (
-                      <div className="flex items-center pt-1">
-                        <Switch
-                          id={field.slug}
-                          checked={!!val}
-                          onCheckedChange={(checked) => handleValueChange(field.slug, checked, activeTab)}
-                        />
-                      </div>
-                    ) : field.type === 'dynamic_zone' ? (
-                      <DynamicZoneField
-                        field={field}
-                        value={val || []}
-                        onChange={(newVal) => handleValueChange(field.slug, newVal, activeTab)}
-                        languages={languages}
-                        activeTab={activeTab}
-                        defaultLangCode={defaultLangCode}
-                        contentTypesList={contentTypesList}
-                      />
-                    ) : field.type === 'text' ? (
-                      <div className={aiLoadingField === field.slug ? 'opacity-60 pointer-events-none' : ''}>
-                        <RichTextEditor
-                          value={val}
-                          onChange={(html) => handleValueChange(field.slug, html, activeTab)}
-                          placeholder={t('content_entries.dialog.rich_text_placeholder', '{name} girin...').replace('{name}', field.name)}
-                        />
-                      </div>
-                    ) : field.type === 'json' ? (
-                      <Textarea
-                        id={field.slug}
-                        value={val}
-                        onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
-                        placeholder='{"key": "value"}'
-                        rows={4}
-                        className="font-mono text-xs"
-                      />
-                    ) : field.type === 'integer' || field.type === 'number' ? (
-                      <Input
-                        id={field.slug}
-                        type="number"
-                        value={val}
-                        onChange={(e) => handleValueChange(field.slug, e.target.value === '' ? '' : (parseInt(e.target.value, 10) || 0), activeTab)}
-                        placeholder="0"
-                      />
-                    ) : field.type === 'date' ? (
-                      <Input
-                        id={field.slug}
-                        type="date"
-                        value={val}
-                        onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
-                      />
-                    ) : field.type === 'email' ? (
-                      <Input
-                        id={field.slug}
-                        type="email"
-                        value={val}
-                        onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
-                        placeholder="example@domain.com"
-                      />
-                    ) : field.type === 'phone' ? (
-                      <Input
-                        id={field.slug}
-                        type="tel"
-                        value={val}
-                        onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
-                        placeholder="+90 555 555 55 55"
-                      />
-                    ) : field.type === 'url' ? (
-                      <Input
-                        id={field.slug}
-                        type="url"
-                        value={val}
-                        onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
-                        placeholder="https://example.com"
-                      />
-                    ) : field.type === 'gallery' || field.type === 'media_gallery' ? (
-                      <FileUpload
-                        value={getMediaIds(val)}
-                        onChange={(newVal) => handleValueChange(field.slug, newVal, activeTab)}
-                        isMultiple={true}
-                        placeholder={`${field.name} eklemek için tıklayın veya sürükleyin`}
-                      />
-                    ) : field.type === 'media' ? (
-                      <FileUpload
-                        value={getMediaIds(val)}
-                        onChange={(newVal) => handleValueChange(field.slug, newVal, activeTab)}
-                        isMultiple={false}
-                        placeholder={`${field.name} yüklemek için tıklayın veya sürükleyin`}
-                      />
-                    ) : (
-                      // Default string/varchar input
-                      <Input
-                        id={field.slug}
-                        type="text"
-                        value={val}
-                        onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
-                        placeholder={`${field.name} girin...`}
-                        disabled={aiLoadingField === field.slug}
-                        className={aiLoadingField === field.slug ? 'animate-pulse' : ''}
-                        onBlur={(e) => {
-                          if (field.slug === 'title') {
-                            const currentSlugVal = isLocalized 
-                              ? dataValues.slug?.[activeTab] 
-                              : dataValues.slug;
-                            if (!currentSlugVal) {
-                              const slugified = e.target.value
-                                .toLowerCase()
-                                .replace(/[^a-z0-9 -]/g, '')
-                                .replace(/\s+/g, '-')
-                                .replace(/-+/g, '-');
-                              handleValueChange('slug', slugified, activeTab);
-                            }
-                          }
-                        }}
-                      />
-                    )}
-                  </div>
-                );
-              })}
+                        {dataValues.access_type === 'premium' && (
+                          <>
+                            <div className="space-y-1.5">
+                              <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.price', 'Fiyat')}</Label>
+                              <Input
+                                type="number"
+                                value={dataValues.price ?? 0}
+                                onChange={(e) => handleValueChange('price', Number(e.target.value))}
+                                className="h-9 text-xs"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.currency', 'Para Birimi')}</Label>
+                              <Select 
+                                value={dataValues.currency ?? 'TRY'} 
+                                onValueChange={(val) => handleValueChange('currency', val)}
+                              >
+                                <SelectTrigger className="bg-card h-9 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="TRY">{t('content_entries.monetization.currency_try', 'TL (TRY)')}</SelectItem>
+                                  <SelectItem value="USD">{t('content_entries.monetization.currency_usd', 'Dolar (USD)')}</SelectItem>
+                                  <SelectItem value="EUR">{t('content_entries.monetization.currency_eur', 'Euro (EUR)')}</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
 
-              {/* Google SERP SEO Preview Panel */}
-              {contentType?.settings?.seo_enabled && (
-                <Card className="border border-border bg-slate-50/50 mt-6 overflow-hidden">
-                  <CardHeader className="py-4 border-b border-border bg-slate-100/50">
-                    <h4 className="text-xs font-bold flex items-center gap-1.5 text-slate-800">
-                      <Globe className="size-4 text-primary" />
-                      Google Arama Motoru Önizlemesi (SEO Ayarları)
-                    </h4>
-                  </CardHeader>
-                  <CardContent className="p-5 space-y-4">
-                    {/* Live SERP Mock Card */}
-                    <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm space-y-1">
-                      <span className="text-[10px] text-slate-400 font-mono block">
-                        https://yourdomain.com/{contentType.slug}/{typeof dataValues.slug === 'object' ? (dataValues.slug?.[activeTab] || dataValues.slug?.[defaultLangCode] || '') : (dataValues.slug || '')}
-                      </span>
-                      <h4 className="text-base text-[#1a0dab] font-semibold leading-snug hover:underline cursor-pointer tracking-wide">
-                        {seoValues.meta_title || (typeof dataValues.title === 'object' ? (dataValues.title?.[activeTab] || dataValues.title?.[defaultLangCode] || '') : (dataValues.title || '')) || 'Arama Motoru Başlığı'}
-                      </h4>
-                      <p className="text-xs text-[#4d5156] leading-relaxed break-words line-clamp-2">
-                        {seoValues.meta_description || 'Bu alan arama sonuçlarında görünecektir. Arama motorları için özel açıklama metni girin...'}
-                      </p>
-                    </div>
+                  {/* Standard fields */}
+                  {fields
+                    .filter((field) => field.type !== 'dynamic_zone' && !advancedSeoSlugs.includes(field.slug))
+                    .map((field) => renderField(field))
+                  }
+                </TabsContent>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Meta Title */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <Label htmlFor="meta_title" className="font-semibold text-muted-foreground">Arama Motoru Başlığı</Label>
-                          <span className={`text-[10px] font-bold ${titleCharCount > 60 ? 'text-amber-500' : 'text-slate-400'}`}>
-                            {titleCharCount}/60
+                <TabsContent value="layout" className="focus-visible:outline-hidden mt-0 space-y-5">
+                  {/* Multilingual Tabs */}
+                  {languages.length > 1 && (
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-2">
+                      <TabsList variant="default" size="sm" className="w-full justify-start bg-muted/20 p-1 rounded-lg">
+                        {languages.map((lang) => (
+                          <TabsTrigger key={lang.code} value={lang.code} className="cursor-pointer">
+                            {lang.name} ({lang.code.toUpperCase()})
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </Tabs>
+                  )}
+
+                  {/* Render Layout builder */}
+                  {fields
+                    .filter((field) => field.type === 'dynamic_zone')
+                    .map((field) => renderField(field))
+                  }
+                </TabsContent>
+
+                <TabsContent value="seo" className="focus-visible:outline-hidden mt-0 space-y-5">
+                  {/* Google SERP SEO Preview Panel */}
+                  {contentType?.settings?.seo_enabled && (
+                    <Card className="border border-border bg-slate-50/50 overflow-hidden shadow-xs">
+                      <CardHeader className="py-4 border-b border-border bg-slate-100/50">
+                        <h4 className="text-xs font-bold flex items-center gap-1.5 text-slate-800">
+                          <Globe className="size-4 text-primary" />
+                          Google Arama Motoru Önizlemesi (SEO Ayarları)
+                        </h4>
+                      </CardHeader>
+                      <CardContent className="p-5 space-y-4 bg-white">
+                        {/* Live SERP Mock Card */}
+                        <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm space-y-1">
+                          <span className="text-[10px] text-slate-400 font-mono block">
+                            https://yourdomain.com/{contentType.slug}/{typeof dataValues.slug === 'object' ? (dataValues.slug?.[activeTab] || dataValues.slug?.[defaultLangCode] || '') : (dataValues.slug || '')}
                           </span>
+                          <h4 className="text-base text-[#1a0dab] font-semibold leading-snug hover:underline cursor-pointer tracking-wide">
+                            {seoValues.meta_title || (typeof dataValues.title === 'object' ? (dataValues.title?.[activeTab] || dataValues.title?.[defaultLangCode] || '') : (dataValues.title || '')) || 'Arama Motoru Başlığı'}
+                          </h4>
+                          <p className="text-xs text-[#4d5156] leading-relaxed break-words line-clamp-2">
+                            {seoValues.meta_description || 'Bu alan arama sonuçlarında görünecektir. Arama motorları için özel açıklama metni girin...'}
+                          </p>
                         </div>
-                        <Input
-                          id="meta_title"
-                          placeholder={(typeof dataValues.title === 'object' ? (dataValues.title?.[activeTab] || dataValues.title?.[defaultLangCode] || '') : (dataValues.title || '')) || 'Varsayılan başlığı kullan'}
-                          value={seoValues.meta_title}
-                          onChange={(e) => setSeoValues(prev => ({ ...prev, meta_title: e.target.value }))}
-                          className="h-9 text-xs"
-                        />
-                        {/* Progress line indicator */}
-                        <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full transition-all duration-300 ${titleCharCount > 60 ? 'bg-amber-500' : titleCharCount > 0 ? 'bg-primary' : 'bg-transparent'}`}
-                            style={{ width: `${Math.min((titleCharCount / 60) * 100, 100)}%` }}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Meta Title */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <Label htmlFor="meta_title" className="font-semibold text-muted-foreground">Arama Motoru Başlığı</Label>
+                              <span className={`text-[10px] font-bold ${titleCharCount > 60 ? 'text-amber-500' : 'text-slate-400'}`}>
+                                {titleCharCount}/60
+                              </span>
+                            </div>
+                            <Input
+                              id="meta_title"
+                              placeholder={(typeof dataValues.title === 'object' ? (dataValues.title?.[activeTab] || dataValues.title?.[defaultLangCode] || '') : (dataValues.title || '')) || 'Varsayılan başlığı kullan'}
+                              value={seoValues.meta_title}
+                              onChange={(e) => setSeoValues(prev => ({ ...prev, meta_title: e.target.value }))}
+                              className="h-9 text-xs"
+                            />
+                            {/* Progress line indicator */}
+                            <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all duration-300 ${titleCharCount > 60 ? 'bg-amber-500' : titleCharCount > 0 ? 'bg-primary' : 'bg-transparent'}`}
+                                style={{ width: `${Math.min((titleCharCount / 60) * 100, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Meta Description */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <Label htmlFor="meta_description" className="font-semibold text-muted-foreground">Meta Açıklaması</Label>
+                              <span className={`text-[10px] font-bold ${descCharCount > 160 ? 'text-amber-500' : 'text-slate-400'}`}>
+                                {descCharCount}/160
+                              </span>
+                            </div>
+                            <Input
+                              id="meta_description"
+                              placeholder="Arama motoru açıklaması girin..."
+                              value={seoValues.meta_description}
+                              onChange={(e) => setSeoValues(prev => ({ ...prev, meta_description: e.target.value }))}
+                              className="h-9 text-xs"
+                            />
+                            {/* Progress line indicator */}
+                            <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all duration-300 ${descCharCount > 160 ? 'bg-amber-500' : descCharCount > 0 ? 'bg-primary' : 'bg-transparent'}`}
+                                style={{ width: `${Math.min((descCharCount / 160) * 100, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Keywords */}
+                        <div className="space-y-1.5">
+                          <Label htmlFor="meta_keywords" className="text-xs font-semibold text-muted-foreground">Anahtar Kelimeler (Keywords)</Label>
+                          <Input
+                            id="meta_keywords"
+                            placeholder="virgülle ayırarak girin: kurumsal, teknoloji, cms"
+                            value={seoValues.meta_keywords}
+                            onChange={(e) => setSeoValues(prev => ({ ...prev, meta_keywords: e.target.value }))}
+                            className="h-9 text-xs"
                           />
                         </div>
-                      </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                      {/* Meta Description */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <Label htmlFor="meta_description" className="font-semibold text-muted-foreground">Meta Açıklaması</Label>
-                          <span className={`text-[10px] font-bold ${descCharCount > 160 ? 'text-amber-500' : 'text-slate-400'}`}>
-                            {descCharCount}/160
-                          </span>
-                        </div>
-                        <Input
-                          id="meta_description"
-                          placeholder="Arama motoru açıklaması girin..."
-                          value={seoValues.meta_description}
-                          onChange={(e) => setSeoValues(prev => ({ ...prev, meta_description: e.target.value }))}
-                          className="h-9 text-xs"
-                        />
-                        {/* Progress line indicator */}
-                        <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full transition-all duration-300 ${descCharCount > 160 ? 'bg-amber-500' : descCharCount > 0 ? 'bg-primary' : 'bg-transparent'}`}
-                            style={{ width: `${Math.min((descCharCount / 160) * 100, 100)}%` }}
-                          />
-                        </div>
+                  {/* Advanced Technical SEO Fields Accordion */}
+                  {fields.some((f) => advancedSeoSlugs.includes(f.slug)) && (
+                    <details className="border border-slate-200 rounded-xl bg-white overflow-hidden group/details">
+                      <summary className="px-5 py-3.5 font-bold text-xs text-slate-700 bg-slate-50 cursor-pointer list-none flex justify-between items-center select-none border-b border-transparent group-open/details:border-slate-200 transition-all">
+                        <span>⚙️ Gelişmiş Teknik Arama Motoru Ayarları</span>
+                        <span className="text-slate-400 group-open/details:rotate-180 transition-transform">&darr;</span>
+                      </summary>
+                      <div className="p-5 space-y-4 border-t border-slate-100">
+                        {languages.length > 1 && (
+                          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-2">
+                            <TabsList variant="default" size="sm" className="w-full justify-start bg-muted/20 p-1 rounded-lg">
+                              {languages.map((lang) => (
+                                <TabsTrigger key={lang.code} value={lang.code} className="cursor-pointer">
+                                  {lang.name} ({lang.code.toUpperCase()})
+                                </TabsTrigger>
+                              ))}
+                            </TabsList>
+                          </Tabs>
+                        )}
+                        {fields
+                          .filter((field) => advancedSeoSlugs.includes(field.slug))
+                          .map((field) => renderField(field))
+                        }
                       </div>
-                    </div>
-
-                    {/* Keywords */}
-                    <div className="space-y-1.5">
-                      <Label htmlFor="meta_keywords" className="text-xs font-semibold text-muted-foreground">Anahtar Kelimeler (Keywords)</Label>
-                      <Input
-                        id="meta_keywords"
-                        placeholder="virgülle ayırarak girin: kurumsal, teknoloji, cms"
-                        value={seoValues.meta_keywords}
-                        onChange={(e) => setSeoValues(prev => ({ ...prev, meta_keywords: e.target.value }))}
-                        className="h-9 text-xs"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                    </details>
+                  )}
+                </TabsContent>
+              </Tabs>
 
               {/* Action Buttons Footer */}
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-border mt-6">
@@ -1904,6 +2122,48 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
               </div>
             </form>
           </div>
+
+          {/* Inline Split Preview Sandbox side */}
+          {splitPreview && (
+            <div className="col-span-6 border border-border rounded-xl bg-card p-5 h-[calc(100vh-14rem)] flex flex-col justify-between overflow-hidden shadow-xs bg-white">
+              <div className="flex items-center justify-between border-b border-border pb-3 mb-4 shrink-0 bg-white">
+                <h4 className="text-xs font-extrabold flex items-center gap-1.5 text-slate-800">
+                  <Eye className="size-4 text-primary" />
+                  CANLI ÖNİZLEME SİMÜLATÖRÜ
+                </h4>
+                {/* Viewport Width device triggers */}
+                <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
+                  {[
+                    { device: 'desktop', icon: Monitor, label: 'Masaüstü' },
+                    { device: 'tablet', icon: Tablet, label: 'Tablet' },
+                    { device: 'mobile', icon: Smartphone, label: 'Mobil' }
+                  ].map((item) => (
+                    <Button
+                      key={item.device}
+                      variant={previewDevice === item.device ? 'default' : 'ghost'}
+                      size="xs"
+                      className="h-6 px-2 gap-1 text-[9px] font-bold rounded"
+                      onClick={() => setPreviewDevice(item.device)}
+                    >
+                      <item.icon className="size-3" />
+                      <span>{item.label}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              {/* Preview frame container */}
+              <div className="flex-1 bg-slate-100 flex items-center justify-center p-3 overflow-hidden rounded-xl">
+                <div 
+                  className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-y-auto transition-all duration-300 h-full w-full max-h-full"
+                  style={{
+                    maxWidth: previewDevice === 'mobile' ? '375px' : previewDevice === 'tablet' ? '768px' : '100%',
+                  }}
+                >
+                  {previewMarkup}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Revisions sidebar details */}
           {revisionsOpen && (
