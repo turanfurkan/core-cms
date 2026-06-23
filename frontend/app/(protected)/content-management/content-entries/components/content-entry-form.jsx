@@ -50,6 +50,15 @@ import {
 } from '@/components/ui/select';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+const advancedSeoSlugs = [
+  'seo_title',
+  'seo_description',
+  'canonical_url',
+  'og_title',
+  'og_description',
+  'og_image',
+  'robots_meta'
+];
 
 const getMediaIds = (value) => {
   if (value === null || value === undefined) return '';
