@@ -567,6 +567,21 @@
     "add_new": "Yeni Şablon Ekle",
     "no_fields_defined": "Tanımlı alan yok",
     "delete_confirm": "Bu içerik şablonunu silmek istediğinizden emin misiniz? Bu işlem bağlı tüm içerikleri silecektir!",
+    "stats": {
+      "total_types": "Toplam Şablon Tipi",
+      "collections": "Koleksiyon Tipleri",
+      "singles": "Tekil Tipler",
+      "entries": "Toplam İçerikler"
+    },
+    "badge": {
+      "collection": "Koleksiyon",
+      "single": "Tekil"
+    },
+    "filters": {
+      "all": "Tümü",
+      "collections": "Koleksiyonlar",
+      "singles": "Tekil Tipler"
+    },
     "columns": {
       "name": "Şablon Adı",
       "slug": "Slug",
@@ -607,6 +622,16 @@
       "required_abbr": "Zorunlu",
       "no_fields": "Herhangi bir alan tanımlı değil."
     },
+    "monetization": {
+      "title": "Satış ve Para Kazanma",
+      "description": "İçerikleri ödeme duvarı (paywall) arkasına almayı veya tekil satışı aktif eder.",
+      "default_access_model": "Varsayılan Erişim Modeli",
+      "access_everyone": "Herkes (Ücretsiz)",
+      "access_members": "Sadece Üyeler (Üyelik Planı)",
+      "access_single_purchase": "Tekil Satın Alma (Ödeme Duvarı)",
+      "default_price": "Varsayılan Fiyat",
+      "currency": "Para Birimi"
+    },
     "field_types": {
       "string": "Düz Metin (string)",
       "text": "Paragraf / Zengin Metin (text)",
@@ -645,7 +670,20 @@
       "title": "Başlık",
       "status": "Durum",
       "published_at": "Yayın Tarihi",
-      "actions": "Eylemler"
+      "actions": "Eylemler",
+      "access_price": "Erişim & Fiyat"
+    },
+    "monetization": {
+      "access_type": "Erişim Tipi",
+      "free": "Ücretsiz",
+      "members_only": "Sadece Üye",
+      "single_purchase": "Tekil Satış (Premium)",
+      "single_purchase_badge": "Tekil Satış",
+      "price": "Fiyat",
+      "currency": "Para Birimi",
+      "currency_try": "TL (TRY)",
+      "currency_usd": "Dolar (USD)",
+      "currency_eur": "Euro (EUR)"
     },
     "status": {
       "published": "Yayında",

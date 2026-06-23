@@ -92,7 +92,7 @@ export function HeaderLogo() {
 
   return (
     <div className="flex items-center gap-1.5 lg:gap-5">
-      <Link href="/">
+      <Link href="/dashboard">
         <img
           src={toAbsoluteUrl('/media/app/mini-logo-circle.svg')}
           className="dark:hidden min-h-[34px]"
@@ -173,7 +173,7 @@ export function HeaderLogo() {
                   className={cn(item === selectedItem && 'bg-accent')}
                   onSelect={() => setSelectedItem(item)}
                 >
-                  <Link href="/">
+                  <Link href="/dashboard">
                     {item.icon && <item.icon />}
                     {item.title}
                   </Link>
@@ -200,7 +200,7 @@ export function HeaderLogo() {
                   className={cn(staging === selectedStaging && 'bg-accent')}
                   onSelect={() => setSelectedStaging(staging)}
                 >
-                  <Link href="/">
+                  <Link href="/dashboard">
                     {staging.icon && <staging.icon />}
                     {staging.title}
                   </Link>

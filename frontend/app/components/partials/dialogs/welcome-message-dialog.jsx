@@ -44,13 +44,13 @@ export function WelcomeMessageDialog({ open, onOpenChange }) {
           </div>
 
           <div className="flex justify-center mb-2">
-            <Link href="/" className="btn btn-primary flex justify-center">
+            <Link href="/dashboard" className="btn btn-primary flex justify-center">
               Show me around
             </Link>
           </div>
 
           <Link
-            href="/"
+            href="/dashboard"
             className="text-sm font-medium text-secondary-foreground hover:text-primary py-3"
           >
             Skip the tour

@@ -57,7 +57,7 @@ export function HeaderLogo() {
           </SheetContent>
         </Sheet>
 
-        <Link href="/" className="mx-1">
+        <Link href="/dashboard" className="mx-1">
           <img
             src={toAbsoluteUrl('/media/app/mini-logo-primary.svg')}
             className="dark:hidden min-h-[24px]"

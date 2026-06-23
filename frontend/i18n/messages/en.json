@@ -563,6 +563,21 @@
     "add_new": "Add New Template",
     "no_fields_defined": "No fields defined",
     "delete_confirm": "Are you sure you want to delete this content type? This action will delete all related content!",
+    "stats": {
+      "total_types": "Total Content Types",
+      "collections": "Collection Types",
+      "singles": "Single Types",
+      "entries": "Total Entries"
+    },
+    "badge": {
+      "collection": "Collection",
+      "single": "Single"
+    },
+    "filters": {
+      "all": "All",
+      "collections": "Collections",
+      "singles": "Single Types"
+    },
     "columns": {
       "name": "Template Name",
       "slug": "Slug",
@@ -603,6 +618,16 @@
       "required_abbr": "Req",
       "no_fields": "No fields defined."
     },
+    "monetization": {
+      "title": "Monetization & Sales",
+      "description": "Enables paywalling content or single-entry purchase options.",
+      "default_access_model": "Default Access Model",
+      "access_everyone": "Everyone (Free)",
+      "access_members": "Members Only (Subscription)",
+      "access_single_purchase": "Single Purchase (Paywall)",
+      "default_price": "Default Price",
+      "currency": "Currency"
+    },
     "field_types": {
       "string": "Plain Text (string)",
       "text": "Paragraph / Rich Text (text)",
@@ -641,7 +666,20 @@
       "title": "Title",
       "status": "Status",
       "published_at": "Published At",
-      "actions": "Actions"
+      "actions": "Actions",
+      "access_price": "Access & Price"
+    },
+    "monetization": {
+      "access_type": "Access Type",
+      "free": "Free",
+      "members_only": "Members Only",
+      "single_purchase": "Single Purchase (Premium)",
+      "single_purchase_badge": "Single Purchase",
+      "price": "Price",
+      "currency": "Currency",
+      "currency_try": "Lira (TRY)",
+      "currency_usd": "Dollar (USD)",
+      "currency_eur": "Euro (EUR)"
     },
     "status": {
       "published": "Published",

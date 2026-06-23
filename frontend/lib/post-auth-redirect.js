@@ -19,7 +19,7 @@ export function callbackPathForDemoRoute(demo, pathname, search) {
 }
 
 /** Reject open redirects; only same-origin relative paths. */
-export function safeCallbackUrl(raw, fallback = '/') {
+export function safeCallbackUrl(raw, fallback = '/dashboard') {
   if (raw == null || raw === '') return fallback;
   let decoded;
   try {

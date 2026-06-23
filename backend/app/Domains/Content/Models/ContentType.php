@@ -16,11 +16,13 @@ class ContentType extends Model
         'description',
         'is_collection',
         'settings',
+        'order',
     ];
 
     protected $casts = [
         'is_collection' => 'boolean',
         'settings' => 'array',
+        'order' => 'integer',
     ];
 
     public function fields(): HasMany

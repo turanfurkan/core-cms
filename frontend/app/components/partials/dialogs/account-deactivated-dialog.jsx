@@ -43,7 +43,7 @@ export function AccountDeactivatedDialog({ open, onOpenChange }) {
             support if this is an error or for reactivation.
           </div>
 
-          <Link href="/" className="btn btn-primary flex justify-center">
+          <Link href="/dashboard" className="btn btn-primary flex justify-center">
             Go to Home
           </Link>
         </DialogBody>

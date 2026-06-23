@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getContentEntries, getSeoMetadata } from '@/lib/api-server';
 import { Container } from '@/components/common/container';
+import BlockRenderer from '@/components/blocks/block-renderer';
+import { CardPost, CardProject, CardWork } from '@/partials/cards';
+
 
 // Generate dynamic metadata for the listing page using SEO override endpoint
 export async function generateMetadata({ params }) {
@@ -44,8 +47,137 @@ export default async function Page({ params, searchParams }) {
 
   const prettyTitle = contentTypeSlug.charAt(0).toUpperCase() + contentTypeSlug.slice(1);
 
+  // Check if this content type should be rendered as a single page view
+  const singlePageSlugs = ['homepage', 'about-us', 'contact', 'legal-pages'];
+  const isSinglePage = singlePageSlugs.includes(contentTypeSlug) || 
+    (entries.length === 1 && !hasPages && (entries[0].data?.dynamic_blocks || entries[0].data?.story || entries[0].data?.address));
+
+  if (isSinglePage && entries.length > 0) {
+    const entry = entries[0];
+    const data = entry.data || {};
+    const title = getLocalized(data.title || entry.title || prettyTitle, 'tr');
+    
+    // Check for dynamic blocks zone
+    const blocks = data.dynamic_blocks || [];
+    
+    // Find cover image or map URL
+    const coverImage = data.cover_image?.url || data.image?.url || null;
+    
+    // Extract other custom content fields
+    const customFields = Object.entries(data).filter(([key, val]) => {
+      return (
+        key !== 'title' &&
+        key !== 'slug' &&
+        key !== 'dynamic_blocks' &&
+        key !== 'cover_image' &&
+        key !== 'image' &&
+        !key.startsWith('seo_') &&
+        !key.startsWith('og_') &&
+        key !== 'canonical_url' &&
+        key !== 'robots_meta'
+      );
+    });
+
+    return (
+      <div className="w-full min-h-screen bg-background text-foreground flex flex-col justify-between">
+        <div>
+          {/* Header */}
+          <header className="border-b border-border py-4 bg-muted/30">
+            <Container className="flex justify-between items-center">
+              <Link href="/" className="font-bold text-xl tracking-tight text-primary">
+                Core CMS
+              </Link>
+              <nav className="flex gap-4 text-sm font-medium">
+                <Link href="/blog" className="hover:text-primary transition-colors">Blog</Link>
+                <Link href="/services" className="hover:text-primary transition-colors">Hizmetler</Link>
+                <Link href="/about-us" className="hover:text-primary transition-colors">Hakkımızda</Link>
+                <Link href="/contact" className="hover:text-primary transition-colors">İletişim</Link>
+              </nav>
+            </Container>
+          </header>
+
+          {/* If page has dynamic blocks structure, render blocks */}
+          {blocks.length > 0 ? (
+            <main>
+              <BlockRenderer blocks={blocks} locale="tr" />
+            </main>
+          ) : (
+            // Custom Structured Single Page Layout (e.g. About-us, Contact)
+            <main className="py-12">
+              <Container className="max-w-4xl space-y-8">
+                {/* Hero Banner */}
+                <div className="relative rounded-2xl overflow-hidden bg-zinc-950 py-20 px-8 text-center border border-border">
+                  {coverImage && (
+                    <div className="absolute inset-0 z-0 opacity-30">
+                      <img src={coverImage} alt={title} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="relative z-10 space-y-3">
+                    <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white">
+                      {title}
+                    </h1>
+                    <p className="text-zinc-300 max-w-lg mx-auto text-sm sm:text-base">
+                      {prettyTitle} sayfasının güncel içerik bilgileri.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Grid Layout of Custom Fields */}
+                <div className="grid gap-6 md:grid-cols-2">
+                  {customFields.map(([key, val]) => {
+                    const fieldLabel = key.replace(/_/g, ' ').toUpperCase();
+                    const fieldValue = getLocalized(val, 'tr');
+                    
+                    if (!fieldValue) return null;
+
+                    // If it looks like HTML, render it as dangerouslySetInnerHTML
+                    const isHtml = typeof fieldValue === 'string' && (fieldValue.includes('<p>') || fieldValue.includes('<br>') || fieldValue.includes('</div>'));
+
+                    // Double column for long texts
+                    const isLongText = typeof fieldValue === 'string' && fieldValue.length > 200;
+
+                    return (
+                      <div
+                        key={key}
+                        className={`p-6 border border-border bg-card rounded-2xl space-y-3 ${
+                          isLongText ? 'md:col-span-2' : ''
+                        }`}
+                      >
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          {fieldLabel}
+                        </h3>
+                        {isHtml ? (
+                          <div
+                            className="prose prose-zinc dark:prose-invert max-w-none text-foreground leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: fieldValue }}
+                          />
+                        ) : (
+                          <p className="text-foreground leading-relaxed whitespace-pre-line text-lg">
+                            {fieldValue}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Container>
+            </main>
+          )}
+        </div>
+
+        {/* Footer */}
+        <footer className="border-t border-border py-6 bg-muted/10">
+          <Container className="text-center text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Core CMS. Tüm Hakları Saklıdır.
+          </Container>
+        </footer>
+      </div>
+    );
+  }
+
+  // --- STANDARD COLLECTION LISTING VIEW ---
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+    <div className="w-full min-h-screen bg-background text-foreground flex flex-col justify-between">
       <div>
         {/* Simple Header */}
         <header className="border-b border-border py-4 bg-muted/30">
@@ -53,8 +185,11 @@ export default async function Page({ params, searchParams }) {
             <Link href="/" className="font-bold text-xl tracking-tight text-primary">
               Core CMS
             </Link>
-            <nav className="flex gap-4 text-sm">
-              <Link href="/" className="hover:text-primary transition-colors">Dashboard</Link>
+            <nav className="flex gap-4 text-sm font-medium">
+              <Link href="/blog" className="hover:text-primary transition-colors">Blog</Link>
+              <Link href="/services" className="hover:text-primary transition-colors">Hizmetler</Link>
+              <Link href="/about-us" className="hover:text-primary transition-colors">Hakkımızda</Link>
+              <Link href="/contact" className="hover:text-primary transition-colors">İletişim</Link>
             </nav>
           </Container>
         </header>
@@ -64,7 +199,7 @@ export default async function Page({ params, searchParams }) {
           <Container>
             <div className="space-y-8">
               <div className="border-b border-border pb-5">
-                <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
+                <h1 className="text-4xl font-extrabold tracking-tight text-foreground animate-fade-in">
                   {prettyTitle} Listesi
                 </h1>
                 <p className="text-muted-foreground mt-2">
@@ -80,8 +215,8 @@ export default async function Page({ params, searchParams }) {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {entries.map((entry) => {
                     const data = entry.data || {};
-                    const title = data.title || entry.title || 'Untitled';
-                    const summary = data.summary || data.description || '';
+                    const title = getLocalized(data.title || data.name || entry.title || 'Untitled', 'tr');
+                    const summary = getLocalized(data.summary || data.description || '', 'tr');
                     const slug = data.slug || entry.slug;
                     const date = entry.published_at 
                       ? new Date(entry.published_at).toLocaleDateString('tr-TR', {
@@ -97,43 +232,53 @@ export default async function Page({ params, searchParams }) {
                     );
                     const imageUrl = imageField ? imageField.url : null;
 
+                    const detailUrl = `/${contentTypeSlug}/${slug}`;
+
+                    if (contentTypeSlug === 'blog') {
+                      return (
+                        <div key={entry.id}>
+                          <CardPost
+                            image={imageUrl || '1.jpg'}
+                            label="Blog"
+                            description={title}
+                            time={date || 'Yeni'}
+                            href={detailUrl}
+                            labelHref={`/${contentTypeSlug}`}
+                          />
+                        </div>
+                      );
+                    }
+
+                    if (contentTypeSlug === 'projects' || contentTypeSlug === 'services') {
+                      return (
+                        <div key={entry.id}>
+                          <CardProject
+                            logo={imageUrl || 'brand-1.png'}
+                            name={title}
+                            description={summary}
+                            startDate={date || 'Başlangıç'}
+                            endDate="Güncel"
+                            status={{ label: 'Aktif', variant: 'badge-success' }}
+                            progress={{ value: 100, variant: 'bg-success' }}
+                            team={{ group: [] }}
+                            href={detailUrl}
+                          />
+                        </div>
+                      );
+                    }
+
                     return (
-                      <article key={entry.id} className="group border border-border bg-card rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
-                        <div>
-                          {imageUrl && (
-                            <div className="aspect-video w-full overflow-hidden bg-muted relative">
-                              <img
-                                src={imageUrl}
-                                alt={title}
-                                className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                              />
-                            </div>
-                          )}
-                          <div className="p-5 space-y-3">
-                            {date && (
-                              <time className="text-xs text-muted-foreground">{date}</time>
-                            )}
-                            <h2 className="text-xl font-bold tracking-tight group-hover:text-primary transition-colors line-clamp-2">
-                              <Link href={`/${contentTypeSlug}/${slug}`}>
-                                {title}
-                              </Link>
-                            </h2>
-                            {summary && (
-                              <p className="text-muted-foreground text-sm line-clamp-3 leading-relaxed">
-                                {summary}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="p-5 pt-0">
-                          <Link
-                            href={`/${contentTypeSlug}/${slug}`}
-                            className="inline-flex items-center text-sm font-semibold text-primary hover:underline gap-1"
-                          >
-                            Devamını Oku →
-                          </Link>
-                        </div>
-                      </article>
+                      <div key={entry.id}>
+                        <CardWork
+                          image={imageUrl || '21.jpg'}
+                          title={title}
+                          authorName="Yazar"
+                          authorAvatar="/media/avatars/300-1.png"
+                          likes={12}
+                          comments={3}
+                          href={detailUrl}
+                        />
+                      </div>
                     );
                   })}
                 </div>
@@ -175,4 +320,12 @@ export default async function Page({ params, searchParams }) {
       </footer>
     </div>
   );
+}
+
+// Localized helper
+function getLocalized(val, locale = 'tr') {
+  if (val && typeof val === 'object') {
+    return val[locale] || val['tr'] || val['en'] || Object.values(val)[0] || '';
+  }
+  return val || '';
 }

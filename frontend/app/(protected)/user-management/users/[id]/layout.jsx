@@ -105,7 +105,7 @@ export default function UserLayout({ params, children }) {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">{t('sidebar.home', 'Home')}</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard">{t('sidebar.home', 'Home')}</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>

@@ -32,7 +32,7 @@ export function SidebarHeader() {
   return (
     <div className="mb-3.5">
       <div className="flex items-center justify-between gap-2.5 px-3.5 h-[70px]">
-        <Link href="/">
+        <Link href="/dashboard">
           <img
             src={toAbsoluteUrl('/media/app/mini-logo-circle.svg')}
             className="dark:hidden h-[42px]"

@@ -12,32 +12,36 @@ const CardWork = ({
   authorName,
   likes,
   comments,
+  href = '#',
+  authorHref = '#',
 }) => {
   return (
     <Card className="border-0 shadow-sm shadow-black/8">
       <img
-        src={toAbsoluteUrl(`/media/images/600x400/${image}`)}
+        src={image && (image.startsWith('/') || image.startsWith('http')) ? toAbsoluteUrl(image) : toAbsoluteUrl(`/media/images/600x400/${image || '21.jpg'}`)}
         className="w-full h-auto rounded-t-xl"
         alt="image"
       />
 
       <div className="card-border card-rounded-b flex flex-col gap-2 px-5 py-4.5">
         <Link
-          href="/public-profile/profiles/company"
+          href={href}
           className="text-lg font-medium text-mono hover:text-primary"
         >
           {title}
         </Link>
         <div className="flex items-center justify-between grow">
           <div className="flex items-center grow">
-            <img
-              src={toAbsoluteUrl(`/media/avatars/${authorAvatar}`)}
-              className="rounded-full size-7 me-2"
-              alt="image"
-            />
+            {authorAvatar && (
+              <img
+                src={authorAvatar.startsWith('/') || authorAvatar.startsWith('http') ? toAbsoluteUrl(authorAvatar) : toAbsoluteUrl(`/media/avatars/${authorAvatar}`)}
+                className="rounded-full size-7 me-2"
+                alt="image"
+              />
+            )}
 
             <Link
-              href="/public-profile/profiles/nft"
+              href={authorHref}
               className="text-sm text-foreground hover:text-primary mb-px"
             >
               {authorName}

@@ -22,8 +22,10 @@ import {
   Link2,
   Sliders,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Eye
 } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -49,10 +51,27 @@ import { toast } from 'sonner';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { LoaderCircleIcon } from 'lucide-react';
+import { Sortable, SortableItem, SortableItemHandle } from '@/components/ui/sortable';
+import { cn } from '@/lib/utils';
 
 const ICONS_LIST = [
   'Database', 'FileText', 'Globe', 'Sliders', 'Eye', 'Link2', 'Settings2', 'Sparkles'
 ];
+
+const getIconComponent = (name, className = "size-4") => {
+  const icons = {
+    Database,
+    FileText,
+    Globe,
+    Sliders,
+    Eye,
+    Link2,
+    Settings2,
+    Sparkles
+  };
+  const IconComponent = icons[name] || Database;
+  return <IconComponent className={className} />;
+};
 
 const COLORS_LIST = [
   { name: 'Blue', hex: '#3b82f6' },
@@ -117,6 +136,16 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
   // SEO Package State
   const [seoEnabled, setSeoEnabled] = useState(false);
 
+  // Monetization States
+  const [monetizationEnabled, setMonetizationEnabled] = useState(false);
+  const [defaultAccessType, setDefaultAccessType] = useState('free');
+  const [defaultPrice, setDefaultPrice] = useState(0);
+  const [defaultCurrency, setDefaultCurrency] = useState('TRY');
+
+  // Dynamic Zone States
+  const [dynamicZoneEnabled, setDynamicZoneEnabled] = useState(false);
+  const [dynamicZoneBlocks, setDynamicZoneBlocks] = useState(['hero_banner', 'rich_text', 'collection_display', 'entry_callout', 'statistics_block', 'faq_accordion', 'features_grid', 'integrations_logos', 'testimonial_card', 'timeline_milestones', 'event_banner', 'team_grid', 'campaign_banner']);
+
   // Step 2 Fields Schema list
   const [fields, setFields] = useState([]);
 
@@ -136,7 +165,10 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
         setApiIdentifier(contentType.slug || '');
         setDescription(contentType.description || '');
         setIsCollection(contentType.is_collection !== false);
-        setFields(contentType.fields || []);
+        // Load regular fields (exclude dynamic_zone)
+        const allFields = contentType.fields || [];
+        const regularFields = allFields.filter(f => f.type !== 'dynamic_zone');
+        setFields(regularFields);
         
         // Settings mapping
         const settings = contentType.settings || {};
@@ -144,6 +176,17 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
         setColor(settings.color || '#3b82f6');
         setSeoEnabled(!!settings.seo_enabled);
         setPreviewUrlPattern(settings.preview_url_pattern || '');
+
+        // Dynamic zone loading from dynamic_zone field in the schema
+        const dzField = allFields.find(f => f.type === 'dynamic_zone');
+        if (dzField) {
+          setDynamicZoneEnabled(true);
+          const allowed = dzField.options?.allowed_blocks || [];
+          setDynamicZoneBlocks(allowed.map(b => b.type));
+        } else {
+          setDynamicZoneEnabled(false);
+          setDynamicZoneBlocks(['hero_banner', 'rich_text', 'collection_display', 'entry_callout', 'statistics_block', 'faq_accordion', 'features_grid', 'integrations_logos', 'testimonial_card', 'timeline_milestones', 'event_banner', 'team_grid', 'campaign_banner']);
+        }
 
         // Localization mapping
         const loc = settings.localization || {};
@@ -161,6 +204,13 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
         setVersionHistory(feats.version_history !== false);
         setScheduledPublishing(!!feats.scheduled_publishing);
         setRevisionRollback(!!feats.revision_rollback);
+
+        // Monetization mapping
+        const monetization = settings.monetization || {};
+        setMonetizationEnabled(!!monetization.enabled);
+        setDefaultAccessType(monetization.default_access_type || 'free');
+        setDefaultPrice(monetization.default_price || 0);
+        setDefaultCurrency(monetization.default_currency || 'TRY');
       } else {
         setName('');
         setApiIdentifier('');
@@ -178,6 +228,12 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
         setVersionHistory(true);
         setScheduledPublishing(false);
         setRevisionRollback(false);
+        setMonetizationEnabled(false);
+        setDefaultAccessType('free');
+        setDefaultPrice(0);
+        setDefaultCurrency('TRY');
+        setDynamicZoneEnabled(false);
+        setDynamicZoneBlocks(['hero_banner', 'rich_text', 'collection_display', 'entry_callout', 'statistics_block', 'faq_accordion', 'features_grid', 'integrations_logos', 'testimonial_card', 'timeline_milestones', 'event_banner', 'team_grid', 'campaign_banner']);
 
         // Standard default locked fields
         setFields([
@@ -224,6 +280,13 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
     if (index >= 2) {
       setFields(fields.filter((_, idx) => idx !== index));
     }
+  };
+
+  const handleFieldsReorder = (newFields) => {
+    const titleField = fields.find(f => f.slug === 'title') || fields[0];
+    const slugField = fields.find(f => f.slug === 'slug') || fields[1];
+    const customFields = newFields.filter(f => f.slug !== 'title' && f.slug !== 'slug');
+    setFields([titleField, slugField, ...customFields]);
   };
 
   const addFieldType = (label, type, categoryOptions = {}) => {
@@ -324,7 +387,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
       toast.error(t('content_types.messages.field_details_required', 'Name and slug must be entered for all fields.'));
       return;
     }
-
+ 
     let finalFields = [...fields];
     if (seoEnabled) {
       const seoDefinitions = [
@@ -336,7 +399,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
         { name: 'OG Image', slug: 'og_image', type: 'media', validation_rules: { required: false }, options: { localized: false } },
         { name: 'Robots Meta', slug: 'robots_meta', type: 'string', validation_rules: { required: false }, options: { localized: false } },
       ];
-
+ 
       seoDefinitions.forEach((def) => {
         if (!finalFields.some((f) => f.slug === def.slug)) {
           finalFields.push({
@@ -344,6 +407,248 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
             order: finalFields.length + 1
           });
         }
+      });
+    }
+
+    if (dynamicZoneEnabled) {
+      const allowedBlockDefinitions = [
+        {
+          type: 'hero_banner',
+          name: 'Hero Banner (Giriş Görseli)',
+          desc: 'Geniş başlık, açıklama ve görsel alanı.',
+          fields: [
+            { name: 'Başlık (Heading)', slug: 'heading', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+            { name: 'Alt Başlık (Subtitle)', slug: 'subtitle', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Arka Plan Görseli', slug: 'background_image', type: 'media', validation_rules: { required: false } }
+          ]
+        },
+        {
+          type: 'rich_text',
+          name: 'Zengin Metin Alanı (Rich Text)',
+          desc: 'WYSIWYG formatında serbest yazı alanı.',
+          fields: [
+            { name: 'Bölüm Başlığı', slug: 'title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'İçerik (Content)', slug: 'content', type: 'text', validation_rules: { required: true }, options: { localized: true } }
+          ]
+        },
+        {
+          type: 'collection_display',
+          name: 'Koleksiyon Listeleme (Collection Display)',
+          desc: 'Diğer içerik tiplerini (koleksiyonları) carousel veya grid olarak gösterir.',
+          fields: [
+            { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Hedef Koleksiyon', slug: 'target_content_type_id', type: 'relation_content_type' },
+            { name: 'Limit', slug: 'limit', type: 'number', validation_rules: { required: true } },
+            { name: 'Görünüm Şablonu', slug: 'layout_style', type: 'select', options: { choices: ['grid', 'carousel', 'list'] } }
+          ]
+        },
+        {
+          type: 'entry_callout',
+          name: 'Görsel Callout Paneli (Callout Banner)',
+          desc: 'Açıklama, yönlendirme butonu ve şık arka plan görseli içeren callout alanı.',
+          fields: [
+            { name: 'Başlık (Title)', slug: 'title', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+            { name: 'Açıklama (Description)', slug: 'description', type: 'text', validation_rules: { required: true }, options: { localized: true } },
+            { name: 'Buton Metni', slug: 'cta_text', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Buton Linki', slug: 'cta_url', type: 'string', validation_rules: { required: false } },
+            { name: 'Arka Plan Görseli', slug: 'background_image', type: 'media', validation_rules: { required: false } }
+          ]
+        },
+        {
+          type: 'statistics_block',
+          name: 'İstatistik Sayacı (Statistics Grid)',
+          desc: 'Sayılar ve açıklamalardan oluşan yan yana istatistik alanları.',
+          fields: [
+            { name: 'Bölüm Başlığı', slug: 'title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. İstatistik Sayı', slug: 'stat_1_number', type: 'string', validation_rules: { required: true } },
+            { name: '1. İstatistik Etiket', slug: 'stat_1_label', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+            { name: '2. İstatistik Sayı', slug: 'stat_2_number', type: 'string', validation_rules: { required: true } },
+            { name: '2. İstatistik Etiket', slug: 'stat_2_label', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+            { name: '3. İstatistik Sayı', slug: 'stat_3_number', type: 'string', validation_rules: { required: true } },
+            { name: '3. İstatistik Etiket', slug: 'stat_3_label', type: 'string', validation_rules: { required: true }, options: { localized: true } }
+          ]
+        },
+        {
+          type: 'faq_accordion',
+          name: 'Sıkça Sorulan Sorular (FAQ Accordion)',
+          desc: 'Açılıp kapanabilir akordiyon formatında SSS başlıkları.',
+          fields: [
+            { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Soru', slug: 'faq_1_question', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Cevap', slug: 'faq_1_answer', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: '2. Soru', slug: 'faq_2_question', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '2. Cevap', slug: 'faq_2_answer', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: '3. Soru', slug: 'faq_3_question', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '3. Cevap', slug: 'faq_3_answer', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: '4. Soru', slug: 'faq_4_question', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '4. Cevap', slug: 'faq_4_answer', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: '5. Soru', slug: 'faq_5_question', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '5. Cevap', slug: 'faq_5_answer', type: 'text', validation_rules: { required: false }, options: { localized: true } }
+          ]
+        },
+        {
+          type: 'features_grid',
+          name: 'Özellik Izgarası (Features Grid)',
+          desc: 'Simge, başlık ve açıklamalı 4lü özellik kartları listesi.',
+          fields: [
+            { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Özellik Başlığı', slug: 'feature_1_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Özellik Açıklaması', slug: 'feature_1_desc', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Özellik Simgesi', slug: 'feature_1_icon', type: 'select', options: { choices: ['Star', 'Heart', 'Check', 'Settings', 'Sparkles', 'Shield', 'Zap', 'Globe'] } },
+            { name: '2. Özellik Başlığı', slug: 'feature_2_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '2. Özellik Açıklaması', slug: 'feature_2_desc', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: '2. Özellik Simgesi', slug: 'feature_2_icon', type: 'select', options: { choices: ['Star', 'Heart', 'Check', 'Settings', 'Sparkles', 'Shield', 'Zap', 'Globe'] } },
+            { name: '3. Özellik Başlığı', slug: 'feature_3_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '3. Özellik Açıklaması', slug: 'feature_3_desc', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: '3. Özellik Simgesi', slug: 'feature_3_icon', type: 'select', options: { choices: ['Star', 'Heart', 'Check', 'Settings', 'Sparkles', 'Shield', 'Zap', 'Globe'] } },
+            { name: '4. Özellik Başlığı', slug: 'feature_4_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '4. Özellik Açıklaması', slug: 'feature_4_desc', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: '4. Özellik Simgesi', slug: 'feature_4_icon', type: 'select', options: { choices: ['Star', 'Heart', 'Check', 'Settings', 'Sparkles', 'Shield', 'Zap', 'Globe'] } }
+          ]
+        },
+        {
+          type: 'integrations_logos',
+          name: 'Entegrasyon Logoları (Integrations Logos Grid)',
+          desc: 'Logo görseli, başlık, açıklama ve Switch butonlu 4lü entegrasyon listesi.',
+          fields: [
+            { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Logo Görseli', slug: 'integration_1_logo', type: 'media', validation_rules: { required: false } },
+            { name: '1. Marka Adı', slug: 'integration_1_name', type: 'string', validation_rules: { required: false } },
+            { name: '1. Açıklama', slug: 'integration_1_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '2. Logo Görseli', slug: 'integration_2_logo', type: 'media', validation_rules: { required: false } },
+            { name: '2. Marka Adı', slug: 'integration_2_name', type: 'string', validation_rules: { required: false } },
+            { name: '2. Açıklama', slug: 'integration_2_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '3. Logo Görseli', slug: 'integration_3_logo', type: 'media', validation_rules: { required: false } },
+            { name: '3. Marka Adı', slug: 'integration_3_name', type: 'string', validation_rules: { required: false } },
+            { name: '3. Açıklama', slug: 'integration_3_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '4. Logo Görseli', slug: 'integration_4_logo', type: 'media', validation_rules: { required: false } },
+            { name: '4. Marka Adı', slug: 'integration_4_name', type: 'string', validation_rules: { required: false } },
+            { name: '4. Açıklama', slug: 'integration_4_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } }
+          ]
+        },
+        {
+          type: 'testimonial_card',
+          name: 'Müşteri Değerlendirmeleri (Testimonials Grid)',
+          desc: 'Avatar, ünvan, yorum ve yıldız derecelendirmeli 3lü referans kartları.',
+          fields: [
+            { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Müşteri Adı', slug: 'testimonial_1_name', type: 'string', validation_rules: { required: false } },
+            { name: '1. Ünvan / Rol', slug: 'testimonial_1_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Yorum', slug: 'testimonial_1_quote', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Profil Resmi', slug: 'testimonial_1_avatar', type: 'media', validation_rules: { required: false } },
+            { name: '1. Derecelendirme (1-5 Yıldız)', slug: 'testimonial_1_rating', type: 'select', options: { choices: ['5', '4', '3', '2', '1'] } },
+            { name: '2. Müşteri Adı', slug: 'testimonial_2_name', type: 'string', validation_rules: { required: false } },
+            { name: '2. Ünvan / Rol', slug: 'testimonial_2_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '2. Yorum', slug: 'testimonial_2_quote', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: '2. Profil Resmi', slug: 'testimonial_2_avatar', type: 'media', validation_rules: { required: false } },
+            { name: '2. Derecelendirme (1-5 Yıldız)', slug: 'testimonial_2_rating', type: 'select', options: { choices: ['5', '4', '3', '2', '1'] } },
+            { name: '3. Müşteri Adı', slug: 'testimonial_3_name', type: 'string', validation_rules: { required: false } },
+            { name: '3. Ünvan / Rol', slug: 'testimonial_3_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '3. Yorum', slug: 'testimonial_3_quote', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: '3. Profil Resmi', slug: 'testimonial_3_avatar', type: 'media', validation_rules: { required: false } },
+            { name: '3. Derecelendirme (1-5 Yıldız)', slug: 'testimonial_3_rating', type: 'select', options: { choices: ['5', '4', '3', '2', '1'] } }
+          ]
+        },
+        {
+          type: 'timeline_milestones',
+          name: 'Zaman Çizelgesi (Timeline Milestones)',
+          desc: 'Tarih, başlık, açıklama ve simge içeren kurumsal kilometre taşları.',
+          fields: [
+            { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Dönem/Yıl', slug: 'milestone_1_year', type: 'string', validation_rules: { required: false } },
+            { name: '1. Başlık', slug: 'milestone_1_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Açıklama', slug: 'milestone_1_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Simge', slug: 'milestone_1_icon', type: 'select', options: { choices: ['Calendar', 'Star', 'Flag', 'Award', 'Globe', 'Rocket'] } },
+            { name: '2. Dönem/Yıl', slug: 'milestone_2_year', type: 'string', validation_rules: { required: false } },
+            { name: '2. Başlık', slug: 'milestone_2_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '2. Açıklama', slug: 'milestone_2_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '2. Simge', slug: 'milestone_2_icon', type: 'select', options: { choices: ['Calendar', 'Star', 'Flag', 'Award', 'Globe', 'Rocket'] } },
+            { name: '3. Dönem/Yıl', slug: 'milestone_3_year', type: 'string', validation_rules: { required: false } },
+            { name: '3. Başlık', slug: 'milestone_3_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '3. Açıklama', slug: 'milestone_3_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '3. Simge', slug: 'milestone_3_icon', type: 'select', options: { choices: ['Calendar', 'Star', 'Flag', 'Award', 'Globe', 'Rocket'] } },
+            { name: '4. Dönem/Yıl', slug: 'milestone_4_year', type: 'string', validation_rules: { required: false } },
+            { name: '4. Başlık', slug: 'milestone_4_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '4. Açıklama', slug: 'milestone_4_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '4. Simge', slug: 'milestone_4_icon', type: 'select', options: { choices: ['Calendar', 'Star', 'Flag', 'Award', 'Globe', 'Rocket'] } }
+          ]
+        },
+        {
+          type: 'event_banner',
+          name: 'Etkinlik & Webinar Duyurusu (Event Banner)',
+          desc: 'Kontenjan ilerleme çubuklu ve kayıt butonlu yatay etkinlik paneli.',
+          fields: [
+            { name: 'Etkinlik Adı', slug: 'event_title', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+            { name: 'Açıklama', slug: 'event_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Etkinlik Kodu', slug: 'event_code', type: 'string', validation_rules: { required: false } },
+            { name: 'Dolu Koltuk Sayısı', slug: 'filled_seats', type: 'number', validation_rules: { required: false } },
+            { name: 'Toplam Koltuk Sayısı', slug: 'total_seats', type: 'number', validation_rules: { required: false } },
+            { name: 'Buton Metni', slug: 'cta_text', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Buton Linki', slug: 'cta_url', type: 'string', validation_rules: { required: false } }
+          ]
+        },
+        {
+          type: 'team_grid',
+          name: 'Ekip Üyeleri Izgarası (Team Grid)',
+          desc: 'Ünvan, profil resmi ve sosyal ağ linkli 4lü ekip listesi.',
+          fields: [
+            { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Üye Adı', slug: 'member_1_name', type: 'string', validation_rules: { required: false } },
+            { name: '1. Rol / Ünvan', slug: 'member_1_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '1. Profil Resmi', slug: 'member_1_avatar', type: 'media', validation_rules: { required: false } },
+            { name: '1. Twitter Linki', slug: 'member_1_social_twitter', type: 'string', validation_rules: { required: false } },
+            { name: '1. LinkedIn Linki', slug: 'member_1_social_linkedin', type: 'string', validation_rules: { required: false } },
+            { name: '2. Üye Adı', slug: 'member_2_name', type: 'string', validation_rules: { required: false } },
+            { name: '2. Rol / Ünvan', slug: 'member_2_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '2. Profil Resmi', slug: 'member_2_avatar', type: 'media', validation_rules: { required: false } },
+            { name: '2. Twitter Linki', slug: 'member_2_social_twitter', type: 'string', validation_rules: { required: false } },
+            { name: '2. LinkedIn Linki', slug: 'member_2_social_linkedin', type: 'string', validation_rules: { required: false } },
+            { name: '3. Üye Adı', slug: 'member_3_name', type: 'string', validation_rules: { required: false } },
+            { name: '3. Rol / Ünvan', slug: 'member_3_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '3. Profil Resmi', slug: 'member_3_avatar', type: 'media', validation_rules: { required: false } },
+            { name: '3. Twitter Linki', slug: 'member_3_social_twitter', type: 'string', validation_rules: { required: false } },
+            { name: '3. LinkedIn Linki', slug: 'member_3_social_linkedin', type: 'string', validation_rules: { required: false } },
+            { name: '4. Üye Adı', slug: 'member_4_name', type: 'string', validation_rules: { required: false } },
+            { name: '4. Rol / Ünvan', slug: 'member_4_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: '4. Profil Resmi', slug: 'member_4_avatar', type: 'media', validation_rules: { required: false } },
+            { name: '4. Twitter Linki', slug: 'member_4_social_twitter', type: 'string', validation_rules: { required: false } },
+            { name: '4. LinkedIn Linki', slug: 'member_4_social_linkedin', type: 'string', validation_rules: { required: false } }
+          ]
+        },
+        {
+          type: 'campaign_banner',
+          name: 'Kampanya & Promosyon Kartı (Campaign Banner)',
+          desc: 'İndirim oranı, kupon kodu kopyalama alanı ve ilerleme durumlu duyuru paneli.',
+          fields: [
+            { name: 'Kampanya Başlığı', slug: 'title', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+            { name: 'Kampanya Açıklaması', slug: 'description', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Kupon / Promosyon Kodu', slug: 'promo_code', type: 'string', validation_rules: { required: false } },
+            { name: 'İndirim Etiketi', slug: 'discount_label', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'İlerleme Yüzdesi (0-100)', slug: 'progress_percent', type: 'number', validation_rules: { required: false } },
+            { name: 'Buton Metni', slug: 'cta_text', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Buton Linki', slug: 'cta_url', type: 'string', validation_rules: { required: false } }
+          ]
+        }
+      ];
+
+      const selectedAllowedBlocks = allowedBlockDefinitions.filter(b => dynamicZoneBlocks.includes(b.type));
+
+      finalFields.push({
+        name: 'Dinamik Bloklar',
+        slug: 'dynamic_blocks',
+        type: 'dynamic_zone',
+        validation_rules: { required: false },
+        options: {
+          allowed_blocks: selectedAllowedBlocks,
+          localized: false
+        },
+        order: finalFields.length + 1
       });
     }
 
@@ -370,6 +675,12 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
           version_history: versionHistory,
           scheduled_publishing: scheduledPublishing,
           revision_rollback: revisionRollback
+        },
+        monetization: {
+          enabled: monetizationEnabled,
+          default_access_type: defaultAccessType,
+          default_price: defaultPrice,
+          default_currency: defaultCurrency
         }
       },
       fields: finalFields.map((f, idx) => ({ ...f, order: idx + 1 }))
@@ -558,18 +869,21 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
             {/* Collection/Single Type Selector (clean radio cards) */}
             <div className="space-y-3">
               <Label className="text-xs font-bold text-muted-foreground">İçerik Tipi Yapısı</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <RadioGroup 
+                value={isCollection ? 'collection' : 'single'} 
+                onValueChange={(val) => setIsCollection(val === 'collection')}
+                className="grid grid-cols-2 gap-4"
+              >
                 <label 
+                  htmlFor="structure-collection"
                   className={`border border-border p-4 rounded-xl cursor-pointer hover:bg-muted/10 flex items-start gap-3 transition-all ${
                     isCollection ? 'border-primary bg-primary/5' : 'bg-card'
                   }`}
                 >
-                  <input
-                    type="radio"
-                    name="structure-type"
-                    checked={isCollection}
-                    onChange={() => setIsCollection(true)}
-                    className="rounded-full text-primary border-border focus:ring-primary size-4 mt-0.5 shrink-0"
+                  <RadioGroupItem
+                    value="collection"
+                    id="structure-collection"
+                    className="mt-0.5 shrink-0"
                   />
                   <div>
                     <span className="font-bold text-sm text-foreground block">Collection Type</span>
@@ -580,16 +894,15 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                 </label>
 
                 <label 
+                  htmlFor="structure-single"
                   className={`border border-border p-4 rounded-xl cursor-pointer hover:bg-muted/10 flex items-start gap-3 transition-all ${
                     !isCollection ? 'border-primary bg-primary/5' : 'bg-card'
                   }`}
                 >
-                  <input
-                    type="radio"
-                    name="structure-type"
-                    checked={!isCollection}
-                    onChange={() => setIsCollection(false)}
-                    className="rounded-full text-primary border-border focus:ring-primary size-4 mt-0.5 shrink-0"
+                  <RadioGroupItem
+                    value="single"
+                    id="structure-single"
+                    className="mt-0.5 shrink-0"
                   />
                   <div>
                     <span className="font-bold text-sm text-foreground block">Single Type</span>
@@ -598,7 +911,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                     </span>
                   </div>
                 </label>
-              </div>
+              </RadioGroup>
             </div>
 
             {/* Collapsible Appearance Customizer */}
@@ -622,7 +935,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                               icon === ic ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:text-foreground'
                             }`}
                           >
-                            <Database className="size-4" />
+                            {getIconComponent(ic, "size-4")}
                           </button>
                         ))}
                       </div>
@@ -667,96 +980,105 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
             </div>
 
             {/* List of Fields */}
-            <div className="space-y-3">
+            <Sortable
+              value={fields}
+              onValueChange={handleFieldsReorder}
+              getItemValue={(field) => field.slug}
+              className="space-y-3"
+            >
               {fields.map((field, idx) => {
                 const isLocked = isLockedField(field);
                 const fieldLabel = field.options?.field_type || field.type;
 
                 return (
-                  <div 
-                    key={idx} 
-                    className={`bg-card border p-4 rounded-xl flex items-center justify-between hover:shadow-sm transition-all group ${
-                      isLocked ? 'border-border bg-muted/10' : 'border-border'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`text-muted-foreground ${isLocked ? 'opacity-30 cursor-not-allowed' : 'cursor-grab hover:text-foreground'}`}>
-                        <Grid className="size-4.5" />
+                  <SortableItem key={field.slug} value={field.slug} disabled={isLocked}>
+                    <div 
+                      className={`bg-card border p-4 rounded-xl flex items-center justify-between hover:shadow-sm transition-all group ${
+                        isLocked ? 'border-border bg-muted/10' : 'border-border'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <SortableItemHandle 
+                          disabled={isLocked}
+                          className={cn("text-muted-foreground", isLocked ? 'opacity-30 cursor-not-allowed' : 'cursor-grab hover:text-foreground')}
+                        >
+                          <Grid className="size-4.5" />
+                        </SortableItemHandle>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-foreground">{field.name || 'İsimsiz Alan'}</span>
+                            <code className="text-[10px] text-muted-foreground font-mono">({field.slug || 'no-slug'})</code>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
+                            <Badge variant="secondary" className="text-[9px] font-bold px-1.5 py-0">
+                              {fieldLabel}
+                            </Badge>
+                            {field.validation_rules?.required && (
+                              <Badge variant="warning" className="text-[9px] font-bold px-1.5 py-0">Zorunlu</Badge>
+                            )}
+                            {field.options?.localized && (
+                              <Badge variant="info" className="text-[9px] font-bold px-1.5 py-0">Çeviri</Badge>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm text-foreground">{field.name || 'İsimsiz Alan'}</span>
-                          <code className="text-[10px] text-muted-foreground font-mono">({field.slug || 'no-slug'})</code>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
-                          <Badge variant="secondary" className="text-[9px] font-bold px-1.5 py-0">
-                            {fieldLabel}
-                          </Badge>
-                          {field.validation_rules?.required && (
-                            <Badge variant="warning" className="text-[9px] font-bold px-1.5 py-0">Zorunlu</Badge>
-                          )}
-                          {field.options?.localized && (
-                            <Badge variant="info" className="text-[9px] font-bold px-1.5 py-0">Çeviri</Badge>
-                          )}
-                        </div>
+
+                      <div className="flex items-center gap-1">
+                        {/* Move up */}
+                        <Button 
+                          type="button"
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => moveField(idx, 'up')}
+                          disabled={idx <= 2 || isLocked}
+                          className="h-7 w-7 p-0 rounded-lg"
+                        >
+                          <ChevronUp className="size-4" />
+                        </Button>
+                        
+                        {/* Move down */}
+                        <Button 
+                          type="button"
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => moveField(idx, 'down')}
+                          disabled={idx === fields.length - 1 || isLocked}
+                          className="h-7 w-7 p-0 rounded-lg"
+                        >
+                          <ChevronDown className="size-4" />
+                        </Button>
+
+                        {/* Settings Cog */}
+                        <Button 
+                          type="button"
+                          variant="dim" 
+                          size="sm" 
+                          onClick={() => {
+                            setFieldSettingsIndex(idx);
+                            setSettingsDrawerOpen(true);
+                          }}
+                          className="h-7 w-7 p-0 rounded-lg"
+                        >
+                          <Settings className="size-4" />
+                        </Button>
+
+                        {/* Delete */}
+                        <Button 
+                          type="button"
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => removeField(idx)}
+                          disabled={isLocked}
+                          className="h-7 w-7 p-0 rounded-lg"
+                        >
+                          <Trash className="size-4" />
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-1">
-                      {/* Move up */}
-                      <Button 
-                        type="button"
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => moveField(idx, 'up')}
-                        disabled={idx <= 2 || isLocked}
-                        className="h-7 w-7 p-0 rounded-lg"
-                      >
-                        <ChevronUp className="size-4" />
-                      </Button>
-                      
-                      {/* Move down */}
-                      <Button 
-                        type="button"
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => moveField(idx, 'down')}
-                        disabled={idx === fields.length - 1 || isLocked}
-                        className="h-7 w-7 p-0 rounded-lg"
-                      >
-                        <ChevronDown className="size-4" />
-                      </Button>
-
-                      {/* Settings Cog */}
-                      <Button 
-                        type="button"
-                        variant="dim" 
-                        size="sm" 
-                        onClick={() => {
-                          setFieldSettingsIndex(idx);
-                          setSettingsDrawerOpen(true);
-                        }}
-                        className="h-7 w-7 p-0 rounded-lg"
-                      >
-                        <Settings className="size-4" />
-                      </Button>
-
-                      {/* Delete */}
-                      <Button 
-                        type="button"
-                        variant="destructive" 
-                        size="sm" 
-                        onClick={() => removeField(idx)}
-                        disabled={isLocked}
-                        className="h-7 w-7 p-0 rounded-lg"
-                      >
-                        <Trash className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  </SortableItem>
                 );
               })}
-            </div>
+            </Sortable>
           </div>
         )}
 
@@ -961,6 +1283,134 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
               </div>
               <Switch id="seo-pack" checked={seoEnabled} onCheckedChange={setSeoEnabled} />
             </div>
+
+            {/* Dinamik Blok Yapısı (Dynamic Zone) */}
+            <div className="space-y-4 p-5 border border-border rounded-xl bg-card">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Sliders className="size-4 text-primary" />
+                    Dinamik Blok Yapısı (Dynamic Zones)
+                  </span>
+                  <span className="text-[10px] text-muted-foreground block">
+                    Editörlerin sayfa içeriğinde sürükle-bırak bloklar (Hero, Metin, Koleksiyonlar) oluşturmasına izin verin.
+                  </span>
+                </div>
+                <Switch 
+                  id="dynamic-zone-enable"
+                  checked={dynamicZoneEnabled}
+                  onCheckedChange={setDynamicZoneEnabled}
+                />
+              </div>
+
+              {dynamicZoneEnabled && (
+                <div className="space-y-3 pt-2">
+                  <Label className="text-xs font-semibold text-muted-foreground">Kullanılabilecek Blok Tipleri</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { type: 'hero_banner', name: '🖼️ Giriş Görseli (Hero)', desc: 'Geniş başlık, alt başlık ve buton alanı.' },
+                      { type: 'rich_text', name: '✍️ Zengin Metin', desc: 'WYSIWYG formatında serbest yazı alanı.' },
+                      { type: 'collection_display', name: '🗂️ Koleksiyon Listeleme', desc: 'İçerikleri carousel veya grid şeklinde listeler.' },
+                      { type: 'entry_callout', name: '📢 Görsel Callout', desc: 'Buton ve görsel içeren callout alanı.' },
+                      { type: 'statistics_block', name: '📊 İstatistik Sayacı', desc: 'İstatistik sayıları ve etiketleri.' },
+                      { type: 'faq_accordion', name: '❓ SSS Akordiyon', desc: 'SSS başlıkları ve cevapları.' },
+                      { type: 'features_grid', name: '🚀 Özellik Izgarası', desc: 'Simge, başlık ve açıklamalı kartlar.' },
+                      { type: 'integrations_logos', name: '🔌 Entegrasyon Logoları', desc: 'Resim, başlık ve durum butonlu liste.' },
+                      { type: 'testimonial_card', name: '💬 Müşteri Değerlendirmeleri', desc: 'Yorumlar ve puanlamalar.' },
+                      { type: 'timeline_milestones', name: '📅 Zaman Çizelgesi', desc: 'Kilometre taşları ve dönem tarihleri.' },
+                      { type: 'event_banner', name: '🎟️ Etkinlik Duyurusu', desc: 'Katılımcı ve ilerleme durumlu yatay kart.' },
+                      { type: 'team_grid', name: '👥 Ekip Üyeleri', desc: 'Roller ve sosyal medya linkli ekip.' },
+                      { type: 'campaign_banner', name: '📈 Kampanya Paneli', desc: 'İndirim oranı ve kupon kopyalama alanı.' }
+                    ].map((block) => {
+                      const isChecked = dynamicZoneBlocks.includes(block.type);
+                      return (
+                        <div key={block.type} className="flex items-start gap-2.5 p-3 border border-border rounded-xl bg-card hover:bg-muted/10 [&:has([data-state=checked])]:border-primary/50">
+                          <Checkbox
+                            id={`dz-block-${block.type}`}
+                            checked={isChecked}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setDynamicZoneBlocks([...dynamicZoneBlocks, block.type]);
+                              } else {
+                                setDynamicZoneBlocks(dynamicZoneBlocks.filter(b => b !== block.type));
+                              }
+                            }}
+                            className="mt-0.5"
+                          />
+                          <label htmlFor={`dz-block-${block.type}`} className="cursor-pointer select-none">
+                            <span className="text-xs font-bold text-foreground block">{block.name}</span>
+                            <span className="text-[9px] text-muted-foreground block mt-0.5 leading-normal">{block.desc}</span>
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Para Kazanma Modülü */}
+            <div className="space-y-4 p-5 border border-border rounded-xl bg-card">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                    {t('content_types.monetization.title', 'Satış ve Para Kazanma')}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground block">
+                    {t('content_types.monetization.description', 'İçerikleri ödeme duvarı (paywall) arkasına almayı veya tekil satışı aktif eder.')}
+                  </span>
+                </div>
+                <Switch 
+                  id="monetization-enable"
+                  checked={monetizationEnabled}
+                  onCheckedChange={setMonetizationEnabled}
+                />
+              </div>
+
+              {monetizationEnabled && (
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-1.5">
+                    <Label>{t('content_types.monetization.default_access_model', 'Varsayılan Erişim Modeli')}</Label>
+                    <Select value={defaultAccessType} onValueChange={setDefaultAccessType}>
+                      <SelectTrigger className="bg-card">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="free">{t('content_types.monetization.access_everyone', 'Herkes (Ücretsiz)')}</SelectItem>
+                        <SelectItem value="protected">{t('content_types.monetization.access_members', 'Sadece Üyeler (Üyelik Planı)')}</SelectItem>
+                        <SelectItem value="premium">{t('content_types.monetization.access_single_purchase', 'Tekil Satın Alma (Ödeme Duvarı)')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {defaultAccessType === 'premium' && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1.5">
+                        <Label>{t('content_types.monetization.default_price', 'Varsayılan Fiyat')}</Label>
+                        <Input 
+                          type="number" 
+                          value={defaultPrice} 
+                          onChange={(e) => setDefaultPrice(Number(e.target.value))}
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>{t('content_types.monetization.currency', 'Para Birimi')}</Label>
+                        <Select value={defaultCurrency} onValueChange={setDefaultCurrency}>
+                          <SelectTrigger className="bg-card">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="TRY">TRY</SelectItem>
+                            <SelectItem value="USD">USD</SelectItem>
+                            <SelectItem value="EUR">EUR</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </RightDrawer>
@@ -1090,10 +1540,6 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                   <div onClick={() => addFieldType('Component', 'json', { structure: 'component', component_name: '' })} className="border p-3.5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all text-center space-y-1">
                     <span className="font-bold text-xs block text-foreground">Component</span>
                     <span className="text-[10px] text-muted-foreground block">Tekrar kullanılabilir hazır blok yapısı</span>
-                  </div>
-                  <div onClick={() => addFieldType('Dynamic Zone', 'json', { structure: 'dynamic_zone', allowed_components: [] })} className="border p-3.5 rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all text-center space-y-1">
-                    <span className="font-bold text-xs block text-foreground">Dynamic Zone</span>
-                    <span className="text-[10px] text-muted-foreground block">Editörün dinamik blok seçip sayfa kurmasını sağlar</span>
                   </div>
                 </TabsContent>
                 <TabsContent value="relations" className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-0">
@@ -1319,6 +1765,271 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                       )}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Dynamic Zone Allowed Blocks Configuration */}
+            {(currentSettingsField.type === 'dynamic_zone' || currentSettingsField.options?.field_type === 'Dynamic Zone') && (
+              <div className="space-y-4 pt-4 border-t border-border bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <Sliders className="size-3.5 text-primary" /> İzin Verilen Bloklar (Allowed Blocks)
+                </h4>
+                <p className="text-[10px] text-muted-foreground">Editörlerin bu bölgeye ekleyebileceği sayfa bileşenlerini seçin.</p>
+                
+                <div className="space-y-3">
+                  {[
+                    {
+                      type: 'hero_banner',
+                      name: 'Hero Banner (Giriş Görseli)',
+                      desc: 'Geniş başlık, açıklama ve görsel alanı.',
+                      fields: [
+                        { name: 'Başlık (Heading)', slug: 'heading', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+                        { name: 'Alt Başlık (Subtitle)', slug: 'subtitle', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Arka Plan Görseli', slug: 'background_image', type: 'media', validation_rules: { required: false } }
+                      ]
+                    },
+                    {
+                      type: 'rich_text',
+                      name: 'Zengin Metin Alanı (Rich Text)',
+                      desc: 'WYSIWYG formatında serbest yazı alanı.',
+                      fields: [
+                        { name: 'Bölüm Başlığı', slug: 'title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'İçerik (Content)', slug: 'content', type: 'text', validation_rules: { required: true }, options: { localized: true } }
+                      ]
+                    },
+                    {
+                      type: 'collection_display',
+                      name: 'Koleksiyon Listeleme (Collection Display)',
+                      desc: 'Diğer içerik tiplerini (koleksiyonları) carousel veya grid olarak gösterir.',
+                      fields: [
+                        { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Hedef Koleksiyon', slug: 'target_content_type_id', type: 'relation_content_type' },
+                        { name: 'Limit', slug: 'limit', type: 'number', validation_rules: { required: true } },
+                        { name: 'Görünüm Şablonu', slug: 'layout_style', type: 'select', options: { choices: ['grid', 'carousel', 'list'] } }
+                      ]
+                    },
+                    {
+                      type: 'entry_callout',
+                      name: 'Görsel Callout Paneli (Callout Banner)',
+                      desc: 'Açıklama, yönlendirme butonu ve şık arka plan görseli içeren callout alanı.',
+                      fields: [
+                        { name: 'Başlık (Title)', slug: 'title', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+                        { name: 'Açıklama (Description)', slug: 'description', type: 'text', validation_rules: { required: true }, options: { localized: true } },
+                        { name: 'Buton Metni', slug: 'cta_text', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Buton Linki', slug: 'cta_url', type: 'string', validation_rules: { required: false } },
+                        { name: 'Arka Plan Görseli', slug: 'background_image', type: 'media', validation_rules: { required: false } }
+                      ]
+                    },
+                    {
+                      type: 'statistics_block',
+                      name: 'İstatistik Sayacı (Statistics Grid)',
+                      desc: 'Sayılar ve açıklamalardan oluşan yan yana istatistik alanları.',
+                      fields: [
+                        { name: 'Bölüm Başlığı', slug: 'title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. İstatistik Sayı', slug: 'stat_1_number', type: 'string', validation_rules: { required: true } },
+                        { name: '1. İstatistik Etiket', slug: 'stat_1_label', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+                        { name: '2. İstatistik Sayı', slug: 'stat_2_number', type: 'string', validation_rules: { required: true } },
+                        { name: '2. İstatistik Etiket', slug: 'stat_2_label', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+                        { name: '3. İstatistik Sayı', slug: 'stat_3_number', type: 'string', validation_rules: { required: true } },
+                        { name: '3. İstatistik Etiket', slug: 'stat_3_label', type: 'string', validation_rules: { required: true }, options: { localized: true } }
+                      ]
+                    },
+                    {
+                      type: 'faq_accordion',
+                      name: 'Sıkça Sorulan Sorular (FAQ Accordion)',
+                      desc: 'Açılıp kapanabilir akordiyon formatında SSS başlıkları.',
+                      fields: [
+                        { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Soru', slug: 'faq_1_question', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Cevap', slug: 'faq_1_answer', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '2. Soru', slug: 'faq_2_question', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '2. Cevap', slug: 'faq_2_answer', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '3. Soru', slug: 'faq_3_question', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '3. Cevap', slug: 'faq_3_answer', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '4. Soru', slug: 'faq_4_question', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '4. Cevap', slug: 'faq_4_answer', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '5. Soru', slug: 'faq_5_question', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '5. Cevap', slug: 'faq_5_answer', type: 'text', validation_rules: { required: false }, options: { localized: true } }
+                      ]
+                    },
+                    {
+                      type: 'features_grid',
+                      name: 'Özellik Izgarası (Features Grid)',
+                      desc: 'Simge, başlık ve açıklamalı 4lü özellik kartları listesi.',
+                      fields: [
+                        { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Özellik Başlığı', slug: 'feature_1_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Özellik Açıklaması', slug: 'feature_1_desc', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Özellik Simgesi', slug: 'feature_1_icon', type: 'select', options: { choices: ['Star', 'Heart', 'Check', 'Settings', 'Sparkles', 'Shield', 'Zap', 'Globe'] } },
+                        { name: '2. Özellik Başlığı', slug: 'feature_2_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '2. Özellik Açıklaması', slug: 'feature_2_desc', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '2. Özellik Simgesi', slug: 'feature_2_icon', type: 'select', options: { choices: ['Star', 'Heart', 'Check', 'Settings', 'Sparkles', 'Shield', 'Zap', 'Globe'] } },
+                        { name: '3. Özellik Başlığı', slug: 'feature_3_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '3. Özellik Açıklaması', slug: 'feature_3_desc', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '3. Özellik Simgesi', slug: 'feature_3_icon', type: 'select', options: { choices: ['Star', 'Heart', 'Check', 'Settings', 'Sparkles', 'Shield', 'Zap', 'Globe'] } },
+                        { name: '4. Özellik Başlığı', slug: 'feature_4_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '4. Özellik Açıklaması', slug: 'feature_4_desc', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '4. Özellik Simgesi', slug: 'feature_4_icon', type: 'select', options: { choices: ['Star', 'Heart', 'Check', 'Settings', 'Sparkles', 'Shield', 'Zap', 'Globe'] } }
+                      ]
+                    },
+                    {
+                      type: 'integrations_logos',
+                      name: 'Entegrasyon Logoları (Integrations Logos Grid)',
+                      desc: 'Logo görseli, başlık, açıklama ve Switch butonlu 4lü entegrasyon listesi.',
+                      fields: [
+                        { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Logo Görseli', slug: 'integration_1_logo', type: 'media', validation_rules: { required: false } },
+                        { name: '1. Marka Adı', slug: 'integration_1_name', type: 'string', validation_rules: { required: false } },
+                        { name: '1. Açıklama', slug: 'integration_1_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '2. Logo Görseli', slug: 'integration_2_logo', type: 'media', validation_rules: { required: false } },
+                        { name: '2. Marka Adı', slug: 'integration_2_name', type: 'string', validation_rules: { required: false } },
+                        { name: '2. Açıklama', slug: 'integration_2_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '3. Logo Görseli', slug: 'integration_3_logo', type: 'media', validation_rules: { required: false } },
+                        { name: '3. Marka Adı', slug: 'integration_3_name', type: 'string', validation_rules: { required: false } },
+                        { name: '3. Açıklama', slug: 'integration_3_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '4. Logo Görseli', slug: 'integration_4_logo', type: 'media', validation_rules: { required: false } },
+                        { name: '4. Marka Adı', slug: 'integration_4_name', type: 'string', validation_rules: { required: false } },
+                        { name: '4. Açıklama', slug: 'integration_4_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } }
+                      ]
+                    },
+                    {
+                      type: 'testimonial_card',
+                      name: 'Müşteri Değerlendirmeleri (Testimonials Grid)',
+                      desc: 'Avatar, ünvan, yorum ve yıldız derecelendirmeli 3lü referans kartları.',
+                      fields: [
+                        { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Müşteri Adı', slug: 'testimonial_1_name', type: 'string', validation_rules: { required: false } },
+                        { name: '1. Ünvan / Rol', slug: 'testimonial_1_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Yorum', slug: 'testimonial_1_quote', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Profil Resmi', slug: 'testimonial_1_avatar', type: 'media', validation_rules: { required: false } },
+                        { name: '1. Derecelendirme (1-5 Yıldız)', slug: 'testimonial_1_rating', type: 'select', options: { choices: ['5', '4', '3', '2', '1'] } },
+                        { name: '2. Müşteri Adı', slug: 'testimonial_2_name', type: 'string', validation_rules: { required: false } },
+                        { name: '2. Ünvan / Rol', slug: 'testimonial_2_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '2. Yorum', slug: 'testimonial_2_quote', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '2. Profil Resmi', slug: 'testimonial_2_avatar', type: 'media', validation_rules: { required: false } },
+                        { name: '2. Derecelendirme (1-5 Yıldız)', slug: 'testimonial_2_rating', type: 'select', options: { choices: ['5', '4', '3', '2', '1'] } },
+                        { name: '3. Müşteri Adı', slug: 'testimonial_3_name', type: 'string', validation_rules: { required: false } },
+                        { name: '3. Ünvan / Rol', slug: 'testimonial_3_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '3. Yorum', slug: 'testimonial_3_quote', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '3. Profil Resmi', slug: 'testimonial_3_avatar', type: 'media', validation_rules: { required: false } },
+                        { name: '3. Derecelendirme (1-5 Yıldız)', slug: 'testimonial_3_rating', type: 'select', options: { choices: ['5', '4', '3', '2', '1'] } }
+                      ]
+                    },
+                    {
+                      type: 'timeline_milestones',
+                      name: 'Zaman Çizelgesi (Timeline Milestones)',
+                      desc: 'Tarih, başlık, açıklama ve simge içeren kurumsal kilometre taşları.',
+                      fields: [
+                        { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Dönem/Yıl', slug: 'milestone_1_year', type: 'string', validation_rules: { required: false } },
+                        { name: '1. Başlık', slug: 'milestone_1_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Açıklama', slug: 'milestone_1_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Simge', slug: 'milestone_1_icon', type: 'select', options: { choices: ['Calendar', 'Star', 'Flag', 'Award', 'Globe', 'Rocket'] } },
+                        { name: '2. Dönem/Yıl', slug: 'milestone_2_year', type: 'string', validation_rules: { required: false } },
+                        { name: '2. Başlık', slug: 'milestone_2_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '2. Açıklama', slug: 'milestone_2_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '2. Simge', slug: 'milestone_2_icon', type: 'select', options: { choices: ['Calendar', 'Star', 'Flag', 'Award', 'Globe', 'Rocket'] } },
+                        { name: '3. Dönem/Yıl', slug: 'milestone_3_year', type: 'string', validation_rules: { required: false } },
+                        { name: '3. Başlık', slug: 'milestone_3_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '3. Açıklama', slug: 'milestone_3_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '3. Simge', slug: 'milestone_3_icon', type: 'select', options: { choices: ['Calendar', 'Star', 'Flag', 'Award', 'Globe', 'Rocket'] } },
+                        { name: '4. Dönem/Yıl', slug: 'milestone_4_year', type: 'string', validation_rules: { required: false } },
+                        { name: '4. Başlık', slug: 'milestone_4_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '4. Açıklama', slug: 'milestone_4_desc', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '4. Simge', slug: 'milestone_4_icon', type: 'select', options: { choices: ['Calendar', 'Star', 'Flag', 'Award', 'Globe', 'Rocket'] } }
+                      ]
+                    },
+                    {
+                      type: 'event_banner',
+                      name: 'Etkinlik & Webinar Duyurusu (Event Banner)',
+                      desc: 'Kontenjan ilerleme çubuklu ve kayıt butonlu yatay etkinlik paneli.',
+                      fields: [
+                        { name: 'Etkinlik Adı', slug: 'event_title', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+                        { name: 'Açıklama', slug: 'event_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Etkinlik Kodu', slug: 'event_code', type: 'string', validation_rules: { required: false } },
+                        { name: 'Dolu Koltuk Sayısı', slug: 'filled_seats', type: 'number', validation_rules: { required: false } },
+                        { name: 'Toplam Koltuk Sayısı', slug: 'total_seats', type: 'number', validation_rules: { required: false } },
+                        { name: 'Buton Metni', slug: 'cta_text', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Buton Linki', slug: 'cta_url', type: 'string', validation_rules: { required: false } }
+                      ]
+                    },
+                    {
+                      type: 'team_grid',
+                      name: 'Ekip Üyeleri Izgarası (Team Grid)',
+                      desc: 'Ünvan, profil resmi ve sosyal ağ linkli 4lü ekip listesi.',
+                      fields: [
+                        { name: 'Bölüm Başlığı', slug: 'section_title', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Bölüm Alt Başlığı', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Üye Adı', slug: 'member_1_name', type: 'string', validation_rules: { required: false } },
+                        { name: '1. Rol / Ünvan', slug: 'member_1_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '1. Profil Resmi', slug: 'member_1_avatar', type: 'media', validation_rules: { required: false } },
+                        { name: '1. Twitter Linki', slug: 'member_1_social_twitter', type: 'string', validation_rules: { required: false } },
+                        { name: '1. LinkedIn Linki', slug: 'member_1_social_linkedin', type: 'string', validation_rules: { required: false } },
+                        { name: '2. Üye Adı', slug: 'member_2_name', type: 'string', validation_rules: { required: false } },
+                        { name: '2. Rol / Ünvan', slug: 'member_2_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '2. Profil Resmi', slug: 'member_2_avatar', type: 'media', validation_rules: { required: false } },
+                        { name: '2. Twitter Linki', slug: 'member_2_social_twitter', type: 'string', validation_rules: { required: false } },
+                        { name: '2. LinkedIn Linki', slug: 'member_2_social_linkedin', type: 'string', validation_rules: { required: false } },
+                        { name: '3. Üye Adı', slug: 'member_3_name', type: 'string', validation_rules: { required: false } },
+                        { name: '3. Rol / Ünvan', slug: 'member_3_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '3. Profil Resmi', slug: 'member_3_avatar', type: 'media', validation_rules: { required: false } },
+                        { name: '3. Twitter Linki', slug: 'member_3_social_twitter', type: 'string', validation_rules: { required: false } },
+                        { name: '3. LinkedIn Linki', slug: 'member_3_social_linkedin', type: 'string', validation_rules: { required: false } },
+                        { name: '4. Üye Adı', slug: 'member_4_name', type: 'string', validation_rules: { required: false } },
+                        { name: '4. Rol / Ünvan', slug: 'member_4_role', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: '4. Profil Resmi', slug: 'member_4_avatar', type: 'media', validation_rules: { required: false } },
+                        { name: '4. Twitter Linki', slug: 'member_4_social_twitter', type: 'string', validation_rules: { required: false } },
+                        { name: '4. LinkedIn Linki', slug: 'member_4_social_linkedin', type: 'string', validation_rules: { required: false } }
+                      ]
+                    },
+                    {
+                      type: 'campaign_banner',
+                      name: 'Kampanya & Promosyon Kartı (Campaign Banner)',
+                      desc: 'İndirim oranı, kupon kodu kopyalama alanı ve ilerleme durumlu duyuru paneli.',
+                      fields: [
+                        { name: 'Kampanya Başlığı', slug: 'title', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+                        { name: 'Kampanya Açıklaması', slug: 'description', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Kupon / Promosyon Kodu', slug: 'promo_code', type: 'string', validation_rules: { required: false } },
+                        { name: 'İndirim Etiketi', slug: 'discount_label', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'İlerleme Yüzdesi (0-100)', slug: 'progress_percent', type: 'number', validation_rules: { required: false } },
+                        { name: 'Buton Metni', slug: 'cta_text', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+                        { name: 'Buton Linki', slug: 'cta_url', type: 'string', validation_rules: { required: false } }
+                      ]
+                    }
+                  ].map((presetBlock) => {
+                    const currentAllowed = currentSettingsField.options?.allowed_blocks || [];
+                    const isChecked = currentAllowed.some(b => b.type === presetBlock.type);
+                    
+                    return (
+                      <div key={presetBlock.type} className="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-lg hover:shadow-xs transition-all">
+                        <Checkbox
+                          id={`block-${presetBlock.type}`}
+                          checked={isChecked}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              const newAllowed = [...currentAllowed, presetBlock];
+                              handleUpdateSettingsOptions('allowed_blocks', newAllowed);
+                              handleUpdateSettingsField('type', 'dynamic_zone');
+                            } else {
+                              const newAllowed = currentAllowed.filter(b => b.type !== presetBlock.type);
+                              handleUpdateSettingsOptions('allowed_blocks', newAllowed);
+                            }
+                          }}
+                          className="mt-0.5"
+                        />
+                        <label htmlFor={`block-${presetBlock.type}`} className="cursor-pointer select-none flex-1">
+                          <span className="text-xs font-bold text-slate-800 block">{presetBlock.name}</span>
+                          <span className="text-[10px] text-slate-500 block mt-0.5 leading-relaxed">{presetBlock.desc}</span>
+                        </label>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

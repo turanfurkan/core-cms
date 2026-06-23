@@ -274,4 +274,109 @@ class HeadlessCmsTest extends TestCase
         $responseSingle->assertStatus(200)
             ->assertJsonPath('id', $entryPublished->id);
     }
+
+    #[Test]
+    public function public_delivery_applies_monetization_masking_unless_purchased(): void
+    {
+        $contentType = ContentType::create([
+            'name' => 'Paid Article',
+            'slug' => 'paid-article',
+            'settings' => [
+                'monetization' => [
+                    'enabled' => true,
+                    'default_access_type' => 'free',
+                    'default_price' => 0,
+                    'default_currency' => 'TRY'
+                ]
+            ]
+        ]);
+
+        $contentType->fields()->create([
+            'name' => 'Slug',
+            'slug' => 'slug',
+            'type' => 'text',
+            'options' => ['localized' => false]
+        ]);
+        $contentType->fields()->create([
+            'name' => 'Content',
+            'slug' => 'content',
+            'type' => 'text',
+            'options' => ['localized' => false]
+        ]);
+
+        // 1. Free entry
+        $freeEntry = ContentEntry::create([
+            'content_type_id' => $contentType->id,
+            'data' => [
+                'title' => 'Free Title',
+                'slug' => 'free-entry',
+                'access_type' => 'free',
+                'content' => 'Free content for everyone'
+            ],
+            'status' => 'published',
+            'published_at' => now()
+        ]);
+
+        // 2. Premium entry
+        $paidEntry = ContentEntry::create([
+            'content_type_id' => $contentType->id,
+            'data' => [
+                'title' => 'Paid Title',
+                'slug' => 'paid-entry',
+                'access_type' => 'premium',
+                'price' => 99.90,
+                'currency' => 'TRY',
+                'content' => 'Premium secrets here'
+            ],
+            'status' => 'published',
+            'published_at' => now()
+        ]);
+
+        // 3. Guest checks free entry -> should see full content
+        $responseFree = $this->getJson('/api/content/delivery/paid-article/free-entry');
+        $responseFree->assertStatus(200);
+        $this->assertEquals('Free content for everyone', $responseFree->json('data.content'));
+        $this->assertNull($responseFree->json('data.access_blocked'));
+
+        // 4. Guest checks paid entry -> should be masked
+        $responseGuestPaid = $this->getJson('/api/content/delivery/paid-article/paid-entry');
+        $responseGuestPaid->assertStatus(200);
+        $this->assertTrue($responseGuestPaid->json('data.access_blocked'));
+        $this->assertNull($responseGuestPaid->json('data.content'));
+        $this->assertEquals('Paid Title', $responseGuestPaid->json('data.title'));
+        $this->assertEquals(99.90, $responseGuestPaid->json('data.price'));
+
+        // 5. Test user checks paid entry -> should be masked
+        $user = User::factory()->create();
+        $responseUserPaid = $this->actingAs($user)
+            ->getJson('/api/content/delivery/paid-article/paid-entry');
+        $responseUserPaid->assertStatus(200);
+        $this->assertTrue($responseUserPaid->json('data.access_blocked'));
+        $this->assertNull($responseUserPaid->json('data.content'));
+
+        // 6. User purchases the entry -> creates a paid order
+        \App\Domains\Billing\Models\Order::create([
+            'user_id' => $user->id,
+            'orderable_type' => ContentEntry::class,
+            'orderable_id' => $paidEntry->id,
+            'amount' => 99.90,
+            'currency' => 'TRY',
+            'status' => 'paid'
+        ]);
+
+        // 7. User checks again -> should see full content
+        $responsePurchased = $this->actingAs($user)
+            ->getJson('/api/content/delivery/paid-article/paid-entry');
+        $responsePurchased->assertStatus(200);
+        $this->assertNull($responsePurchased->json('data.access_blocked'));
+        $this->assertEquals('Premium secrets here', $responsePurchased->json('data.content'));
+
+        // 8. Another user checks -> should still be masked
+        $otherUser = User::factory()->create();
+        $responseOther = $this->actingAs($otherUser)
+            ->getJson('/api/content/delivery/paid-article/paid-entry');
+        $responseOther->assertStatus(200);
+        $this->assertTrue($responseOther->json('data.access_blocked'));
+        $this->assertNull($responseOther->json('data.content'));
+    }
 }

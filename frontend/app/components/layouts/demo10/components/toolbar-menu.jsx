@@ -53,7 +53,7 @@ export function ToolbarMenu() {
             className={item.active ? 'bg-muted font-medium' : ''}
             asChild
           >
-            <Link href="/" className="w-full">
+            <Link href="/dashboard" className="w-full">
               {item.title}
             </Link>
           </DropdownMenuItem>

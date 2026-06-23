@@ -112,6 +112,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/permissions/delete', [PermissionController::class, 'bulkDestroy']);
 
     // Admin Content Type Schemas Management
+    Route::post('/admin/content-types/reorder', [ContentTypeController::class, 'reorder']);
     Route::apiResource('/admin/content-types', ContentTypeController::class);
 
     // Admin Content Entries Management
@@ -121,6 +122,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::put('/admin/content-types/{content_type}/entries/{content_entry}', [ContentEntryController::class, 'update']);
     Route::delete('/admin/content-types/{content_type}/entries/{content_entry}', [ContentEntryController::class, 'destroy']);
     Route::post('/admin/content-types/{content_type}/entries/{content_entry}/publish', [ContentEntryController::class, 'publish']);
+    Route::get('/admin/content-types/{content_type}/entries/{content_entry}/revisions', [ContentEntryController::class, 'revisions']);
     Route::post('/admin/content-types/{content_type}/entries/{content_entry}/revisions/{content_revision}/rollback', [ContentEntryController::class, 'rollback']);
 
     // Media Folders Management

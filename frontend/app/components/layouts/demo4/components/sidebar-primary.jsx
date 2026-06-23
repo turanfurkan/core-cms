@@ -132,7 +132,7 @@ export function SidebarPrimary() {
           ref={headerRef}
           className="hidden lg:flex items-center justify-center shrink-0"
         >
-          <Link href="/">
+          <Link href="/dashboard">
             <img
               src={toAbsoluteUrl('/media/app/mini-logo-gray.svg')}
               className="dark:hidden min-h-[30px]"

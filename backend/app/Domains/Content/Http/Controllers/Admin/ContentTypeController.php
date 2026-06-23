@@ -14,6 +14,7 @@ use App\Domains\Content\Models\ContentType;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class ContentTypeController extends Controller
 {
@@ -24,8 +25,28 @@ class ContentTypeController extends Controller
 
     public function index(): AnonymousResourceCollection
     {
-        $types = ContentType::with('fields')->withCount('entries')->get();
+        $types = ContentType::with('fields')
+            ->withCount('entries')
+            ->orderBy('order', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
         return ContentTypeResource::collection($types);
+    }
+
+    public function reorder(\Illuminate\Http\Request $request): JsonResponse
+    {
+        $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'required|integer',
+        ]);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+            foreach ($request->input('order') as $index => $id) {
+                ContentType::where('id', $id)->update(['order' => $index + 1]);
+            }
+        });
+
+        return response()->json(['message' => 'Content types reordered successfully.']);
     }
 
     public function store(

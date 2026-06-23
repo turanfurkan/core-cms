@@ -61,7 +61,7 @@ export const MENU_SIDEBAR = [
   {
     title: 'Dashboards',
     icon: LayoutGrid,
-    path: '/'
+    path: '/dashboard'
   },
   { heading: 'User' },
   {
@@ -484,7 +484,7 @@ export const MENU_SIDEBAR_COMPACT = [
   {
     title: 'Dashboards',
     icon: LayoutGrid,
-    path: '/',
+    path: '/dashboard',
   },
   {
     title: 'Public Profile',
@@ -834,7 +834,7 @@ export const MENU_SIDEBAR_COMPACT = [
 ];
 
 export const MENU_MEGA = [
-  { title: 'Home', path: '/' },
+  { title: 'Home', path: '/dashboard' },
   {
     title: 'Profiles',
     children: [
@@ -1230,7 +1230,7 @@ export const MENU_MEGA = [
 ];
 
 export const MENU_MEGA_MOBILE = [
-  { title: 'Home', path: '/' },
+  { title: 'Home', path: '/dashboard' },
   {
     title: 'Profiles',
     children: [

@@ -89,6 +89,23 @@ class ContentEntryController extends Controller
         return new ContentEntryResource($updated);
     }
 
+    public function revisions(ContentType $contentType, ContentEntry $contentEntry): JsonResponse
+    {
+        $revisions = $contentEntry->revisions()->with('creator')->get();
+        return response()->json([
+            'data' => $revisions->map(fn($rev) => [
+                'id' => $rev->id,
+                'version' => $rev->version,
+                'created_at' => $rev->created_at->toIso8601String(),
+                'creator' => $rev->creator ? [
+                    'id' => $rev->creator->id,
+                    'name' => $rev->creator->name,
+                ] : null,
+                'data' => $rev->data,
+            ])
+        ]);
+    }
+
     public function rollback(
         ContentType $contentType,
         ContentEntry $contentEntry,

@@ -26,6 +26,7 @@ class ContentDeliveryController extends Controller
             'page' => $page,
             'limit' => $perPage,
             'filters' => $filters,
+            'user_id' => (auth()->user() ?? auth('sanctum')->user())?->id,
         ];
 
         $responseData = \App\Domains\Content\Support\ContentCacheHelper::remember(
@@ -75,6 +76,7 @@ class ContentDeliveryController extends Controller
 
         $cacheParams = [
             'slug' => $entrySlug,
+            'user_id' => (auth()->user() ?? auth('sanctum')->user())?->id,
         ];
 
         $responseData = \App\Domains\Content\Support\ContentCacheHelper::remember(

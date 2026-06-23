@@ -29,7 +29,7 @@ export function Header() {
   return (
     <header className="flex items-center fixed z-10 top-0 start-0 end-0 shrink-0 bg-muted h-(--header-height)">
       <Container className="flex items-center justify-between flex-wrap gap-3">
-        <Link href="/">
+        <Link href="/dashboard">
           <img
             src={toAbsoluteUrl('/media/app/mini-logo-gray.svg')}
             className="dark:hidden h-[30px]"

@@ -16,16 +16,19 @@ const CardProject = ({
   status,
   progress,
   team,
+  href = '#',
 }) => {
   return (
     <Card className="p-7.5">
       <div className="flex items-center justify-between mb-3 lg:mb-6">
         <div className="flex items-center justify-center size-[50px] rounded-lg bg-accent/60">
-          <img
-            src={toAbsoluteUrl(`/media/brand-logos/${logo}`)}
-            className=""
-            alt="image"
-          />
+          {logo && (
+            <img
+              src={logo.startsWith('/') || logo.startsWith('http') ? toAbsoluteUrl(logo) : toAbsoluteUrl(`/media/brand-logos/${logo}`)}
+              className="max-h-[36px] object-contain"
+              alt="logo"
+            />
+          )}
         </div>
         <Badge size="lg" variant={status.variant} appearance="light">
           {status.label}
@@ -33,7 +36,7 @@ const CardProject = ({
       </div>
       <div className="flex flex-col mb-3 lg:mb-6">
         <Link
-          href="#"
+          href={href}
           className="text-lg font-media/brand text-mono hover:text-primary-active mb-px"
         >
           {name}

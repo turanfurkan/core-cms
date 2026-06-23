@@ -16,9 +16,33 @@ import {
   ExternalLink,
   ChevronDown,
   LayoutGrid,
-  LoaderCircleIcon
+  LoaderCircleIcon,
+  Globe,
+  Sliders,
+  Eye,
+  Link2,
+  Settings2,
+  Sparkles,
+  GripVertical
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Sortable, SortableItem, SortableItemHandle } from '@/components/ui/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
+
+const getIconComponent = (name, className = "size-5") => {
+  const icons = {
+    Database,
+    FileText,
+    Globe,
+    Sliders,
+    Eye,
+    Link2,
+    Settings2,
+    Sparkles
+  };
+  const IconComponent = icons[name] || Database;
+  return <IconComponent className={className} />;
+};
 import { apiFetch } from '@/lib/api';
 import { Container } from '@/components/common/container';
 import {
@@ -48,6 +72,7 @@ import {
 import { toast } from 'sonner';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
+import { StatsCard } from '@/components/ui/stats-card';
 import ContentTypeDialog from './components/content-type-dialog';
 import {
   AlertDialog,
@@ -69,7 +94,7 @@ export default function ContentTypesPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [idToDelete, setIdToDelete] = useState(null);
   const [activeTab, setActiveTab] = useState('all'); // all, collections, singles
-  const [sortBy, setSortBy] = useState('last_updated'); // last_updated, created_at, alphabetical
+  const [sortBy, setSortBy] = useState('custom'); // custom, last_updated, created_at, alphabetical
 
   // Fetch all content types
   const { data, isLoading } = useQuery({
@@ -118,7 +143,9 @@ export default function ContentTypesPage() {
 
     // 3. Sort Data
     return [...result].sort((a, b) => {
-      if (sortBy === 'alphabetical') {
+      if (sortBy === 'custom') {
+        return (a.order || 0) - (b.order || 0) || a.id - b.id;
+      } else if (sortBy === 'alphabetical') {
         return a.name.localeCompare(b.name);
       } else if (sortBy === 'created_at') {
         return new Date(b.created_at || 0) - new Date(a.created_at || 0);
@@ -169,6 +196,70 @@ export default function ContentTypesPage() {
     },
   });
 
+  // Reorder Content Types Mutation
+  const reorderMutation = useMutation({
+    mutationFn: async (orderedIds) => {
+      const res = await apiFetch('/api/admin/content-types/reorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ order: orderedIds }),
+      });
+      if (!res.ok) throw new Error(t('content_types.messages.error_reorder', 'Failed to reorder content types'));
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-content-types'] });
+      toast.custom(
+        () => (
+          <Alert variant="mono" icon="success" close={false}>
+            <AlertIcon>
+              <RiCheckboxCircleFill />
+            </AlertIcon>
+            <AlertTitle>{t('content_types.messages.success_reorder', 'Sıralama başarıyla güncellendi.')}</AlertTitle>
+          </Alert>
+        ),
+        { position: 'top-center' }
+      );
+    },
+    onError: (err) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-content-types'] });
+      toast.custom(
+        () => (
+          <Alert variant="mono" icon="destructive" close={false}>
+            <AlertIcon>
+              <RiErrorWarningFill />
+            </AlertIcon>
+            <AlertTitle>{err.message || t('content_types.messages.error', 'Bir hata oluştu.')}</AlertTitle>
+          </Alert>
+        ),
+        { position: 'top-center' }
+      );
+    },
+  });
+
+  const handleMove = ({ activeIndex, overIndex }) => {
+    const newVisibleList = arrayMove(filteredAndSortedData, activeIndex, overIndex);
+    
+    const visibleIndicesInFull = filteredAndSortedData
+      .map((item) => data.findIndex((fItem) => fItem.id === item.id))
+      .sort((a, b) => a - b);
+
+    const newFullList = [...data];
+    newVisibleList.forEach((item, idx) => {
+      const targetFullIdx = visibleIndicesInFull[idx];
+      newFullList[targetFullIdx] = item;
+    });
+
+    // Optimistically update the cache
+    queryClient.setQueryData(['admin-content-types'], newFullList);
+
+    // Trigger mutation
+    const orderedIds = newFullList.map((item) => item.id);
+    reorderMutation.mutate(orderedIds);
+  };
+
   const handleEdit = (type, e) => {
     if (e) e.stopPropagation();
     setSelectedType(type);
@@ -210,7 +301,7 @@ export default function ContentTypesPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">{t('sidebar.home', 'Home')}</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard">{t('sidebar.home', 'Home')}</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
@@ -229,61 +320,26 @@ export default function ContentTypesPage() {
       {/* Stats Cards Section */}
       <Container className="mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <Card className="p-5 flex items-center justify-between border border-border bg-card/60 backdrop-blur-md">
-            <div className="space-y-1">
-              <span className="text-2xl font-bold tracking-tight block">
-                {isLoading ? '...' : stats.total}
-              </span>
-              <span className="text-xs font-semibold text-muted-foreground block uppercase tracking-wider">
-                {t('content_types.stats.total_types', 'Total Content Types')}
-              </span>
-            </div>
-            <div className="p-3 bg-primary/10 rounded-xl text-primary shrink-0">
-              <Layers className="size-6" />
-            </div>
-          </Card>
-
-          <Card className="p-5 flex items-center justify-between border border-border bg-card/60 backdrop-blur-md">
-            <div className="space-y-1">
-              <span className="text-2xl font-bold tracking-tight block">
-                {isLoading ? '...' : stats.collections}
-              </span>
-              <span className="text-xs font-semibold text-muted-foreground block uppercase tracking-wider">
-                {t('content_types.stats.collections', 'Collection Types')}
-              </span>
-            </div>
-            <div className="p-3 bg-success/10 rounded-xl text-success shrink-0">
-              <Database className="size-6" />
-            </div>
-          </Card>
-
-          <Card className="p-5 flex items-center justify-between border border-border bg-card/60 backdrop-blur-md">
-            <div className="space-y-1">
-              <span className="text-2xl font-bold tracking-tight block">
-                {isLoading ? '...' : stats.singles}
-              </span>
-              <span className="text-xs font-semibold text-muted-foreground block uppercase tracking-wider">
-                {t('content_types.stats.singles', 'Single Types')}
-              </span>
-            </div>
-            <div className="p-3 bg-info/10 rounded-xl text-info shrink-0">
-              <FileText className="size-6" />
-            </div>
-          </Card>
-
-          <Card className="p-5 flex items-center justify-between border border-border bg-card/60 backdrop-blur-md">
-            <div className="space-y-1">
-              <span className="text-2xl font-bold tracking-tight block">
-                {isLoading ? '...' : stats.totalEntries}
-              </span>
-              <span className="text-xs font-semibold text-muted-foreground block uppercase tracking-wider">
-                {t('content_types.stats.entries', 'Total Entries')}
-              </span>
-            </div>
-            <div className="p-3 bg-warning/10 rounded-xl text-warning shrink-0">
-              <Calendar className="size-6" />
-            </div>
-          </Card>
+          <StatsCard
+            icon={<Layers className="size-7 text-primary" />}
+            value={isLoading ? '...' : stats.total}
+            label={t('content_types.stats.total_types', 'Total Content Types')}
+          />
+          <StatsCard
+            icon={<Database className="size-7 text-success" />}
+            value={isLoading ? '...' : stats.collections}
+            label={t('content_types.stats.collections', 'Collection Types')}
+          />
+          <StatsCard
+            icon={<FileText className="size-7 text-info" />}
+            value={isLoading ? '...' : stats.singles}
+            label={t('content_types.stats.singles', 'Single Types')}
+          />
+          <StatsCard
+            icon={<Calendar className="size-7 text-warning" />}
+            value={isLoading ? '...' : stats.totalEntries}
+            label={t('content_types.stats.entries', 'Total Entries')}
+          />
         </div>
       </Container>
 
@@ -292,7 +348,7 @@ export default function ContentTypesPage() {
         <Card className="p-4 border border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Tabs Filter */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList variant="default" size="sm" className="w-fit self-start md:self-auto rounded-xl">
+            <TabsList variant="line" size="sm" className="w-fit bg-transparent pb-0">
               <TabsTrigger value="all">{t('content_types.filters.all', 'Tümü')}</TabsTrigger>
               <TabsTrigger value="collections">{t('content_types.filters.collections', 'Koleksiyonlar')}</TabsTrigger>
               <TabsTrigger value="singles">{t('content_types.filters.singles', 'Tekil Tipler')}</TabsTrigger>
@@ -330,7 +386,9 @@ export default function ContentTypesPage() {
                     Sırala:
                   </span>
                   <span className="text-xs font-bold">
-                    {sortBy === 'last_updated'
+                    {sortBy === 'custom'
+                      ? 'Özel Sıralama'
+                      : sortBy === 'last_updated'
                       ? 'Son Güncellenen'
                       : sortBy === 'created_at'
                       ? 'Oluşturulma Tarihi'
@@ -340,6 +398,9 @@ export default function ContentTypesPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => setSortBy('custom')}>
+                  Özel Sıralama
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortBy('last_updated')}>
                   Son Güncellenen
                 </DropdownMenuItem>
@@ -409,7 +470,13 @@ export default function ContentTypesPage() {
             </Button>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Sortable
+            value={filteredAndSortedData}
+            getItemValue={(item) => item.id}
+            onMove={handleMove}
+            strategy="grid"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
             {filteredAndSortedData.map((item) => {
               const iconName = item.settings?.icon || 'Database';
               const iconColor = item.settings?.color || '#3b82f6';
@@ -420,99 +487,114 @@ export default function ContentTypesPage() {
                 : '-';
 
               return (
-                <Card 
-                  key={item.id} 
-                  className="group hover:shadow-lg transition-all duration-300 border border-border bg-card flex flex-col justify-between overflow-hidden relative"
-                >
-                  <div className="p-6 space-y-4">
-                    {/* Card Header with Icon and Badges */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="size-11 rounded-xl flex items-center justify-center text-white font-bold"
-                          style={{ backgroundColor: iconColor }}
-                        >
-                          <Database className="size-5.5" />
+                <SortableItem key={item.id} value={item.id} disabled={sortBy !== 'custom'} asChild>
+                  <Card 
+                    className="group hover:shadow-lg transition-all duration-300 border border-border bg-card flex flex-col justify-between overflow-hidden relative"
+                  >
+                    <div className="p-6 space-y-4">
+                      {/* Card Header with Icon and Badges */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2.5">
+                          {sortBy === 'custom' && (
+                            <SortableItemHandle asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7 text-muted-foreground/65 hover:text-foreground cursor-grab active:cursor-grabbing shrink-0 -ms-2"
+                                type="button"
+                              >
+                                <GripVertical className="size-4" />
+                              </Button>
+                            </SortableItemHandle>
+                          )}
+                          <div 
+                            className="size-11 rounded-xl flex items-center justify-center text-white font-bold"
+                            style={{ backgroundColor: iconColor }}
+                          >
+                            {getIconComponent(iconName, "size-5.5")}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                              {item.name}
+                            </h3>
+                            <code className="text-[10px] text-muted-foreground font-mono">
+                              /{item.slug}
+                            </code>
+                          </div>
+                        </div>
+                        <Badge variant={item.is_collection ? 'success' : 'secondary'} className="text-[10px] font-bold px-2 py-0.5">
+                          {item.is_collection 
+                            ? t('content_types.badge.collection', 'Koleksiyon') 
+                            : t('content_types.badge.single', 'Tekil')}
+                        </Badge>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-muted-foreground line-clamp-2 h-8">
+                        {item.description || t('content_types.no_description', 'Açıklama belirtilmemiş.')}
+                      </p>
+
+                      {/* Metrics Row */}
+                      <div className="grid grid-cols-2 gap-4 bg-muted/30 p-2.5 rounded-lg text-center border border-border/40">
+                        <div>
+                          <span className="text-[10px] font-semibold text-muted-foreground block uppercase">Alan Sayısı</span>
+                          <span className="text-sm font-bold text-foreground">{fieldsCount}</span>
                         </div>
                         <div>
-                          <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
-                            {item.name}
-                          </h3>
-                          <code className="text-[10px] text-muted-foreground font-mono">
-                            /{item.slug}
-                          </code>
+                          <span className="text-[10px] font-semibold text-muted-foreground block uppercase">İçerik Adedi</span>
+                          <span className="text-sm font-bold text-foreground">{entriesCount}</span>
                         </div>
                       </div>
-                      <Badge variant={item.is_collection ? 'success' : 'secondary'} className="text-[10px] font-bold px-2 py-0.5">
-                        {item.is_collection ? 'Collection' : 'Single'}
-                      </Badge>
                     </div>
 
-                    {/* Description */}
-                    <p className="text-xs text-muted-foreground line-clamp-2 h-8">
-                      {item.description || t('content_types.no_description', 'Açıklama belirtilmemiş.')}
-                    </p>
+                    {/* Actions Footer */}
+                    <div className="border-t border-border bg-muted/10 px-6 py-3.5 flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="size-3.5" />
+                        {formattedDate}
+                      </span>
 
-                    {/* Metrics Row */}
-                    <div className="grid grid-cols-2 gap-4 bg-muted/30 p-2.5 rounded-lg text-center border border-border/40">
-                      <div>
-                        <span className="text-[10px] font-semibold text-muted-foreground block uppercase">Alan Sayısı</span>
-                        <span className="text-sm font-bold text-foreground">{fieldsCount}</span>
+                      <div className="flex items-center gap-1">
+                        {/* Manage Content Button */}
+                        <Button
+                          variant="dim"
+                          size="xs"
+                          asChild
+                          className="h-7 px-2.5 rounded-lg"
+                          title="İçeriği Yönet"
+                        >
+                          <a href={`/content-management/content-entries?type=${item.slug}`} className="flex items-center gap-1 font-bold text-primary">
+                            <ExternalLink className="size-3" />
+                            Yönet
+                          </a>
+                        </Button>
+
+                        {/* Dropdown Actions */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="dim" size="xs" className="h-7 w-7 p-0 rounded-lg">
+                              <ChevronDown className="size-3.5 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-36">
+                            <DropdownMenuItem onClick={(e) => handleEdit(item, e)} className="gap-2">
+                              <Edit className="size-3.5" /> Düzenle
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => handleDuplicate(item, e)} className="gap-2">
+                              <Copy className="size-3.5" /> Kopyala
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => handleDelete(item.id, e)} className="gap-2 text-danger">
+                              <Trash className="size-3.5" /> Sil
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      <div>
-                        <span className="text-[10px] font-semibold text-muted-foreground block uppercase">İçerik Adedi</span>
-                        <span className="text-sm font-bold text-foreground">{entriesCount}</span>
-                      </div>
                     </div>
-                  </div>
-
-                  {/* Actions Footer */}
-                  <div className="border-t border-border bg-muted/10 px-6 py-3.5 flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="size-3.5" />
-                      {formattedDate}
-                    </span>
-
-                    <div className="flex items-center gap-1">
-                      {/* Manage Content Button */}
-                      <Button
-                        variant="dim"
-                        size="xs"
-                        asChild
-                        className="h-7 px-2.5 rounded-lg"
-                        title="İçeriği Yönet"
-                      >
-                        <a href={`/content-management/content-entries?type=${item.slug}`} className="flex items-center gap-1 font-bold text-primary">
-                          <ExternalLink className="size-3" />
-                          Yönet
-                        </a>
-                      </Button>
-
-                      {/* Dropdown Actions */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="dim" size="xs" className="h-7 w-7 p-0 rounded-lg">
-                            <ChevronDown className="size-3.5 text-muted-foreground" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-36">
-                          <DropdownMenuItem onClick={(e) => handleEdit(item, e)} className="gap-2">
-                            <Edit className="size-3.5" /> Düzenle
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => handleDuplicate(item, e)} className="gap-2">
-                            <Copy className="size-3.5" /> Kopyala
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => handleDelete(item.id, e)} className="gap-2 text-danger">
-                            <Trash className="size-3.5" /> Sil
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                </SortableItem>
               );
             })}
-          </div>
+          </Sortable>
         )}
       </Container>
 

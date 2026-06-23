@@ -92,7 +92,7 @@ export default async function Page({ params }) {
   const attachments = mediaFields.filter(m => m !== featuredImage);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+    <div className="w-full min-h-screen bg-background text-foreground flex flex-col justify-between">
       <div>
         {/* Simple Header */}
         <header className="border-b border-border py-4 bg-muted/30">

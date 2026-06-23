@@ -323,7 +323,7 @@ export default function SystemSettingsPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">{t('sidebar.dashboards', 'Dashboard')}</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard">{t('sidebar.dashboards', 'Dashboard')}</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>

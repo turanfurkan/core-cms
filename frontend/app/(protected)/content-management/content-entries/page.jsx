@@ -44,6 +44,7 @@ import { toast } from 'sonner';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import ContentEntryDialog from './components/content-entry-dialog';
+import ContentEntryForm from './components/content-entry-form';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -237,108 +238,147 @@ export default function ContentEntriesPage() {
   };
 
   const columns = useMemo(
-    () => [
-      {
-        accessorKey: 'id',
-        id: 'id',
-        header: ({ column }) => (
-          <DataGridColumnHeader title={t('content_entries.columns.id', 'ID')} visibility={true} column={column} />
-        ),
-        cell: ({ row }) => <span className="text-xs text-muted-foreground font-mono">{row.original.id}</span>,
-        size: 60,
-      },
-      {
-        accessorKey: 'title',
-        id: 'title',
-        header: ({ column }) => (
-          <DataGridColumnHeader title={t('content_entries.columns.title', 'Başlık')} visibility={true} column={column} />
-        ),
-        cell: ({ row }) => {
-          const data = row.original.data || {};
-          const title = getLocalizedValue(data.title || row.original.title, i18n.language) || 'Untitled';
-          const slug = getLocalizedValue(data.slug || row.original.slug, i18n.language);
-          return (
-            <div className="space-y-0.5">
-              <div className="font-semibold text-sm">{title}</div>
-              {slug && <code className="text-[10px] text-muted-foreground font-mono">/{slug}</code>}
+    () => {
+      const baseCols = [
+        {
+          accessorKey: 'id',
+          id: 'id',
+          header: ({ column }) => (
+            <DataGridColumnHeader title={t('content_entries.columns.id', 'ID')} visibility={true} column={column} />
+          ),
+          cell: ({ row }) => <span className="text-xs text-muted-foreground font-mono">{row.original.id}</span>,
+          size: 60,
+        },
+        {
+          accessorKey: 'title',
+          id: 'title',
+          header: ({ column }) => (
+            <DataGridColumnHeader title={t('content_entries.columns.title', 'Başlık')} visibility={true} column={column} />
+          ),
+          cell: ({ row }) => {
+            const data = row.original.data || {};
+            const title = getLocalizedValue(data.title || row.original.title, i18n.language) || 'Untitled';
+            const slug = getLocalizedValue(data.slug || row.original.slug, i18n.language);
+            return (
+              <div className="space-y-0.5">
+                <div className="font-semibold text-sm">{title}</div>
+                {slug && <code className="text-[10px] text-muted-foreground font-mono">/{slug}</code>}
+              </div>
+            );
+          },
+          size: 250,
+        },
+      ];
+
+      // Add Erişim & Fiyat column if monetization is enabled
+      if (activeType?.settings?.monetization?.enabled) {
+        baseCols.push({
+          id: 'access_control',
+          header: ({ column }) => (
+            <DataGridColumnHeader title={t('content_entries.columns.access_price', 'Erişim & Fiyat')} visibility={true} column={column} />
+          ),
+          cell: ({ row }) => {
+            const data = row.original.data || {};
+            const accessType = data.access_type || 'free';
+            const price = data.price ?? 0;
+            const currency = data.currency || 'TRY';
+
+            if (accessType === 'free') {
+              return <Badge variant="success" className="text-xs font-semibold">{t('content_entries.monetization.free', 'Ücretsiz')}</Badge>;
+            } else if (accessType === 'protected') {
+              return <Badge variant="info" className="text-xs font-semibold">{t('content_entries.monetization.members_only', 'Sadece Üye')}</Badge>;
+            } else {
+              return (
+                <div className="flex items-center gap-1.5">
+                  <Badge variant="warning" className="text-xs font-semibold">{t('content_entries.monetization.single_purchase_badge', 'Tekil Satış')}</Badge>
+                  <span className="text-xs font-bold text-foreground">
+                    {price} {currency}
+                  </span>
+                </div>
+              );
+            }
+          },
+          size: 150,
+        });
+      }
+
+      baseCols.push(
+        {
+          accessorKey: 'status',
+          id: 'status',
+          header: ({ column }) => (
+            <DataGridColumnHeader title={t('content_entries.columns.status', 'Durum')} visibility={true} column={column} />
+          ),
+          cell: ({ row }) => {
+            const status = row.original.status;
+            const isPublished = status === 'published';
+            return (
+              <Badge variant={isPublished ? 'success' : 'secondary'} className="text-xs">
+                {isPublished ? t('content_entries.status.published', 'Yayında') : t('content_entries.status.draft', 'Taslak')}
+              </Badge>
+            );
+          },
+          size: 100,
+        },
+        {
+          accessorKey: 'published_at',
+          id: 'published_at',
+          header: ({ column }) => (
+            <DataGridColumnHeader title={t('content_entries.columns.published_at', 'Yayın Tarihi')} visibility={true} column={column} />
+          ),
+          cell: ({ row }) => {
+            const date = row.original.published_at || row.original.created_at;
+            return (
+              <span className="text-xs text-muted-foreground">
+                {date ? new Date(date).toLocaleString(i18n.language === 'tr' ? 'tr-TR' : 'en-US') : '-'}
+              </span>
+            );
+          },
+          size: 150,
+        },
+        {
+          id: 'actions',
+          header: '',
+          cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="dim"
+                size="sm"
+                onClick={(e) => handleEdit(row.original, e)}
+                className="h-7 w-7 p-0"
+                title={t('content_entries.tooltips.edit', 'Düzenle')}
+              >
+                <Edit className="size-3.5" />
+              </Button>
+              <Button
+                variant="dim"
+                size="sm"
+                onClick={(e) => handleTogglePublish(row.original, e)}
+                className="h-7 w-7 p-0"
+                title={row.original.status === 'published' ? t('content_entries.tooltips.revert_draft', 'Taslağa Çek') : t('content_entries.tooltips.publish', 'Yayınla')}
+                disabled={publishMutation.isPending}
+              >
+                <Globe className="size-3.5" />
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={(e) => handleDelete(row.original.id, e)}
+                className="h-7 w-7 p-0"
+                disabled={deleteMutation.isPending}
+                title={t('content_entries.tooltips.delete', 'Sil')}
+              >
+                <Trash className="size-3.5" />
+              </Button>
             </div>
-          );
-        },
-        size: 250,
-      },
-      {
-        accessorKey: 'status',
-        id: 'status',
-        header: ({ column }) => (
-          <DataGridColumnHeader title={t('content_entries.columns.status', 'Durum')} visibility={true} column={column} />
-        ),
-        cell: ({ row }) => {
-          const status = row.original.status;
-          const isPublished = status === 'published';
-          return (
-            <Badge variant={isPublished ? 'success' : 'secondary'} className="text-xs">
-              {isPublished ? t('content_entries.status.published', 'Yayında') : t('content_entries.status.draft', 'Taslak')}
-            </Badge>
-          );
-        },
-        size: 100,
-      },
-      {
-        accessorKey: 'published_at',
-        id: 'published_at',
-        header: ({ column }) => (
-          <DataGridColumnHeader title={t('content_entries.columns.published_at', 'Yayın Tarihi')} visibility={true} column={column} />
-        ),
-        cell: ({ row }) => {
-          const date = row.original.published_at || row.original.created_at;
-          return (
-            <span className="text-xs text-muted-foreground">
-              {date ? new Date(date).toLocaleString(i18n.language === 'tr' ? 'tr-TR' : 'en-US') : '-'}
-            </span>
-          );
-        },
-        size: 150,
-      },
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="dim"
-              size="sm"
-              onClick={(e) => handleEdit(row.original, e)}
-              className="h-7 w-7 p-0"
-              title={t('content_entries.tooltips.edit', 'Düzenle')}
-            >
-              <Edit className="size-3.5" />
-            </Button>
-            <Button
-              variant="dim"
-              size="sm"
-              onClick={(e) => handleTogglePublish(row.original, e)}
-              className="h-7 w-7 p-0"
-              title={row.original.status === 'published' ? t('content_entries.tooltips.revert_draft', 'Taslağa Çek') : t('content_entries.tooltips.publish', 'Yayınla')}
-              disabled={publishMutation.isPending}
-            >
-              <Globe className="size-3.5" />
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={(e) => handleDelete(row.original.id, e)}
-              className="h-7 w-7 p-0"
-              disabled={deleteMutation.isPending}
-              title={t('content_entries.tooltips.delete', 'Sil')}
-            >
-              <Trash className="size-3.5" />
-            </Button>
-          </div>
-        ),
-        size: 120,
-      },
-    ],
-    [deleteMutation.isPending, publishMutation.isPending, i18n.language, t]
+          ),
+          size: 120,
+        }
+      );
+
+      return baseCols;
+    },
+    [deleteMutation.isPending, publishMutation.isPending, i18n.language, t, activeType]
   );
 
   const table = useReactTable({
@@ -408,7 +448,7 @@ export default function ContentEntriesPage() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <BreadcrumbLink href="/">{t('common.home', 'Home')}</BreadcrumbLink>
+                  <BreadcrumbLink href="/dashboard">{t('common.home', 'Home')}</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
@@ -445,23 +485,57 @@ export default function ContentEntriesPage() {
           </div>
         </Card>
 
-        {selectedTypeId !== 'all' && (
-          <DataGrid
-            table={table}
-            recordCount={filteredEntries.length}
-            isLoading={isLoading}
-            tableClassNames={{ edgeCell: 'px-5' }}
-          >
-            <Card>
-              <DataGridToolbar />
-              <CardTable>
-                <ScrollArea>
-                  <DataGridTable />
-                  <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-              </CardTable>
+        {selectedTypeId !== 'all' && activeType && (
+          activeType.is_collection ? (
+            <DataGrid
+              table={table}
+              recordCount={filteredEntries.length}
+              isLoading={isLoading}
+              tableClassNames={{ edgeCell: 'px-5' }}
+            >
+              <Card>
+                <DataGridToolbar />
+                <CardTable>
+                  <ScrollArea>
+                    <DataGridTable />
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
+                </CardTable>
+              </Card>
+            </DataGrid>
+          ) : (
+            <Card className="border border-border bg-card">
+              <CardHeader className="flex items-center justify-between py-5 border-b border-border/80">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center p-2 rounded-lg bg-primary/10 text-primary">
+                    <Edit className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-foreground">
+                      {activeType.name} İçeriğini Düzenle
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {activeType.description || t('content_entries.single_description_default', 'Bu tekil içerik şablonunun alanlarını doldurun.')}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <div className="p-6">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <LoaderCircleIcon className="size-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <ContentEntryForm
+                    key={selectedTypeId} // Reset form state when changing types
+                    contentType={activeType}
+                    entry={entries && entries.length > 0 ? entries[0] : null}
+                    isInline={true}
+                  />
+                )}
+              </div>
             </Card>
-          </DataGrid>
+          )
         )}
       </Container>
 
