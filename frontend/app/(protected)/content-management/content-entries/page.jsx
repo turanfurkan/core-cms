@@ -94,6 +94,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import RichTextEditor from '@/components/common/rich-text-editor';
 import { FileUpload } from '@/components/ui/file-upload';
+import BlockRenderer from '@/components/blocks/block-renderer';
 
 const getLocalizedValue = (value, currentLang = 'tr') => {
   if (value === null || value === undefined) return '';
@@ -1628,7 +1629,7 @@ export default function ContentEntriesPage() {
           )}
         </div>
       </RightDrawer>
-      {/* Block Edit Dialog Modal */}
+      {/* Modern RightDrawer Editor for block fields */}
       {editingBlock && activeType && (() => {
         const dynamicZoneField = activeType?.fields?.find(f => f.type === 'dynamic_zone');
         const allowedBlocks = dynamicZoneField?.options?.allowed_blocks || [];
@@ -1638,18 +1639,40 @@ export default function ContentEntriesPage() {
         const displayBlockName = blockSchema.name || editingBlock.type;
 
         return (
-          <Dialog open={!!editingBlock} onOpenChange={(open) => !open && setEditingBlock(null)}>
-            <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden p-0 rounded-2xl">
-              <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-slate-50">
-                <DialogTitle className="text-sm font-extrabold flex items-center gap-2 text-slate-800">
-                  ⚙️ Bölüm İçeriğini Düzenle: {displayBlockName}
-                </DialogTitle>
-                <DialogDescription className="text-xs text-slate-400">
-                  Bu bölüme ait parametreleri ve görsel varyasyonu girin. Değişiklikler kaydedildiğinde yayına alınır.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <RightDrawer
+            open={!!editingBlock}
+            onOpenChange={(open) => !open && setEditingBlock(null)}
+            title={`⚙️ Bölüm İçeriğini Düzenle: ${displayBlockName}`}
+            size="5xl"
+            footer={
+              <div className="flex justify-end gap-2 w-full">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => setEditingBlock(null)} 
+                  className="h-8.5 rounded-lg px-4 text-xs font-bold"
+                >
+                  Vazgeç
+                </Button>
+                <Button 
+                  type="button" 
+                  onClick={saveEditedBlock} 
+                  disabled={updateBlocksMutation.isPending}
+                  className="h-8.5 rounded-lg px-4 text-xs font-bold bg-primary text-white flex items-center gap-1.5"
+                >
+                  {updateBlocksMutation.isPending ? (
+                    <LoaderCircleIcon className="size-3.5 animate-spin" />
+                  ) : (
+                    <Check className="size-3.5" />
+                  )}
+                  Kaydet ve Kapat
+                </Button>
+              </div>
+            }
+          >
+            <div className="grid grid-cols-12 gap-6 h-full min-h-[500px]">
+              {/* Form Column */}
+              <div className="col-span-12 xl:col-span-5 space-y-6">
                 {/* Languages selector if fields are localized */}
                 {languages.length > 1 && blockSchema.fields?.some(sub => !!(sub.options?.localized || sub.localized)) && (
                   <div className="p-1 bg-slate-100/80 border border-slate-200/40 rounded-lg flex gap-1 max-w-xs mb-2">
@@ -1672,7 +1695,7 @@ export default function ContentEntriesPage() {
                     <Label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
                       🎨 Bölüm Tasarım Varyasyonu (Layout Variant)
                     </Label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {blockVariations[editingBlock.type].map((variant) => {
                         const isSelected = editingBlock.variant === variant.id || (!editingBlock.variant && variant.id === 'minimal_centered');
                         return (
@@ -1732,7 +1755,7 @@ export default function ContentEntriesPage() {
                 )}
 
                 {/* Block Fields Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 gap-4.5">
                   {blockSchema.fields?.map(sub => {
                     const isSubLocalized = !!(sub.options?.localized || sub.localized);
                     const subVal = isSubLocalized 
@@ -1740,10 +1763,10 @@ export default function ContentEntriesPage() {
                       : (editingBlock.data?.[sub.slug] ?? '');
                     const subRequired = !!(sub.validation_rules?.required);
                     const isSubReq = subRequired && (!isSubLocalized || activeTab === defaultLangCode);
-                    const isFullWidth = sub.type === 'text' || sub.slug === 'content' || sub.slug === 'subtitle' || sub.type === 'media' || sub.type === 'gallery';
+                    const isFullWidth = true; // Use single column inside drawer form for compact vertical spacing
 
                     return (
-                      <div key={sub.slug} className={`space-y-1.5 ${isFullWidth ? 'col-span-2' : 'col-span-1'}`}>
+                      <div key={sub.slug} className="space-y-1.5 col-span-1">
                         <Label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
                           {sub.name}
                           {isSubReq && <span className="text-red-500">*</span>}
@@ -1818,33 +1841,53 @@ export default function ContentEntriesPage() {
                 </div>
               </div>
 
-              <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-end gap-2 shrink-0">
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => setEditingBlock(null)} 
-                  className="h-8.5 rounded-lg px-4 text-xs font-bold"
-                >
-                  Vazgeç
-                </Button>
-                <Button 
-                  type="button" 
-                  onClick={saveEditedBlock} 
-                  disabled={updateBlocksMutation.isPending}
-                  className="h-8.5 rounded-lg px-4 text-xs font-bold bg-primary text-white flex items-center gap-1.5"
-                >
-                  {updateBlocksMutation.isPending ? (
-                    <LoaderCircleIcon className="size-3.5 animate-spin" />
-                  ) : (
-                    <Check className="size-3.5" />
-                  )}
-                  Kaydet ve Kapat
-                </Button>
+              {/* Live Preview Column */}
+              <div className="col-span-12 xl:col-span-7 border-t xl:border-t-0 xl:border-l border-slate-100 pt-6 xl:pt-0 xl:pl-6 flex flex-col h-full space-y-4">
+                <div className="flex items-center justify-between shrink-0">
+                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    🖥️ Canlı Bölüm Önizlemesi (Live Preview)
+                  </span>
+                  
+                  {/* Device selectors */}
+                  <div className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-200/40">
+                    {[
+                      { device: 'desktop', label: 'Masaüstü' },
+                      { device: 'tablet', label: 'Tablet' },
+                      { device: 'mobile', label: 'Mobil' }
+                    ].map((item) => (
+                      <button
+                        key={item.device}
+                        type="button"
+                        onClick={() => setEditingBlockDevice(item.device)}
+                        className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
+                          editingBlockDevice === item.device
+                            ? 'bg-white shadow-xs text-slate-800'
+                            : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Simulated frame */}
+                <div className="flex-1 bg-slate-50 border border-slate-200/60 rounded-2xl p-4 flex justify-center items-start overflow-y-auto max-h-[60vh] xl:max-h-none">
+                  <div 
+                    className="transition-all duration-300 w-full"
+                    style={{ 
+                      maxWidth: editingBlockDevice === 'mobile' ? '375px' : editingBlockDevice === 'tablet' ? '768px' : '100%',
+                      boxShadow: '0 4px 20px -2px rgba(0,0,0,0.05)'
+                    }}
+                  >
+                    <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+                      <BlockRenderer blocks={[editingBlock]} locale={activeTab} />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </DialogContent>
-          </Dialog>
-        );
-      })()}
+            </div>
+          </RightDrawer>
     </>
   );
 }
