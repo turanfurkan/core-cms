@@ -1888,6 +1888,8 @@ export default function ContentEntriesPage() {
               </div>
             </div>
           </RightDrawer>
+        );
+      })()}
     </>
   );
 }
