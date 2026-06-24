@@ -8,7 +8,37 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Edit, Trash, Plus, Search, X, Globe, LoaderCircleIcon } from 'lucide-react';
+import {
+  Edit,
+  Trash,
+  Plus,
+  Search,
+  X,
+  Globe,
+  LoaderCircleIcon,
+  Grid,
+  MonitorPlay,
+  FileText,
+  Library,
+  Megaphone,
+  BarChart3,
+  HelpCircle,
+  Cpu,
+  Layers,
+  MessageSquare,
+  CalendarRange,
+  Ticket,
+  Users2,
+  TrendingUp,
+  CreditCard,
+  MousePointerClick,
+  Play,
+  Newspaper,
+  Mail,
+  ListOrdered,
+  MapPin,
+  ArrowLeft
+} from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
 import { Container } from '@/components/common/container';
@@ -45,6 +75,7 @@ import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import ContentEntryDialog from './components/content-entry-dialog';
 import ContentEntryForm from './components/content-entry-form';
+import { Sortable, SortableItem, SortableItemHandle } from '@/components/ui/sortable';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +86,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { RightDrawer } from '@/components/common/right-drawer';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const getLocalizedValue = (value, currentLang = 'tr') => {
   if (value === null || value === undefined) return '';
@@ -62,6 +95,191 @@ const getLocalizedValue = (value, currentLang = 'tr') => {
     return value[currentLang] || value['tr'] || value['en'] || Object.values(value)[0] || '';
   }
   return String(value);
+};
+
+const fallbackVariations = [
+  {
+    id: 'standard_layout',
+    name: 'Standart Yerleşim',
+    description: 'Bloğun klasik dikey yerleşimi.',
+    wireframe: (
+      <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 space-y-1.5">
+        <div className="w-1/3 h-2.5 bg-slate-200 rounded"></div>
+        <div className="w-full h-1.5 bg-slate-150 rounded"></div>
+        <div className="w-5/6 h-1.5 bg-slate-150 rounded"></div>
+      </div>
+    )
+  },
+  {
+    id: 'split_layout',
+    name: 'İki Sütunlu Ayrılmış Düzen',
+    description: 'Sol tarafta görsel/medya, sağ tarafta içerik yerleşimi.',
+    wireframe: (
+      <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 grid grid-cols-2 gap-3 items-center">
+        <div className="w-full h-8 bg-slate-200 rounded"></div>
+        <div className="space-y-1">
+          <div className="w-3/4 h-2 bg-slate-150 rounded"></div>
+          <div className="w-full h-1 bg-slate-100 rounded"></div>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: 'compact_grid',
+    name: 'Sıkıştırılmış Izgara Yerleşimi',
+    description: 'İçeriği daha dar ve sıkışık bir ızgarada listeler.',
+    wireframe: (
+      <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 grid grid-cols-2 gap-2">
+        {[1, 2].map(i => (
+          <div key={i} className="bg-white border border-slate-150 rounded p-1.5 space-y-1">
+            <div className="w-1/2 h-1.5 bg-slate-200 rounded"></div>
+            <div className="w-full h-1 bg-slate-100 rounded"></div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+];
+
+const blockVariations = {
+  hero_banner: [
+    {
+      id: 'minimal_centered',
+      name: 'Minimal Ortalanmış Giriş',
+      description: 'Sadece yazı ve buton içerir.',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 flex flex-col items-center gap-1.5">
+          <div className="w-2/3 h-2 bg-slate-200 rounded"></div>
+          <div className="w-1/2 h-1.5 bg-slate-150 rounded"></div>
+          <div className="w-12 h-3 bg-primary/20 rounded mt-1"></div>
+        </div>
+      )
+    },
+    {
+      id: 'image_supported',
+      name: 'Görsel Destekli Giriş',
+      description: 'Solda yazı, sağda görsel önizlemesi içerir.',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 grid grid-cols-2 gap-3 items-center">
+          <div className="space-y-1.5">
+            <div className="w-full h-2 bg-slate-200 rounded"></div>
+            <div className="w-3/4 h-1.5 bg-slate-150 rounded"></div>
+            <div className="w-10 h-3 bg-primary/20 rounded"></div>
+          </div>
+          <div className="w-full h-10 bg-slate-200 rounded flex items-center justify-center text-[10px] text-slate-400">🖼️</div>
+        </div>
+      )
+    },
+    {
+      id: 'form_input',
+      name: 'Formlu Giriş',
+      description: 'Sol tarafta başlık, sağ tarafta bülten/kayıt formu içerir.',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 grid grid-cols-2 gap-3 items-center">
+          <div className="space-y-1.5">
+            <div className="w-full h-2 bg-slate-200 rounded"></div>
+            <div className="w-1/2 h-1.5 bg-slate-150 rounded"></div>
+          </div>
+          <div className="w-full bg-white border border-slate-200 rounded p-1.5 space-y-1">
+            <div className="w-full h-2 bg-slate-100 rounded"></div>
+            <div className="w-full h-3.5 bg-primary/30 rounded"></div>
+          </div>
+        </div>
+      )
+    }
+  ],
+  rich_text: [
+    {
+      id: 'standard_centered',
+      name: 'Ortalanmış Zengin Metin',
+      description: 'Ortalanmış başlık ve paragraf düzeni.',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 flex flex-col items-center gap-1.5">
+          <div className="w-1/2 h-2.5 bg-slate-200 rounded"></div>
+          <div className="w-full h-1.5 bg-slate-150 rounded"></div>
+          <div className="w-5/6 h-1.5 bg-slate-150 rounded"></div>
+        </div>
+      )
+    },
+    {
+      id: 'two_columns',
+      name: 'İki Sütunlu Metin Düzeni',
+      description: 'Yan yana iki sütundan oluşan uzun metin yerleşimi.',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <div className="w-full h-1.5 bg-slate-150 rounded"></div>
+            <div className="w-5/6 h-1.5 bg-slate-150 rounded"></div>
+          </div>
+          <div className="space-y-1">
+            <div className="w-full h-1.5 bg-slate-150 rounded"></div>
+            <div className="w-5/6 h-1.5 bg-slate-150 rounded"></div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'callout_highlight',
+      name: 'Öne Çıkarılmış Alıntı',
+      description: 'Vurgulanmış kenar çizgili alıntı ve açıklama kartı.',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 border-l-2 border-l-primary rounded-r-lg p-3 space-y-1">
+          <div className="w-3/4 h-2 bg-slate-200 rounded"></div>
+          <div className="w-full h-1.5 bg-slate-150 rounded"></div>
+        </div>
+      )
+    }
+  ],
+  collection_display: [
+    {
+      id: 'grid_cards',
+      name: '3 Kolonlu Kart Izgarası',
+      description: 'Görselli içerikleri 3 kolonlu ızgara şeklinde listeler.',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 grid grid-cols-3 gap-2">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white border border-slate-150 rounded p-1 space-y-1">
+              <div className="w-full h-5 bg-slate-100 rounded"></div>
+              <div className="w-3/4 h-1 bg-slate-250 rounded"></div>
+            </div>
+          ))}
+        </div>
+      )
+    },
+    {
+      id: 'list_items',
+      name: 'Detaylı Liste Düzeni',
+      description: 'Alt alta sıralanmış resimli liste elemanları.',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 space-y-2">
+          {[1, 2].map(i => (
+            <div key={i} className="flex gap-2 items-center bg-white border border-slate-150 rounded p-1">
+              <div className="w-6 h-6 bg-slate-100 rounded shrink-0"></div>
+              <div className="flex-1 space-y-1">
+                <div className="w-1/2 h-1.5 bg-slate-200 rounded"></div>
+                <div className="w-3/4 h-1 bg-slate-150 rounded"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    },
+    {
+      id: 'carousel_slider',
+      name: 'Yatay Kaydırıcı (Slider)',
+      description: 'Kartları yana kaydırılabilir carousel şeklinde listeler.',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 flex gap-2 overflow-hidden">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white border border-slate-150 rounded p-1 w-20 shrink-0 space-y-1">
+              <div className="w-full h-4 bg-slate-100 rounded"></div>
+              <div className="w-3/4 h-1 bg-slate-200 rounded"></div>
+            </div>
+          ))}
+        </div>
+      )
+    }
+  ]
 };
 
 export default function ContentEntriesPage() {
@@ -75,6 +293,43 @@ export default function ContentEntriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [idToDelete, setIdToDelete] = useState(null);
+  const [blockDeleteConfirmOpen, setBlockDeleteConfirmOpen] = useState(false);
+  const [blockToDeleteId, setBlockToDeleteId] = useState(null);
+  const [addBlockDrawerOpen, setAddBlockDrawerOpen] = useState(false);
+  const [blockSearchQuery, setBlockSearchQuery] = useState('');
+  const [selectedBlockForVariant, setSelectedBlockForVariant] = useState(null);
+
+  const readyBlocks = useMemo(() => [
+    { id: 'hero_banner', name: 'Hero Giriş', type: 'hero_banner', icon: MonitorPlay, description: 'Giriş Görseli (Hero Banner)' },
+    { id: 'rich_text', name: 'Zengin Metin', type: 'rich_text', icon: FileText, description: 'Zengin Metin Alanı (Rich Text)' },
+    { id: 'collection_display', name: 'Koleksiyon Listeleme', type: 'collection_display', icon: Library, description: 'Koleksiyon Listeleme' },
+    { id: 'entry_callout', name: 'Callout Paneli', type: 'entry_callout', icon: Megaphone, description: 'Görsel Callout Paneli' },
+    { id: 'statistics_block', name: 'İstatistikler', type: 'statistics_block', icon: BarChart3, description: 'İstatistik Sayacı Izgarası' },
+    { id: 'faq_accordion', name: 'SSS', type: 'faq_accordion', icon: HelpCircle, description: 'Sıkça Sorulan Sorular' },
+    { id: 'features_grid', name: 'Özellikler', type: 'features_grid', icon: Cpu, description: 'Özellik Izgarası' },
+    { id: 'integrations_logos', name: 'Logolar', type: 'integrations_logos', icon: Layers, description: 'Entegrasyon Logoları' },
+    { id: 'testimonial_card', name: 'Müşteri Yorumları', type: 'testimonial_card', icon: MessageSquare, description: 'Müşteri Değerlendirmeleri' },
+    { id: 'timeline_milestones', name: 'Zaman Çizelgesi', type: 'timeline_milestones', icon: CalendarRange, description: 'Zaman Çizelgesi' },
+    { id: 'event_banner', name: 'Etkinlik', type: 'event_banner', icon: Ticket, description: 'Etkinlik & Webinar Duyurusu' },
+    { id: 'team_grid', name: 'Ekibimiz', type: 'team_grid', icon: Users2, description: 'Ekip Üyeleri Izgarası' },
+    { id: 'campaign_banner', name: 'Kampanya', type: 'campaign_banner', icon: TrendingUp, description: 'Kampanya & Promosyon Kartı' },
+    { id: 'pricing_block', name: 'Fiyatlandırma Tablosu', type: 'pricing_block', icon: CreditCard, description: 'Fiyat ve Paket Seçenekleri' },
+    { id: 'cta_block', name: 'Aksiyon Çağrısı (CTA)', type: 'cta_block', icon: MousePointerClick, description: 'Dönüşüm Odaklı Buton ve Banner' },
+    { id: 'video_block', name: 'Video Tanıtım', type: 'video_block', icon: Play, description: 'Medya ve Video Oynatıcı Alanı' },
+    { id: 'blog_posts', name: 'Son Yazılar / Blog', type: 'blog_posts', icon: Newspaper, description: 'Dinamik İçerik ve Haber Listesi' },
+    { id: 'newsletter_subscribe', name: 'Bülten Aboneliği', type: 'newsletter_subscribe', icon: Mail, description: 'E-Posta Toplama Formu' },
+    { id: 'steps_timeline', name: 'Nasıl Çalışır? (Steps)', type: 'steps_timeline', icon: ListOrdered, description: 'Adım Adım Süreç Akışı' },
+    { id: 'google_maps', name: 'Harita', type: 'google_maps', icon: MapPin, description: 'Lokasyon ve Harita Entegrasyonu' }
+  ], []);
+
+  const filteredReadyBlocks = useMemo(() => {
+    if (!blockSearchQuery) return readyBlocks;
+    const q = blockSearchQuery.toLowerCase();
+    return readyBlocks.filter(b =>
+      b.name.toLowerCase().includes(q) ||
+      b.description.toLowerCase().includes(q)
+    );
+  }, [blockSearchQuery, readyBlocks]);
 
   // Fetch all content types for dropdown selector
   const { data: contentTypes } = useQuery({
@@ -116,6 +371,15 @@ export default function ContentEntriesPage() {
     },
     enabled: selectedTypeId !== 'all',
   });
+
+  const [localBlocks, setLocalBlocks] = useState([]);
+
+  useEffect(() => {
+    const singleTypeEntry = entries?.[0] || null;
+    const dynamicZoneField = activeType?.fields?.find(f => f.type === 'dynamic_zone');
+    const blocksVal = dynamicZoneField ? (singleTypeEntry?.data?.[dynamicZoneField.slug] || []) : [];
+    setLocalBlocks(blocksVal);
+  }, [entries, activeType]);
 
   // Filter local entries based on search input
   const filteredEntries = useMemo(() => {
@@ -213,6 +477,25 @@ export default function ContentEntriesPage() {
     },
   });
 
+  const updateBlocksMutation = useMutation({
+    mutationFn: async ({ entryId, payload }) => {
+      const res = await apiFetch(`/api/admin/content-types/${selectedTypeId}/entries/${entryId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Güncelleme başarısız.');
+      return res.json();
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-content-entries', selectedTypeId] });
+      toast.success(variables.successMessage || 'Bölüm sıralaması başarıyla güncellendi.');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'İşlem gerçekleştirilirken bir hata oluştu.');
+    }
+  });
+
   const handleEdit = (entry, e) => {
     e.stopPropagation();
     setSelectedEntry(entry);
@@ -228,6 +511,74 @@ export default function ContentEntriesPage() {
   const confirmDelete = () => {
     if (idToDelete) {
       deleteMutation.mutate(idToDelete);
+    }
+  };
+
+  const confirmDeleteBlock = () => {
+    if (blockToDeleteId && activeType) {
+      const singleTypeEntry = entries?.[0] || null;
+      const dynamicZoneField = activeType?.fields?.find(f => f.type === 'dynamic_zone');
+      if (!singleTypeEntry || !dynamicZoneField) return;
+
+      const newBlocks = localBlocks.filter(b => b.id !== blockToDeleteId);
+      setLocalBlocks(newBlocks);
+      const updatedData = {
+        ...singleTypeEntry.data,
+        [dynamicZoneField.slug]: newBlocks
+      };
+
+      updateBlocksMutation.mutate({
+        entryId: singleTypeEntry.id,
+        payload: {
+          data: updatedData,
+          status: singleTypeEntry.status || 'published'
+        },
+        successMessage: 'Bölüm başarıyla silindi.'
+      }, {
+        onSuccess: () => {
+          setBlockDeleteConfirmOpen(false);
+          setBlockToDeleteId(null);
+        }
+      });
+    }
+  };
+
+  const handleAddBlock = (blockType, variantId) => {
+    if (activeType) {
+      const singleTypeEntry = entries?.[0] || null;
+      const dynamicZoneField = activeType?.fields?.find(f => f.type === 'dynamic_zone');
+      if (!singleTypeEntry || !dynamicZoneField) return;
+
+      const newBlockId = `${blockType}_${Date.now()}`;
+      const newBlock = {
+        id: newBlockId,
+        type: blockType,
+        variant: variantId,
+        title: { tr: '', en: '' },
+        data: {}
+      };
+
+      const newBlocks = [...localBlocks, newBlock];
+      setLocalBlocks(newBlocks);
+
+      const updatedData = {
+        ...singleTypeEntry.data,
+        [dynamicZoneField.slug]: newBlocks
+      };
+
+      updateBlocksMutation.mutate({
+        entryId: singleTypeEntry.id,
+        payload: {
+          data: updatedData,
+          status: singleTypeEntry.status || 'published'
+        },
+        successMessage: 'Yeni bölüm başarıyla eklendi.'
+      }, {
+        onSuccess: () => {
+          setAddBlockDrawerOpen(false);
+          setSelectedBlockForVariant(null);
+        }
+      });
     }
   };
 
@@ -504,37 +855,190 @@ export default function ContentEntriesPage() {
               </Card>
             </DataGrid>
           ) : (
-            <Card className="border border-border bg-card">
-              <CardHeader className="flex items-center justify-between py-5 border-b border-border/80">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center p-2 rounded-lg bg-primary/10 text-primary">
-                    <Edit className="size-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-foreground">
-                      {activeType.name} İçeriğini Düzenle
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {activeType.description || t('content_entries.single_description_default', 'Bu tekil içerik şablonunun alanlarını doldurun.')}
-                    </p>
-                  </div>
-                </div>
-              </CardHeader>
-              <div className="p-6">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-20">
-                    <LoaderCircleIcon className="size-8 animate-spin text-primary" />
-                  </div>
-                ) : (
-                  <ContentEntryForm
-                    key={selectedTypeId} // Reset form state when changing types
-                    contentType={activeType}
-                    entry={entries && entries.length > 0 ? entries[0] : null}
-                    isInline={true}
-                  />
-                )}
+            isLoading ? (
+              <div className="flex justify-center items-center p-20 bg-white border border-slate-200 rounded-2xl">
+                <LoaderCircleIcon className="size-8 animate-spin text-primary" />
               </div>
-            </Card>
+            ) : (
+              (() => {
+                const singleTypeEntry = entries?.[0] || null;
+                const dynamicZoneField = activeType?.fields?.find(f => f.type === 'dynamic_zone');
+                const hasNoBlocks = localBlocks.length === 0;
+
+                const handleReorder = (newBlocks) => {
+                  setLocalBlocks(newBlocks);
+                  if (!singleTypeEntry || !dynamicZoneField) return;
+                  const updatedData = {
+                    ...singleTypeEntry.data,
+                    [dynamicZoneField.slug]: newBlocks
+                  };
+                  updateBlocksMutation.mutate({
+                    entryId: singleTypeEntry.id,
+                    payload: {
+                      data: updatedData,
+                      status: singleTypeEntry.status || 'published'
+                    }
+                  });
+                };
+
+
+
+                return (
+                  <div className="space-y-4">
+                    {/* Render existing blocks if any */}
+                    {!hasNoBlocks && (
+                      <Sortable value={localBlocks} onValueChange={handleReorder} getItemValue={(item) => item.id} className="space-y-3">
+                        {localBlocks.map((block, idx) => {
+                          let leftColor = 'border-l-blue-500';
+                          let blockName = 'Bilinmeyen Blok';
+                          let icon = '🗂️';
+
+                          if (block.type === 'hero_banner') {
+                            leftColor = 'border-l-blue-500';
+                            blockName = 'Giriş Görseli (Hero Banner)';
+                            icon = '🖼️';
+                          } else if (block.type === 'rich_text') {
+                            leftColor = 'border-l-purple-500';
+                            blockName = 'Zengin Metin Alanı (Rich Text)';
+                            icon = '✍️';
+                          } else if (block.type === 'collection_display') {
+                            leftColor = 'border-l-amber-500';
+                            blockName = 'Koleksiyon Listeleme (Collection Display)';
+                            icon = '🗂️';
+                          } else if (block.type === 'entry_callout') {
+                            leftColor = 'border-l-emerald-500';
+                            blockName = 'Görsel Callout Paneli (Callout Banner)';
+                            icon = '📢';
+                          } else if (block.type === 'statistics_block') {
+                            leftColor = 'border-l-rose-500';
+                            blockName = 'İstatistik Sayacı (Statistics Grid)';
+                            icon = '📊';
+                          } else if (block.type === 'faq_accordion') {
+                            leftColor = 'border-l-teal-500';
+                            blockName = 'Sıkça Sorulan Sorular (FAQ Accordion)';
+                            icon = '❓';
+                          } else if (block.type === 'features_grid') {
+                            leftColor = 'border-l-indigo-500';
+                            blockName = 'Özellik Izgarası (Features Grid)';
+                            icon = '🚀';
+                          } else if (block.type === 'integrations_logos') {
+                            leftColor = 'border-l-sky-500';
+                            blockName = 'Entegrasyon Logoları (Integrations Logos Grid)';
+                            icon = '🔌';
+                          } else if (block.type === 'testimonial_card') {
+                            leftColor = 'border-l-pink-500';
+                            blockName = 'Müşteri Değerlendirmeleri (Testimonials Grid)';
+                            icon = '💬';
+                          } else if (block.type === 'timeline_milestones') {
+                            leftColor = 'border-l-amber-600';
+                            blockName = 'Zaman Çizelgesi (Timeline Milestones)';
+                            icon = '📅';
+                          } else if (block.type === 'event_banner') {
+                            leftColor = 'border-l-violet-500';
+                            blockName = 'Etkinlik & Webinar Duyurusu (Event Banner)';
+                            icon = '🎟️';
+                          } else if (block.type === 'team_grid') {
+                            leftColor = 'border-l-slate-400';
+                            blockName = 'Ekip Üyeleri Izgarası (Team Grid)';
+                            icon = '👥';
+                          } else if (block.type === 'pricing_block') {
+                            leftColor = 'border-l-cyan-500';
+                            blockName = 'Fiyatlandırma Tablosu (Pricing)';
+                            icon = '💳';
+                          } else if (block.type === 'cta_block') {
+                            leftColor = 'border-l-orange-500';
+                            blockName = 'Aksiyon Çağrısı (CTA)';
+                            icon = '🎯';
+                          } else if (block.type === 'video_block') {
+                            leftColor = 'border-l-red-500';
+                            blockName = 'Video Tanıtım (Video)';
+                            icon = '🎥';
+                          } else if (block.type === 'blog_posts') {
+                            leftColor = 'border-l-lime-600';
+                            blockName = 'Son Yazılar / Blog (Blog)';
+                            icon = '📰';
+                          } else if (block.type === 'newsletter_subscribe') {
+                            leftColor = 'border-l-emerald-600';
+                            blockName = 'Bülten Aboneliği (Newsletter)';
+                            icon = '✉️';
+                          } else if (block.type === 'steps_timeline') {
+                            leftColor = 'border-l-yellow-600';
+                            blockName = 'Nasıl Çalışır? (Steps)';
+                            icon = '👣';
+                          } else if (block.type === 'google_maps') {
+                            leftColor = 'border-l-blue-600';
+                            blockName = 'Harita (Google Maps)';
+                            icon = '📍';
+                          }
+
+                          return (
+                            <SortableItem key={block.id || idx} value={block.id}>
+                              <SortableItemHandle asChild>
+                                <div
+                                  className={`bg-white border border-slate-200 border-l-4 ${leftColor} p-4 rounded-xl flex items-center justify-between hover:shadow-xs transition-all`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Grid className="size-4 text-slate-400" />
+                                    <span className="text-lg">{icon}</span>
+                                    <div>
+                                      <span className="font-bold text-sm text-slate-800">{blockName}</span>
+                                      <span className="text-[10px] text-slate-400 block mt-0.5">Tip: {block.type}</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="xs"
+                                      className="h-8 px-3 text-xs font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      Düzenle
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="xs"
+                                      className="h-8 w-8 p-0 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setBlockToDeleteId(block.id);
+                                        setBlockDeleteConfirmOpen(true);
+                                      }}
+                                    >
+                                      <Trash className="size-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </SortableItemHandle>
+                            </SortableItem>
+                          );
+                        })}
+                      </Sortable>
+                    )}
+
+                    {/* Always visible Add Block button at the bottom */}
+                    <div className={`flex flex-col items-center justify-center p-8 border border-dashed border-slate-200 rounded-2xl bg-white shadow-xs ${!hasNoBlocks ? 'mt-4' : 'p-20'}`}>
+                      <Button
+                        type="button"
+                        size="lg"
+                        className="gap-2 font-bold px-6 py-5 rounded-xl shadow-md hover:shadow-lg transition-all"
+                        onClick={() => {
+                          setAddBlockDrawerOpen(true);
+                        }}
+                      >
+                        <Plus className="size-5" />
+                        Add Block
+                      </Button>
+                      {hasNoBlocks && (
+                        <span className="text-xs text-slate-400 mt-2">Henüz hiç bölüm eklenmemiş. Yeni bir bölüm eklemek için tıklayın.</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()
+            )
           )
         )}
       </Container>
@@ -579,6 +1083,198 @@ export default function ContentEntriesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={blockDeleteConfirmOpen} onOpenChange={setBlockDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bölümü Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu bölümü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button type="button" variant="outline" className="gap-1.5 h-9 rounded-lg">
+                <X className="size-4" />
+                Vazgeç
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild onClick={(e) => { e.preventDefault(); confirmDeleteBlock(); }}>
+              <Button type="button" variant="destructive" className="gap-1.5 h-9 rounded-lg" disabled={updateBlocksMutation.isPending}>
+                {updateBlocksMutation.isPending ? (
+                  <LoaderCircleIcon className="size-4 animate-spin" />
+                ) : (
+                  <Trash className="size-4" />
+                )}
+                Kalıcı Olarak Sil
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <RightDrawer
+        open={addBlockDrawerOpen}
+        onOpenChange={setAddBlockDrawerOpen}
+        title={selectedBlockForVariant ? `${selectedBlockForVariant.name} Varyasyonları` : "Bölüm Ekle"}
+        size="5xl"
+      >
+        <div className="space-y-5 flex flex-col h-full overflow-hidden">
+          {selectedBlockForVariant ? (
+            <div className="flex flex-col h-full overflow-hidden space-y-4 transition-all duration-300">
+              {/* Back Button */}
+              <button
+                type="button"
+                onClick={() => setSelectedBlockForVariant(null)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-active select-none shrink-0 self-start pb-2 border-b border-border w-full text-start"
+              >
+                <ArrowLeft className="size-4" />
+                Geri Dön
+              </button>
+
+              {/* Variations list */}
+              <div className="space-y-3 overflow-y-auto pr-1 pb-6 flex-1 hover-scroll-overlay-y">
+                {(blockVariations[selectedBlockForVariant.type] || fallbackVariations).map((v) => (
+                  <div
+                    key={v.id}
+                    onClick={() => handleAddBlock(selectedBlockForVariant.type, v.id)}
+                    data-block-variant={v.id}
+                    className="group border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 rounded-xl p-4 flex flex-col md:flex-row items-center gap-4 cursor-pointer transition-all select-none"
+                  >
+                    <div className="w-full md:w-56 shrink-0">
+                      {v.wireframe}
+                    </div>
+                    <div className="flex-1 text-start space-y-1">
+                      <h4 className="font-bold text-sm text-slate-800 transition-colors group-hover:text-primary">
+                        {v.name}
+                      </h4>
+                      <p className="text-xs text-slate-400">
+                        {v.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Search Input */}
+              <div className="relative shrink-0">
+                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  placeholder="Blok ara..."
+                  value={blockSearchQuery}
+                  onChange={(e) => setBlockSearchQuery(e.target.value)}
+                  className="ps-9 h-10"
+                />
+              </div>
+
+              {/* Tabs Container */}
+              <Tabs defaultValue="ready" className="w-full flex-1 flex flex-col overflow-hidden">
+                <TabsList variant="line" size="sm" className="w-full justify-start border-b border-border shrink-0">
+                  <TabsTrigger variant="line" value="ready" className="px-4 py-2 font-semibold">Hazır Bölümler</TabsTrigger>
+                  <TabsTrigger variant="line" value="layout" className="px-4 py-2 font-semibold">Kolon Düzenleri</TabsTrigger>
+                </TabsList>
+
+                {/* Ready Sections Tab Content */}
+                <TabsContent value="ready" className="mt-4 flex-1 overflow-y-auto pr-1">
+                  {filteredReadyBlocks.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-10">
+                      Aradığınız kriterde blok bulunamadı.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-3 pb-6">
+                      {filteredReadyBlocks.map((b) => {
+                        const IconComponent = b.icon;
+                        return (
+                          <div
+                            key={b.id}
+                            onClick={() => {
+                              setSelectedBlockForVariant(b);
+                            }}
+                            className="group border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all text-center select-none"
+                          >
+                            <div className="p-3 bg-slate-50 rounded-xl text-slate-600 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-200">
+                              <IconComponent className="size-5" />
+                            </div>
+                            <span className="font-bold text-xs text-slate-800 transition-colors group-hover:text-primary">
+                              {b.name}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block line-clamp-1">
+                              {b.description}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Layout Templates Tab Content */}
+                <TabsContent value="layout" className="mt-4 flex-1 overflow-y-auto pr-1 space-y-3 pb-6">
+                  {/* Tekli Kolon (100%) */}
+                  <div
+                    onClick={() => toast.info('Tekli Kolon (100%) seçildi!')}
+                    className="group border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 rounded-xl p-4 cursor-pointer transition-all flex flex-col gap-3 select-none"
+                  >
+                    <div className="w-full bg-slate-50 border border-slate-100 rounded-lg h-10 transition-colors group-hover:bg-primary/10 group-hover:border-primary/20"></div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-xs text-slate-800 transition-colors group-hover:text-primary">Tekli Kolon (100%)</span>
+                      <span className="text-[10px] text-slate-400">Tam genişlikte tek bir alan oluşturur.</span>
+                    </div>
+                  </div>
+
+                  {/* İki Eşit Kolon (50% + 50%) */}
+                  <div
+                    onClick={() => toast.info('İki Eşit Kolon (50% + 50%) seçildi!')}
+                    className="group border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 rounded-xl p-4 cursor-pointer transition-all flex flex-col gap-3 select-none"
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg h-10 transition-colors group-hover:bg-primary/10 group-hover:border-primary/20"></div>
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg h-10 transition-colors group-hover:bg-primary/10 group-hover:border-primary/20"></div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-xs text-slate-800 transition-colors group-hover:text-primary">İki Eşit Kolon (50% + 50%)</span>
+                      <span className="text-[10px] text-slate-400">Yan yana iki eşit alan oluşturur.</span>
+                    </div>
+                  </div>
+
+                  {/* Üç Eşit Kolon (33% * 3) */}
+                  <div
+                    onClick={() => toast.info('Üç Eşit Kolon (33% * 3) seçildi!')}
+                    className="group border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 rounded-xl p-4 cursor-pointer transition-all flex flex-col gap-3 select-none"
+                  >
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg h-10 transition-colors group-hover:bg-primary/10 group-hover:border-primary/20"></div>
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg h-10 transition-colors group-hover:bg-primary/10 group-hover:border-primary/20"></div>
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg h-10 transition-colors group-hover:bg-primary/10 group-hover:border-primary/20"></div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-xs text-slate-800 transition-colors group-hover:text-primary">Üç Eşit Kolon (33% * 3)</span>
+                      <span className="text-[10px] text-slate-400">Yan yana üç eşit alan oluşturur.</span>
+                    </div>
+                  </div>
+
+                  {/* Sol Dar, Sağ Geniş (33% + 66%) */}
+                  <div
+                    onClick={() => toast.info('Sol Dar, Sağ Geniş (33% + 66%) seçildi!')}
+                    className="group border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 rounded-xl p-4 cursor-pointer transition-all flex flex-col gap-3 select-none"
+                  >
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg h-10 transition-colors group-hover:bg-primary/10 group-hover:border-primary/20 col-span-1"></div>
+                      <div className="bg-slate-50 border border-slate-100 rounded-lg h-10 transition-colors group-hover:bg-primary/10 group-hover:border-primary/20 col-span-2"></div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-xs text-slate-800 transition-colors group-hover:text-primary">Sol Dar, Sağ Geniş (33% + 66%)</span>
+                      <span className="text-[10px] text-slate-400">Sol tarafı dar, sağ tarafı geniş yan yana iki alan oluşturur.</span>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </>
+          )}
+        </div>
+      </RightDrawer>
     </>
   );
 }

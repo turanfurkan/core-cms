@@ -60,6 +60,198 @@ const advancedSeoSlugs = [
   'robots_meta'
 ];
 
+const labelTranslationMap = {
+  'Başlık': 'Başlık',
+  'Hero Slider Başlığı': 'Ana Ekran Başlığı',
+  'Hero Slider Alt Başlığı': 'Ana Ekran Açıklaması',
+  'CTA Buton Metni': 'Buton Yazısı',
+  'CTA Buton Linki': 'Butonun Gideceği Sayfa',
+  'Tanıtım Bölümü Başlığı': 'Tanıtım Bölümü Başlığı',
+  'Şirket Hikayesi': 'Şirket Hikayesi',
+  'Vizyon': 'Vizyonumuz',
+  'Misyon': 'Misyonumuz',
+  'Kapak Görseli': 'Kapak Görseli',
+  'Adres': 'Adres Bilgisi',
+  'Telefon Numarası': 'Telefon Numarası',
+  'E-posta Adresi': 'E-posta Adresi',
+  'Google Harita Linki': 'Harita Konumu (URL)',
+  'Facebook URL': 'Facebook Adresi',
+  'Instagram URL': 'Instagram Adresi',
+  'Gizlilik Sözleşmesi': 'Gizlilik Sözleşmesi',
+  'KVKK Aydınlatma Metni': 'KVKK Aydınlatma Metni',
+  'Kullanım Koşulları': 'Kullanım Koşulları',
+};
+
+const fieldMetaMap = {
+  'title': {
+    placeholder: 'Örn: Ana Sayfa, Kurumsal Tanıtım',
+    helpText: 'Sistem içindeki sayfa başlığı.'
+  },
+  'hero_title': {
+    placeholder: 'Örn: Yenilikçi CMS Çözümleri',
+    helpText: 'Sayfanın en üstünde, ziyaretçilerin ilk göreceği büyük başlık alanıdır.'
+  },
+  'hero_subtitle': {
+    placeholder: 'Örn: İşinizi büyütmek için esnek ve hızlı çözümler...',
+    helpText: 'Ana başlığın hemen altında yer alan açıklayıcı alt metindir.'
+  },
+  'hero_cta_text': {
+    placeholder: 'Örn: Hemen Keşfet, İletişime Geç',
+    helpText: 'Kullanıcıları bir aksiyona yönlendiren ana butonun üzerindeki yazıdır.'
+  },
+  'hero_cta_link': {
+    placeholder: 'Örn: /contact, https://...',
+    helpText: 'Butona tıklandığında gidilecek sayfa bağlantısı.'
+  },
+  'features_title': {
+    placeholder: 'Örn: Neden Bizi Seçmelisiniz?',
+    helpText: 'Hizmetler veya özellikler bölümünün üstünde görünecek ana başlıktır.'
+  },
+  'story': {
+    placeholder: 'Şirketinizin hikayesini ve kuruluşunu detaylandırın...',
+    helpText: 'Hakkımızda sayfasında görüntülenecek zengin içerikli şirket hikayesi.'
+  },
+  'vision': {
+    placeholder: 'Şirketinizin gelecek vizyonunu yazın...',
+    helpText: 'Şirketin uzun vadeli hedeflerini anlatan vizyon alanı.'
+  },
+  'mission': {
+    placeholder: 'Şirketinizin misyonunu yazın...',
+    helpText: 'Müşterilere ve sektöre katılan değeri anlatan misyon alanı.'
+  },
+  'cover_image': {
+    placeholder: 'Görsel seçin',
+    helpText: 'Sayfanın en üstünde veya yanında görünecek kurumsal kapak resmi.'
+  },
+  'address': {
+    placeholder: 'Örn: Teknopark Ankara A Blok No: 12, Yenimahalle / Ankara',
+    helpText: 'Web sitenizin iletişim sayfasında görünecek resmi ofis adresi.'
+  },
+  'phone': {
+    placeholder: 'Örn: +90 312 444 0 538',
+    helpText: 'Müşterilerinizin size ulaşabileceği telefon numarası.'
+  },
+  'email': {
+    placeholder: 'Örn: info@markaniz.com',
+    helpText: 'Resmi e-posta yazışmalarınız için kullanılacak adres.'
+  },
+  'map_url': {
+    placeholder: 'Örn: https://maps.google.com/...',
+    helpText: 'İletişim sayfasındaki harita simülasyonunda kullanılacak Google Maps linki.'
+  },
+  'social_facebook': {
+    placeholder: 'Örn: https://facebook.com/kullaniciadi',
+    helpText: 'Resmi Facebook sayfanızın bağlantısı.'
+  },
+  'social_instagram': {
+    placeholder: 'Örn: https://instagram.com/kullaniciadi',
+    helpText: 'Resmi Instagram hesabınızın bağlantısı.'
+  }
+};
+
+const groupSchema = {
+  homepage: [
+    {
+      id: 'hero',
+      name: '📍 Hero Bölümü',
+      desc: 'Ana sayfanın en üst kısmında görünen giriş alanı',
+      fields: ['hero_title', 'hero_subtitle', 'hero_cta_text', 'hero_cta_link']
+    },
+    {
+      id: 'features',
+      name: '📍 Tanıtım Bölümü',
+      desc: 'Sayfadaki özellikleri ve tanıtım başlığını içerir',
+      fields: ['features_title']
+    },
+    {
+      id: 'general',
+      name: '⚙️ Genel Ayarlar',
+      desc: 'Sayfa başlığı ve temel yapılandırmalar',
+      fields: ['title']
+    }
+  ],
+  'about-us': [
+    {
+      id: 'general',
+      name: '⚙️ Genel Bilgiler',
+      desc: 'Sayfa başlığı',
+      fields: ['title']
+    },
+    {
+      id: 'story',
+      name: '📖 Kurumsal Hikayemiz',
+      desc: 'Şirketin kuruluş hikayesi ve kapak resmi',
+      fields: ['story', 'cover_image']
+    },
+    {
+      id: 'vision_mission',
+      name: '🚀 Vizyon & Misyon',
+      desc: 'Gelecek hedefleri ve misyon değerleri',
+      fields: ['vision', 'mission']
+    }
+  ],
+  contact: [
+    {
+      id: 'info',
+      name: '📞 İletişim Bilgileri',
+      desc: 'Adres, telefon ve e-posta bilgileri',
+      fields: ['address', 'phone', 'email']
+    },
+    {
+      id: 'social_map',
+      name: '📍 Harita & Sosyal Medya',
+      desc: 'Google Harita linki ve sosyal medya bağlantıları',
+      fields: ['map_url', 'social_facebook', 'social_instagram']
+    }
+  ],
+  'legal-pages': [
+    {
+      id: 'privacy',
+      name: '⚖️ Gizlilik & Kullanım',
+      desc: 'Gizlilik sözleşmesi ve kullanım koşulları metinleri',
+      fields: ['privacy_policy', 'terms_of_use']
+    },
+    {
+      id: 'kvkk',
+      name: '📄 KVKK Aydınlatma',
+      desc: 'KVKK aydınlatma ve rıza metinleri',
+      fields: ['kvkk_consent']
+    }
+  ]
+};
+
+const getGroups = (contentTypeSlug, allFields) => {
+  const predefined = groupSchema[contentTypeSlug];
+  if (predefined) {
+    return predefined.map(g => ({
+      ...g,
+      resolvedFields: allFields.filter(f => g.fields.includes(f.slug))
+    })).filter(g => g.resolvedFields.length > 0);
+  }
+  
+  const titleField = allFields.find(f => f.slug === 'title' || f.slug === 'name');
+  const otherFields = allFields.filter(f => f !== titleField);
+  
+  const groups = [];
+  if (titleField) {
+    groups.push({
+      id: 'general',
+      name: '📝 Genel Bilgiler',
+      desc: 'Temel başlık ve isim tanımlaması',
+      resolvedFields: [titleField]
+    });
+  }
+  if (otherFields.length > 0) {
+    groups.push({
+      id: 'content',
+      name: '✍️ İçerik Detayları',
+      desc: 'Diğer içerik alanları ve şablon girdileri',
+      resolvedFields: otherFields
+    });
+  }
+  return groups;
+};
+
 const getMediaIds = (value) => {
   if (value === null || value === undefined) return '';
   if (Array.isArray(value)) {
@@ -474,7 +666,23 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
   });
 
   const [activeFormTab, setActiveFormTab] = useState('general');
-  const [splitPreview, setSplitPreview] = useState(false);
+  const [splitPreview, setSplitPreview] = useState(true);
+
+  // Group Accordion open states
+  const [expandedGroups, setExpandedGroups] = useState({
+    general: true,
+    hero: true,
+    story: true,
+    info: true,
+    privacy: true
+  });
+
+  const toggleGroup = (groupId) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
 
   // UI Panel Toggle States
   const [revisionsOpen, setRevisionsOpen] = useState(false);
@@ -702,14 +910,24 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
     const isFieldRequired = isRequired && (!isLocalized || activeTab === defaultLangCode);
     const isAiAvailable = field.type === 'string' || field.type === 'text' || field.type === 'varchar';
 
+    const meta = fieldMetaMap[field.slug] || {};
+    const labelText = labelTranslationMap[field.name] || field.name;
+    const placeholderText = meta.placeholder || `${labelText} girin...`;
+    const helpText = meta.helpText || '';
+
     return (
       <div key={field.id} className="space-y-1.5 relative group/field">
         <div className="flex items-center justify-between">
-          <Label htmlFor={field.slug} className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-            {field.name}
+          <Label htmlFor={field.slug} className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+            {labelText}
             {isFieldRequired && <span className="text-red-500">*</span>}
             {isLocalized && (
               <Globe className="size-3 text-primary/80" title={t('content_entries.translatable_field', 'Çevrilebilir alan')} />
+            )}
+            {helpText && (
+              <span className="cursor-help text-slate-400 hover:text-slate-600 transition-colors" title={helpText}>
+                <Info className="size-3" />
+              </span>
             )}
           </Label>
 
@@ -761,7 +979,7 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
             <RichTextEditor
               value={val}
               onChange={(html) => handleValueChange(field.slug, html, activeTab)}
-              placeholder={t('content_entries.dialog.rich_text_placeholder', '{name} girin...').replace('{name}', field.name)}
+              placeholder={placeholderText}
             />
           </div>
         ) : field.type === 'json' ? (
@@ -769,7 +987,7 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
             id={field.slug}
             value={val}
             onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
-            placeholder='{"key": "value"}'
+            placeholder={placeholderText}
             rows={4}
             className="font-mono text-xs"
           />
@@ -779,7 +997,7 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
             type="number"
             value={val}
             onChange={(e) => handleValueChange(field.slug, e.target.value === '' ? '' : (parseInt(e.target.value, 10) || 0), activeTab)}
-            placeholder="0"
+            placeholder={placeholderText}
           />
         ) : field.type === 'date' ? (
           <Input
@@ -794,7 +1012,7 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
             type="email"
             value={val}
             onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
-            placeholder="example@domain.com"
+            placeholder={placeholderText}
           />
         ) : field.type === 'phone' ? (
           <Input
@@ -802,7 +1020,7 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
             type="tel"
             value={val}
             onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
-            placeholder="+90 555 555 55 55"
+            placeholder={placeholderText}
           />
         ) : field.type === 'url' ? (
           <Input
@@ -810,21 +1028,21 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
             type="url"
             value={val}
             onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
-            placeholder="https://example.com"
+            placeholder={placeholderText}
           />
         ) : field.type === 'gallery' || field.type === 'media_gallery' ? (
           <FileUpload
             value={getMediaIds(val)}
             onChange={(newVal) => handleValueChange(field.slug, newVal, activeTab)}
             isMultiple={true}
-            placeholder={`${field.name} eklemek için tıklayın veya sürükleyin`}
+            placeholder={placeholderText}
           />
         ) : field.type === 'media' ? (
           <FileUpload
             value={getMediaIds(val)}
             onChange={(newVal) => handleValueChange(field.slug, newVal, activeTab)}
             isMultiple={false}
-            placeholder={`${field.name} yüklemek için tıklayın veya sürükleyin`}
+            placeholder={placeholderText}
           />
         ) : (
           // Default string/varchar input
@@ -833,7 +1051,7 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
             type="text"
             value={val}
             onChange={(e) => handleValueChange(field.slug, e.target.value, activeTab)}
-            placeholder={`${field.name} girin...`}
+            placeholder={placeholderText}
             disabled={aiLoadingField === field.slug}
             className={aiLoadingField === field.slug ? 'animate-pulse' : ''}
             onBlur={(e) => {
@@ -852,6 +1070,11 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
               }
             }}
           />
+        )}
+        {helpText && (
+          <p className="text-[11px] text-slate-400 font-medium leading-normal mt-1 block">
+            {helpText}
+          </p>
         )}
       </div>
     );
@@ -1774,18 +1997,135 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
     );
   }, [activeTab, fields, dataValues, contentType, contentTypesList]);
 
+  const groups = getGroups(contentType?.slug, fields);
+
   return (
     <>
       <div className="space-y-4">
-        {/* Revisions Control Overlay Trigger Alert */}
+        {/* Visual Page Header Panel */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-slate-200/80 rounded-2xl p-5 bg-white shadow-xs mb-1">
+          <div className="space-y-1">
+            <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+              {contentType?.slug === 'homepage' ? '🏠 ' : contentType?.slug === 'about-us' ? '👥 ' : '📄 '}
+              {contentType?.name} İçeriği
+            </h3>
+            <p className="text-xs text-slate-400 leading-normal">
+              {contentType?.description || 'Bu şablona ait tüm içerik alanlarını buradan kolayca düzenleyin.'}
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="dim"
+              size="sm"
+              className="h-9 gap-1.5 font-bold text-xs rounded-xl px-3 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700"
+              onClick={() => setPreviewOpen(true)}
+            >
+              <Eye className="size-3.5" />
+              Önizle
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5 font-bold text-xs rounded-xl px-3 border border-slate-300 hover:bg-slate-50 text-slate-700"
+              onClick={() => {
+                mutation.mutate({
+                  data: dataValues,
+                  seo: contentType?.settings?.seo_enabled ? seoValues : undefined,
+                  status: 'draft',
+                });
+              }}
+              disabled={mutation.isPending}
+            >
+              <Save className="size-3.5" />
+              Taslak Kaydet
+            </Button>
+            <Button
+              type="submit"
+              form="content-entry-form"
+              size="sm"
+              className="h-9 gap-1.5 font-bold text-xs rounded-xl px-4 bg-primary text-white hover:bg-primary/90"
+              disabled={mutation.isPending}
+            >
+              <Globe className="size-3.5" />
+              Yayına Al
+            </Button>
+          </div>
+        </div>
+
+        {/* Multilingual Global Selection if more than 1 language */}
+        {languages.length > 1 && (
+          <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-2.5 flex items-center justify-between gap-4">
+            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+              <Globe className="size-3.5 text-primary" /> Düzenleme Dili:
+            </span>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-xs w-full">
+              <TabsList variant="default" size="sm" className="w-full justify-start bg-slate-200/60 p-0.5 rounded-lg h-8">
+                {languages.map((lang) => (
+                  <TabsTrigger key={lang.code} value={lang.code} className="cursor-pointer text-[10px] font-bold py-1 h-7">
+                    {lang.name} ({lang.code.toUpperCase()})
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
+
+        {/* Auto-Save & Recovery Draft status bar */}
+        <div className="flex flex-wrap items-center gap-4 bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs text-slate-600 mb-4 justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-2.5 w-2.5 relative">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${autosaveStatus === 'saving' ? 'bg-amber-400' : 'bg-green-400'} opacity-75`}></span>
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${autosaveStatus === 'saving' ? 'bg-amber-500' : 'bg-green-500'}`}></span>
+            </span>
+            <span className="font-bold text-slate-600">
+              {autosaveStatus === 'saving' ? 'Taslak Kaydediliyor...' : 'Otomatik Kaydet Açık'}
+            </span>
+            <span className="text-slate-300">|</span>
+            <span className="text-slate-400 font-medium">
+              Son kaydedilme: Az önce
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {/* Live Preview Toggle */}
+            <Button
+              type="button"
+              variant={splitPreview ? 'default' : 'dim'}
+              size="xs"
+              className="h-7.5 gap-1.5 font-bold text-[11px] rounded-lg px-2.5"
+              onClick={toggleSplitPreview}
+            >
+              <Grid className="size-3" />
+              Yan Yana Önizleme (Split View)
+            </Button>
+
+            {/* Revision Panel trigger */}
+            {isEdit && (
+              <Button
+                type="button"
+                variant="dim"
+                size="xs"
+                className={`h-7.5 gap-1 font-bold text-[11px] rounded-lg px-2.5 ${revisionsOpen ? 'bg-primary/10 text-primary border-primary/20' : ''}`}
+                onClick={toggleRevisions}
+              >
+                <History className="size-3" />
+                Geçmiş Değişiklikler
+              </Button>
+            )}
+          </div>
+        </div>
+
         {hasDraftToRecover && (
-          <Alert variant="mono" icon="warning" className="bg-warning/5 border-warning/30 flex items-center justify-between p-4">
+          <Alert variant="mono" icon="warning" className="bg-warning/5 border-warning/30 flex items-center justify-between p-4 mb-4">
             <div className="flex items-center gap-3">
               <AlertIcon>
                 <AlertTriangle className="text-warning" />
               </AlertIcon>
               <div>
-                <AlertTitle className="font-bold text-xs">{t('content_entries.draft.recover_title', 'Kurtarılmamış Değişiklikler Bulunuyor')}</AlertTitle>
+                <AlertTitle className="font-bold text-xs">Kurtarılmamış Değişiklikler Bulunuyor (Taslak Mevcut)</AlertTitle>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
                   Bu içeriğe ait kaydedilmemiş yerel taslak veriler var ({new Date(recoveredDraftPayload?.timestamp).toLocaleString()}).
                 </p>
@@ -1802,312 +2142,220 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
           </Alert>
         )}
 
-        {/* Panel Toolbar & Header Actions */}
-        <div className="flex items-center justify-between pb-3 border-b border-border">
-          {/* Auto-Save Indicator Status */}
-          <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 relative">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${autosaveStatus === 'saving' ? 'bg-amber-400' : 'bg-green-400'} opacity-75`}></span>
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${autosaveStatus === 'saving' ? 'bg-amber-500' : 'bg-green-500'}`}></span>
-            </span>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase">
-              {autosaveStatus === 'saving' 
-                ? t('content_entries.draft.saving', 'Yerel Taslak Kaydediliyor...') 
-                : t('content_entries.draft.saved', 'Yerel Taslak Kaydedildi')}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            {/* Live Preview Toggle */}
-            <Button
-              type="button"
-              variant={splitPreview ? 'default' : 'dim'}
-              size="xs"
-              className="h-8 gap-1.5 font-bold text-xs rounded-lg px-2.5"
-              onClick={toggleSplitPreview}
-            >
-              <Grid className="size-3.5" />
-              İki Bölmeli Görünüm (Split View)
-            </Button>
-
-            {/* Fullscreen Live Preview Trigger */}
-            <Button
-              type="button"
-              variant="dim"
-              size="xs"
-              className="h-8 gap-1 font-bold text-xs rounded-lg px-2.5"
-              onClick={() => setPreviewOpen(true)}
-            >
-              <Eye className="size-3.5" />
-              Önizle
-            </Button>
-
-            {/* Revision Panel trigger */}
-            {isEdit && (
-              <Button
-                type="button"
-                variant="dim"
-                size="xs"
-                className={`h-8 gap-1 font-bold text-xs rounded-lg px-2.5 ${revisionsOpen ? 'bg-primary/10 text-primary border-primary/20' : ''}`}
-                onClick={toggleRevisions}
-              >
-                <History className="size-3.5" />
-                Revizyon Geçmişi
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Dynamic Split Layout: Revisions history sidebar column */}
+        {/* Dynamic Split Layout: Form on Left, Live Preview on Right */}
         <div className="grid grid-cols-12 gap-6 items-start">
-          <div className={`space-y-5 transition-all duration-300 ${splitPreview ? 'col-span-6' : revisionsOpen ? 'col-span-8' : 'col-span-12'}`}>
+          <div className={`space-y-4 transition-all duration-300 ${splitPreview ? 'col-span-12 xl:col-span-7' : revisionsOpen ? 'col-span-12 lg:col-span-8' : 'col-span-12'}`}>
             <form id="content-entry-form" onSubmit={handleSubmit} className="space-y-4">
               
-              {/* Form Section Tabs */}
-              <Tabs value={activeFormTab} onValueChange={setActiveFormTab} className="w-full">
-                <TabsList className="w-full justify-start border-b border-border pb-px mb-5 gap-6 bg-transparent p-0 rounded-none h-auto">
-                  <TabsTrigger 
-                    value="general" 
-                    className="cursor-pointer border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700 data-[state=active]:text-primary rounded-none shadow-none"
-                  >
-                    📝 Genel İçerik
-                  </TabsTrigger>
-                  {fields.some(f => f.type === 'dynamic_zone') && (
-                    <TabsTrigger 
-                      value="layout" 
-                      className="cursor-pointer border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700 data-[state=active]:text-primary rounded-none shadow-none"
+              {/* Card Group Accordion System */}
+              {groups.map((group) => {
+                const isOpen = !!expandedGroups[group.id];
+                return (
+                  <Card key={group.id} className="border border-slate-200 overflow-hidden shadow-xs hover:shadow-sm transition-all bg-white">
+                    <div 
+                      onClick={() => toggleGroup(group.id)}
+                      className="px-5 py-4 flex items-center justify-between cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors border-b border-slate-100 select-none"
                     >
-                      🧩 Sayfa Tasarımı (Bloklar)
-                    </TabsTrigger>
-                  )}
-                  {contentType?.settings?.seo_enabled && (
-                    <TabsTrigger 
-                      value="seo" 
-                      className="cursor-pointer border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-1 py-3 text-xs font-bold text-slate-500 hover:text-slate-700 data-[state=active]:text-primary rounded-none shadow-none"
-                    >
-                      🔍 SEO & Sosyal Medya
-                    </TabsTrigger>
-                  )}
-                </TabsList>
-
-                <TabsContent value="general" className="space-y-5 focus-visible:outline-hidden mt-0">
-                  {/* Multilingual Tabs */}
-                  {languages.length > 1 && (
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-2">
-                      <TabsList variant="default" size="sm" className="w-full justify-start bg-muted/20 p-1 rounded-lg">
-                        {languages.map((lang) => (
-                          <TabsTrigger key={lang.code} value={lang.code} className="cursor-pointer">
-                            {lang.name} ({lang.code.toUpperCase()})
-                          </TabsTrigger>
-                        ))}
-                      </TabsList>
-                    </Tabs>
-                  )}
-
-                  {/* Dynamically shown only if monetization is enabled */}
-                  {contentType?.settings?.monetization?.enabled && (
-                    <Card className="border border-border bg-slate-50/50 overflow-hidden shadow-xs">
-                      <CardHeader className="py-3 px-5 border-b border-border bg-slate-100/50">
+                      <div className="space-y-1">
                         <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                          💰 Monetizasyon ve Erişim Ayarları
+                          {group.name}
                         </h4>
-                      </CardHeader>
-                      <CardContent className="p-4 grid grid-cols-3 gap-4 bg-white">
-                        <div className="space-y-1.5">
-                          <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.access_type', 'Erişim Tipi')}</Label>
-                          <Select 
-                            value={dataValues.access_type ?? 'free'} 
-                            onValueChange={(val) => handleValueChange('access_type', val)}
-                          >
-                            <SelectTrigger className="bg-card h-9 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="free">{t('content_entries.monetization.free', 'Ücretsiz')}</SelectItem>
-                              <SelectItem value="protected">{t('content_entries.monetization.members_only', 'Sadece Üye')}</SelectItem>
-                              <SelectItem value="premium">{t('content_entries.monetization.single_purchase', 'Tekil Satış (Premium)')}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                        {group.desc && <p className="text-[10px] text-slate-400">{group.desc}</p>}
+                      </div>
+                      <div className="text-slate-400">
+                        {isOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                      </div>
+                    </div>
+                    {isOpen && (
+                      <CardContent className="p-5 space-y-4 bg-white">
+                        {group.resolvedFields.map((field) => renderField(field))}
+                      </CardContent>
+                    )}
+                  </Card>
+                );
+              })}
 
-                        {dataValues.access_type === 'premium' && (
-                          <>
+              {/* Advanced Settings (SEO & Meta Fields Accordion) */}
+              {(contentType?.settings?.seo_enabled || fields.some((f) => advancedSeoSlugs.includes(f.slug))) && (
+                <Card className="border border-slate-200 overflow-hidden shadow-xs hover:shadow-sm transition-all bg-white">
+                  <div 
+                    onClick={() => toggleGroup('advanced_seo')}
+                    className="px-5 py-4 flex items-center justify-between cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors border-b border-slate-100 select-none"
+                  >
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        ⚙️ Gelişmiş Ayarlar (Arama Motoru / SEO)
+                      </h4>
+                      <p className="text-[10px] text-slate-400">Meta etiketleri, canonical, OpenGraph ve teknik arama motoru yapılandırmaları</p>
+                    </div>
+                    <div className="text-slate-400">
+                      {expandedGroups['advanced_seo'] ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                    </div>
+                  </div>
+                  {expandedGroups['advanced_seo'] && (
+                    <CardContent className="p-5 space-y-5 bg-white">
+                      {/* Google SERP SEO Preview Panel */}
+                      {contentType?.settings?.seo_enabled && (
+                        <div className="space-y-4">
+                          <h5 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Arama Sonucu Önizlemesi</h5>
+                          <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-xs space-y-1">
+                            <span className="text-[10px] text-slate-400 font-mono block">
+                              https://yourdomain.com/{contentType.slug}/{typeof dataValues.slug === 'object' ? (dataValues.slug?.[activeTab] || dataValues.slug?.[defaultLangCode] || '') : (dataValues.slug || '')}
+                            </span>
+                            <h4 className="text-base text-[#1a0dab] font-semibold leading-snug hover:underline cursor-pointer tracking-wide">
+                              {seoValues.meta_title || (typeof dataValues.title === 'object' ? (dataValues.title?.[activeTab] || dataValues.title?.[defaultLangCode] || '') : (dataValues.title || '')) || 'Arama Motoru Başlığı'}
+                            </h4>
+                            <p className="text-xs text-[#4d5156] leading-relaxed break-words line-clamp-2">
+                              {seoValues.meta_description || 'Bu alan arama sonuçlarında görünecektir. Arama motorları için özel açıklama metni girin...'}
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Meta Title */}
                             <div className="space-y-1.5">
-                              <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.price', 'Fiyat')}</Label>
+                              <div className="flex items-center justify-between text-xs">
+                                <Label htmlFor="meta_title" className="font-semibold text-slate-700">Arama Motoru Başlığı (Meta Title)</Label>
+                                <span className={`text-[10px] font-bold ${titleCharCount > 60 ? 'text-amber-500' : 'text-slate-400'}`}>
+                                  {titleCharCount}/60
+                                </span>
+                              </div>
                               <Input
-                                type="number"
-                                value={dataValues.price ?? 0}
-                                onChange={(e) => handleValueChange('price', Number(e.target.value))}
+                                id="meta_title"
+                                placeholder={(typeof dataValues.title === 'object' ? (dataValues.title?.[activeTab] || dataValues.title?.[defaultLangCode] || '') : (dataValues.title || '')) || 'Varsayılan başlığı kullan'}
+                                value={seoValues.meta_title}
+                                onChange={(e) => setSeoValues(prev => ({ ...prev, meta_title: e.target.value }))}
                                 className="h-9 text-xs"
                               />
+                              <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full transition-all duration-300 ${titleCharCount > 60 ? 'bg-amber-500' : titleCharCount > 0 ? 'bg-primary' : 'bg-transparent'}`}
+                                  style={{ width: `${Math.min((titleCharCount / 60) * 100, 100)}%` }}
+                                />
+                              </div>
                             </div>
+
+                            {/* Meta Description */}
                             <div className="space-y-1.5">
-                              <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.currency', 'Para Birimi')}</Label>
-                              <Select 
-                                value={dataValues.currency ?? 'TRY'} 
-                                onValueChange={(val) => handleValueChange('currency', val)}
-                              >
-                                <SelectTrigger className="bg-card h-9 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="TRY">{t('content_entries.monetization.currency_try', 'TL (TRY)')}</SelectItem>
-                                  <SelectItem value="USD">{t('content_entries.monetization.currency_usd', 'Dolar (USD)')}</SelectItem>
-                                  <SelectItem value="EUR">{t('content_entries.monetization.currency_eur', 'Euro (EUR)')}</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Standard fields */}
-                  {fields
-                    .filter((field) => field.type !== 'dynamic_zone' && !advancedSeoSlugs.includes(field.slug))
-                    .map((field) => renderField(field))
-                  }
-                </TabsContent>
-
-                <TabsContent value="layout" className="focus-visible:outline-hidden mt-0 space-y-5">
-                  {/* Multilingual Tabs */}
-                  {languages.length > 1 && (
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-2">
-                      <TabsList variant="default" size="sm" className="w-full justify-start bg-muted/20 p-1 rounded-lg">
-                        {languages.map((lang) => (
-                          <TabsTrigger key={lang.code} value={lang.code} className="cursor-pointer">
-                            {lang.name} ({lang.code.toUpperCase()})
-                          </TabsTrigger>
-                        ))}
-                      </TabsList>
-                    </Tabs>
-                  )}
-
-                  {/* Render Layout builder */}
-                  {fields
-                    .filter((field) => field.type === 'dynamic_zone')
-                    .map((field) => renderField(field))
-                  }
-                </TabsContent>
-
-                <TabsContent value="seo" className="focus-visible:outline-hidden mt-0 space-y-5">
-                  {/* Google SERP SEO Preview Panel */}
-                  {contentType?.settings?.seo_enabled && (
-                    <Card className="border border-border bg-slate-50/50 overflow-hidden shadow-xs">
-                      <CardHeader className="py-4 border-b border-border bg-slate-100/50">
-                        <h4 className="text-xs font-bold flex items-center gap-1.5 text-slate-800">
-                          <Globe className="size-4 text-primary" />
-                          Google Arama Motoru Önizlemesi (SEO Ayarları)
-                        </h4>
-                      </CardHeader>
-                      <CardContent className="p-5 space-y-4 bg-white">
-                        {/* Live SERP Mock Card */}
-                        <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm space-y-1">
-                          <span className="text-[10px] text-slate-400 font-mono block">
-                            https://yourdomain.com/{contentType.slug}/{typeof dataValues.slug === 'object' ? (dataValues.slug?.[activeTab] || dataValues.slug?.[defaultLangCode] || '') : (dataValues.slug || '')}
-                          </span>
-                          <h4 className="text-base text-[#1a0dab] font-semibold leading-snug hover:underline cursor-pointer tracking-wide">
-                            {seoValues.meta_title || (typeof dataValues.title === 'object' ? (dataValues.title?.[activeTab] || dataValues.title?.[defaultLangCode] || '') : (dataValues.title || '')) || 'Arama Motoru Başlığı'}
-                          </h4>
-                          <p className="text-xs text-[#4d5156] leading-relaxed break-words line-clamp-2">
-                            {seoValues.meta_description || 'Bu alan arama sonuçlarında görünecektir. Arama motorları için özel açıklama metni girin...'}
-                          </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Meta Title */}
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <Label htmlFor="meta_title" className="font-semibold text-muted-foreground">Arama Motoru Başlığı</Label>
-                              <span className={`text-[10px] font-bold ${titleCharCount > 60 ? 'text-amber-500' : 'text-slate-400'}`}>
-                                {titleCharCount}/60
-                              </span>
-                            </div>
-                            <Input
-                              id="meta_title"
-                              placeholder={(typeof dataValues.title === 'object' ? (dataValues.title?.[activeTab] || dataValues.title?.[defaultLangCode] || '') : (dataValues.title || '')) || 'Varsayılan başlığı kullan'}
-                              value={seoValues.meta_title}
-                              onChange={(e) => setSeoValues(prev => ({ ...prev, meta_title: e.target.value }))}
-                              className="h-9 text-xs"
-                            />
-                            {/* Progress line indicator */}
-                            <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full transition-all duration-300 ${titleCharCount > 60 ? 'bg-amber-500' : titleCharCount > 0 ? 'bg-primary' : 'bg-transparent'}`}
-                                style={{ width: `${Math.min((titleCharCount / 60) * 100, 100)}%` }}
+                              <div className="flex items-center justify-between text-xs">
+                                <Label htmlFor="meta_description" className="font-semibold text-slate-700">Meta Açıklaması (Meta Description)</Label>
+                                <span className={`text-[10px] font-bold ${descCharCount > 160 ? 'text-amber-500' : 'text-slate-400'}`}>
+                                  {descCharCount}/160
+                                </span>
+                              </div>
+                              <Input
+                                id="meta_description"
+                                placeholder="Arama motoru açıklaması girin..."
+                                value={seoValues.meta_description}
+                                onChange={(e) => setSeoValues(prev => ({ ...prev, meta_description: e.target.value }))}
+                                className="h-9 text-xs"
                               />
+                              <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full transition-all duration-300 ${descCharCount > 160 ? 'bg-amber-500' : descCharCount > 0 ? 'bg-primary' : 'bg-transparent'}`}
+                                  style={{ width: `${Math.min((descCharCount / 160) * 100, 100)}%` }}
+                                />
+                              </div>
                             </div>
                           </div>
 
-                          {/* Meta Description */}
+                          {/* Keywords */}
                           <div className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <Label htmlFor="meta_description" className="font-semibold text-muted-foreground">Meta Açıklaması</Label>
-                              <span className={`text-[10px] font-bold ${descCharCount > 160 ? 'text-amber-500' : 'text-slate-400'}`}>
-                                {descCharCount}/160
-                              </span>
-                            </div>
+                            <Label htmlFor="meta_keywords" className="text-xs font-semibold text-slate-700">Anahtar Kelimeler (Keywords)</Label>
                             <Input
-                              id="meta_description"
-                              placeholder="Arama motoru açıklaması girin..."
-                              value={seoValues.meta_description}
-                              onChange={(e) => setSeoValues(prev => ({ ...prev, meta_description: e.target.value }))}
+                              id="meta_keywords"
+                              placeholder="virgülle ayırarak girin: kurumsal, teknoloji, cms"
+                              value={seoValues.meta_keywords}
+                              onChange={(e) => setSeoValues(prev => ({ ...prev, meta_keywords: e.target.value }))}
                               className="h-9 text-xs"
                             />
-                            {/* Progress line indicator */}
-                            <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full transition-all duration-300 ${descCharCount > 160 ? 'bg-amber-500' : descCharCount > 0 ? 'bg-primary' : 'bg-transparent'}`}
-                                style={{ width: `${Math.min((descCharCount / 160) * 100, 100)}%` }}
-                              />
-                            </div>
                           </div>
                         </div>
+                      )}
 
-                        {/* Keywords */}
-                        <div className="space-y-1.5">
-                          <Label htmlFor="meta_keywords" className="text-xs font-semibold text-muted-foreground">Anahtar Kelimeler (Keywords)</Label>
-                          <Input
-                            id="meta_keywords"
-                            placeholder="virgülle ayırarak girin: kurumsal, teknoloji, cms"
-                            value={seoValues.meta_keywords}
-                            onChange={(e) => setSeoValues(prev => ({ ...prev, meta_keywords: e.target.value }))}
-                            className="h-9 text-xs"
-                          />
+                      {/* Advanced SEO fields if any exist */}
+                      {fields.some((f) => advancedSeoSlugs.includes(f.slug)) && (
+                        <div className="pt-4 border-t border-slate-100 space-y-4">
+                          <h5 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Teknik Arama Motoru Parametreleri (OpenGraph, Canonical)</h5>
+                          {fields
+                            .filter((field) => advancedSeoSlugs.includes(field.slug))
+                            .map((field) => renderField(field))
+                          }
                         </div>
-                      </CardContent>
-                    </Card>
+                      )}
+                    </CardContent>
                   )}
+                </Card>
+              )}
 
-                  {/* Advanced Technical SEO Fields Accordion */}
-                  {fields.some((f) => advancedSeoSlugs.includes(f.slug)) && (
-                    <details className="border border-slate-200 rounded-xl bg-white overflow-hidden group/details">
-                      <summary className="px-5 py-3.5 font-bold text-xs text-slate-700 bg-slate-50 cursor-pointer list-none flex justify-between items-center select-none border-b border-transparent group-open/details:border-slate-200 transition-all">
-                        <span>⚙️ Gelişmiş Teknik Arama Motoru Ayarları</span>
-                        <span className="text-slate-400 group-open/details:rotate-180 transition-transform">&darr;</span>
-                      </summary>
-                      <div className="p-5 space-y-4 border-t border-slate-100">
-                        {languages.length > 1 && (
-                          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-2">
-                            <TabsList variant="default" size="sm" className="w-full justify-start bg-muted/20 p-1 rounded-lg">
-                              {languages.map((lang) => (
-                                <TabsTrigger key={lang.code} value={lang.code} className="cursor-pointer">
-                                  {lang.name} ({lang.code.toUpperCase()})
-                                </TabsTrigger>
-                              ))}
-                            </TabsList>
-                          </Tabs>
-                        )}
-                        {fields
-                          .filter((field) => advancedSeoSlugs.includes(field.slug))
-                          .map((field) => renderField(field))
-                        }
+              {/* Standard Monetization if enabled */}
+              {contentType?.settings?.monetization?.enabled && (
+                <Card className="border border-slate-200 overflow-hidden shadow-xs hover:shadow-sm transition-all bg-white">
+                  <div 
+                    onClick={() => toggleGroup('monetization')}
+                    className="px-5 py-4 flex items-center justify-between cursor-pointer bg-slate-50/50 hover:bg-slate-50 transition-colors border-b border-slate-100 select-none"
+                  >
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        💰 Monetizasyon ve Erişim Ayarları
+                      </h4>
+                      <p className="text-[10px] text-slate-400">Ücretli üyelik ve tekil içerik satış ayarları</p>
+                    </div>
+                    <div className="text-slate-400">
+                      {expandedGroups['monetization'] ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                    </div>
+                  </div>
+                  {expandedGroups['monetization'] && (
+                    <CardContent className="p-5 grid grid-cols-3 gap-4 bg-white">
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.access_type', 'Erişim Tipi')}</Label>
+                        <Select 
+                          value={dataValues.access_type ?? 'free'} 
+                          onValueChange={(val) => handleValueChange('access_type', val)}
+                        >
+                          <SelectTrigger className="bg-card h-9 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="free">{t('content_entries.monetization.free', 'Ücretsiz')}</SelectItem>
+                            <SelectItem value="protected">{t('content_entries.monetization.members_only', 'Sadece Üye')}</SelectItem>
+                            <SelectItem value="premium">{t('content_entries.monetization.single_purchase', 'Tekil Satış (Premium)')}</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </details>
+
+                      {dataValues.access_type === 'premium' && (
+                        <>
+                          <div className="space-y-1.5">
+                            <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.price', 'Fiyat')}</Label>
+                            <Input
+                              type="number"
+                              value={dataValues.price ?? 0}
+                              onChange={(e) => handleValueChange('price', Number(e.target.value))}
+                              className="h-9 text-xs"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-[10px] font-bold uppercase">{t('content_entries.monetization.currency', 'Para Birimi')}</Label>
+                            <Select 
+                              value={dataValues.currency ?? 'TRY'} 
+                              onValueChange={(val) => handleValueChange('currency', val)}
+                            >
+                              <SelectTrigger className="bg-card h-9 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="TRY">{t('content_entries.monetization.currency_try', 'TL (TRY)')}</SelectItem>
+                                <SelectItem value="USD">{t('content_entries.monetization.currency_usd', 'Dolar (USD)')}</SelectItem>
+                                <SelectItem value="EUR">{t('content_entries.monetization.currency_eur', 'Euro (EUR)')}</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
                   )}
-                </TabsContent>
-              </Tabs>
+                </Card>
+              )}
 
               {/* Action Buttons Footer */}
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-border mt-6">
@@ -2132,13 +2380,13 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
             </form>
           </div>
 
-          {/* Inline Split Preview Sandbox side */}
+          {/* Sticky Inline Split Preview Simulator Panel */}
           {splitPreview && (
-            <div className="col-span-6 border border-border rounded-xl bg-card p-5 h-[calc(100vh-14rem)] flex flex-col justify-between overflow-hidden shadow-xs bg-white">
-              <div className="flex items-center justify-between border-b border-border pb-3 mb-4 shrink-0 bg-white">
+            <div className="col-span-12 xl:col-span-5 sticky top-[95px] h-[calc(100vh-140px)] border border-slate-200 rounded-2xl bg-white p-5 flex flex-col justify-between overflow-hidden shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4 shrink-0 bg-white">
                 <h4 className="text-xs font-extrabold flex items-center gap-1.5 text-slate-800">
                   <Eye className="size-4 text-primary" />
-                  CANLI ÖNİZLEME SİMÜLATÖRÜ
+                  ÖNİZLEME SİMÜLATÖRÜ
                 </h4>
                 {/* Viewport Width device triggers */}
                 <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
@@ -2163,7 +2411,7 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
               {/* Preview frame container */}
               <div className="flex-1 bg-slate-100 flex items-center justify-center p-3 overflow-hidden rounded-xl">
                 <div 
-                  className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-y-auto transition-all duration-300 h-full w-full max-h-full"
+                  className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-y-auto transition-all duration-300 h-full w-full max-h-full animate-fade-in"
                   style={{
                     maxWidth: previewDevice === 'mobile' ? '375px' : previewDevice === 'tablet' ? '768px' : '100%',
                   }}
@@ -2176,7 +2424,7 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
 
           {/* Revisions sidebar details */}
           {revisionsOpen && (
-            <div className="col-span-4 border border-border rounded-xl bg-card p-5 h-[calc(100vh-14rem)] overflow-y-auto kt-scrollable-y-hover flex flex-col justify-between">
+            <div className="col-span-12 lg:col-span-4 border border-border rounded-xl bg-card p-5 h-[calc(100vh-14rem)] overflow-y-auto kt-scrollable-y-hover flex flex-col justify-between">
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-border pb-3">
                   <h4 className="text-xs font-extrabold flex items-center gap-1.5">
@@ -2339,3 +2587,4 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
     </>
   );
 }
+

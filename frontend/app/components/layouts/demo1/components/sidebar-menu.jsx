@@ -62,6 +62,20 @@ export function SidebarMenu() {
 
   // Dynamically build/inject content types into Content Management children
   const dynamicMenu = useMemo(() => {
+    const slugIconMap = {
+      'homepage': '🏠 ',
+      'about-us': '👥 ',
+      'services': '🛠 ',
+      'blog': '📰 ',
+      'projects': '📁 ',
+      'faq': '❓ ',
+      'contact': '📞 ',
+      'legal-pages': '⚖️ ',
+      'categories': '🏷️ ',
+      'team-members': '👥 ',
+      'testimonials': '💬 ',
+    };
+
     return MENU_SIDEBAR.map(item => {
       if (item.title === 'Content Management') {
         const dynamicChildren = [
@@ -71,8 +85,9 @@ export function SidebarMenu() {
           }
         ];
         contentTypes.forEach(type => {
+          const emojiPrefix = slugIconMap[type.slug] || '📄 ';
           dynamicChildren.push({
-            title: type.name,
+            title: `${emojiPrefix}${type.name}`,
             path: `/content-management/content-entries?type=${type.slug}`,
           });
         });

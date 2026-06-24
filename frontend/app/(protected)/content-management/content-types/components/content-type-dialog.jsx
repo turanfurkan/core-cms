@@ -696,7 +696,11 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
         toast.error('İçerik Şablonu Adı ve API Identifier alanları zorunludur.');
         return;
       }
-      setStep(2);
+      if (isCollection) {
+        setStep(2);
+      } else {
+        setStep(3);
+      }
     } else if (step === 2) {
       const hasEmptyField = fields.some(f => !f.name || !f.slug);
       if (hasEmptyField) {
@@ -708,7 +712,13 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
   };
 
   const handlePrevStep = () => {
-    if (step > 1) setStep(step - 1);
+    if (step > 1) {
+      if (step === 3 && !isCollection) {
+        setStep(1);
+      } else {
+        setStep(step - 1);
+      }
+    }
   };
 
   // Stepper Footers
@@ -803,27 +813,44 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
               Genel Bilgiler
             </span>
 
-            <span className="h-px w-8 bg-border mx-1" />
+            {isCollection ? (
+              <>
+                <span className="h-px w-8 bg-border mx-1" />
 
-            <span className={`size-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-              step === 2 ? 'bg-primary text-white scale-110 shadow-sm' : 'bg-muted text-muted-foreground'
-            }`}>
-              2
-            </span>
-            <span className={`text-xs font-bold ${step === 2 ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Alan Şeması
-            </span>
+                <span className={`size-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  step === 2 ? 'bg-primary text-white scale-110 shadow-sm' : 'bg-muted text-muted-foreground'
+                }`}>
+                  2
+                </span>
+                <span className={`text-xs font-bold ${step === 2 ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  Alan Şeması
+                </span>
 
-            <span className="h-px w-8 bg-border mx-1" />
+                <span className="h-px w-8 bg-border mx-1" />
 
-            <span className={`size-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-              step === 3 ? 'bg-primary text-white scale-110 shadow-sm' : 'bg-muted text-muted-foreground'
-            }`}>
-              3
-            </span>
-            <span className={`text-xs font-bold ${step === 3 ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Gelişmiş Ayarlar
-            </span>
+                <span className={`size-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  step === 3 ? 'bg-primary text-white scale-110 shadow-sm' : 'bg-muted text-muted-foreground'
+                }`}>
+                  3
+                </span>
+                <span className={`text-xs font-bold ${step === 3 ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  Gelişmiş Ayarlar
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="h-px w-8 bg-border mx-1" />
+
+                <span className={`size-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  step === 3 ? 'bg-primary text-white scale-110 shadow-sm' : 'bg-muted text-muted-foreground'
+                }`}>
+                  2
+                </span>
+                <span className={`text-xs font-bold ${step === 3 ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  Gelişmiş Ayarlar
+                </span>
+              </>
+            )}
           </div>
         </div>
 
