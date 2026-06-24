@@ -419,6 +419,8 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
           fields: [
             { name: 'Başlık (Heading)', slug: 'heading', type: 'string', validation_rules: { required: true }, options: { localized: true } },
             { name: 'Alt Başlık (Subtitle)', slug: 'subtitle', type: 'text', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Buton Metni (CTA Text)', slug: 'cta_text', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Buton Linki (CTA Link)', slug: 'cta_link', type: 'url', validation_rules: { required: false } },
             { name: 'Arka Plan Görseli', slug: 'background_image', type: 'media', validation_rules: { required: false } }
           ]
         },

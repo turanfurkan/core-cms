@@ -37,7 +37,8 @@ import {
   Mail,
   ListOrdered,
   MapPin,
-  ArrowLeft
+  ArrowLeft,
+  Check
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
@@ -88,6 +89,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { RightDrawer } from '@/components/common/right-drawer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import RichTextEditor from '@/components/common/rich-text-editor';
+import { FileUpload } from '@/components/ui/file-upload';
 
 const getLocalizedValue = (value, currentLang = 'tr') => {
   if (value === null || value === undefined) return '';
@@ -147,6 +153,7 @@ const blockVariations = {
       id: 'minimal_centered',
       name: 'Minimal Ortalanmış Giriş',
       description: 'Sadece yazı ve buton içerir.',
+      image: '/media/previews/hero_minimal_centered.png',
       wireframe: (
         <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 flex flex-col items-center gap-1.5">
           <div className="w-2/3 h-2 bg-slate-200 rounded"></div>
@@ -159,6 +166,7 @@ const blockVariations = {
       id: 'image_supported',
       name: 'Görsel Destekli Giriş',
       description: 'Solda yazı, sağda görsel önizlemesi içerir.',
+      image: '/media/previews/hero_image_supported.png',
       wireframe: (
         <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 grid grid-cols-2 gap-3 items-center">
           <div className="space-y-1.5">
@@ -174,6 +182,7 @@ const blockVariations = {
       id: 'form_input',
       name: 'Formlu Giriş',
       description: 'Sol tarafta başlık, sağ tarafta bülten/kayıt formu içerir.',
+      image: '/media/previews/hero_form_input.png',
       wireframe: (
         <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 grid grid-cols-2 gap-3 items-center">
           <div className="space-y-1.5">
@@ -183,6 +192,161 @@ const blockVariations = {
           <div className="w-full bg-white border border-slate-200 rounded p-1.5 space-y-1">
             <div className="w-full h-2 bg-slate-100 rounded"></div>
             <div className="w-full h-3.5 bg-primary/30 rounded"></div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'video_popup',
+      name: 'Video Destekli Giriş',
+      description: 'Sol tarafta içerik, sağ tarafta popup açan video kartı içerir.',
+      image: '/media/previews/hero_video_popup.png',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 grid grid-cols-2 gap-3 items-center">
+          <div className="space-y-1.5">
+            <div className="w-full h-2 bg-slate-200 rounded"></div>
+            <div className="w-3/4 h-1.5 bg-slate-150 rounded"></div>
+          </div>
+          <div className="w-full h-10 bg-slate-200 rounded flex items-center justify-center relative">
+            <div className="w-5 h-5 rounded-full bg-white/40 flex items-center justify-center">▶️</div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'search_focused',
+      name: 'Arama ve Filtre Odaklı Giriş',
+      description: 'Ortalanmış başlık altında gelişmiş rezervasyon/arama formu barındırır.',
+      image: '/media/previews/hero_search_focused.png',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 flex flex-col items-center gap-2">
+          <div className="w-1/2 h-2 bg-slate-200 rounded"></div>
+          <div className="w-full bg-white border border-slate-200 rounded-full h-6 px-2 flex items-center justify-between mt-1">
+            <div className="w-1/3 h-2 bg-slate-100 rounded"></div>
+            <div className="w-6 h-4 bg-primary/30 rounded-full"></div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'dashboard_mockup',
+      name: 'Dashboard Ön İzleme Girişi',
+      description: 'Ortalanmış başlık altında modern 3D eğimli SaaS kontrol paneli barındırır.',
+      image: '/media/previews/hero_dashboard_mockup.png',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 flex flex-col items-center gap-1.5">
+          <div className="w-1/2 h-2 bg-slate-200 rounded"></div>
+          <div className="w-2/3 h-1.5 bg-slate-150 rounded"></div>
+          <div className="w-full h-8 bg-slate-200 border border-slate-150 rounded mt-1 flex items-center justify-center text-[8px] text-slate-400">📊 Dashboard</div>
+        </div>
+      )
+    },
+    {
+      id: 'social_proof',
+      name: 'Sosyal Kanıt Odaklı Giriş',
+      description: 'Sol tarafta beş yıldız değerlendirmeleri, sağ tarafta iş ortağı logoları ve kullanıcı avatarları içerir.',
+      image: '/media/previews/hero_social_proof.png',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-3 grid grid-cols-2 gap-3 items-center">
+          <div className="space-y-1">
+            <div className="w-full h-2 bg-slate-200 rounded"></div>
+            <div className="flex gap-0.5">
+              {[1,2,3,4,5].map(i => <div key={i} className="text-[6px]">⭐</div>)}
+            </div>
+            <div className="w-1/2 h-1 bg-slate-150 rounded"></div>
+          </div>
+          <div className="flex -space-x-1.5 overflow-hidden justify-end">
+            {[1,2,3].map(i => <div key={i} className="inline-block h-4 w-4 rounded-full ring-1 ring-white bg-slate-200"></div>)}
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'split_screen',
+      name: 'Bölünmüş Ekran Girişi',
+      description: 'Ekranı 50-50 ikiye bölerek sol tarafta metin, sağ tarafta tam kaplayan görsel sunar.',
+      image: '/media/previews/hero_split_screen.png',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg grid grid-cols-2 h-[60px] overflow-hidden">
+          <div className="p-2 space-y-1 flex flex-col justify-center">
+            <div className="w-full h-2 bg-slate-200 rounded"></div>
+            <div className="w-8 h-2 bg-primary/20 rounded"></div>
+          </div>
+          <div className="w-full h-full bg-slate-250 flex items-center justify-center text-[8px] text-slate-500 font-bold">Portrait</div>
+        </div>
+      )
+    },
+    {
+      id: 'background_video',
+      name: 'Arka Plan Videolu Giriş',
+      description: 'Arka planda sessiz döngü video, ön planda ortalanmış şeffaf cam kart üzerinde içerik barındırır.',
+      image: '/media/previews/hero_background_video.png',
+      wireframe: (
+        <div className="w-full bg-slate-350 border border-slate-200 rounded-lg h-[60px] flex items-center justify-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
+            <div className="bg-white/95 rounded p-1 space-y-0.5 text-center max-w-[80%]">
+              <div className="w-10 h-1 bg-slate-600 rounded mx-auto"></div>
+              <div className="w-5 h-1 bg-primary/40 rounded mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'metric_cards',
+      name: 'Metrik ve İstatistik Girişi',
+      description: 'Ana metinlerin hemen altında yan yana 3 adet sayısal başarı kartı/kolonu görüntüler.',
+      image: '/media/previews/hero_metric_cards.png',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-2 flex flex-col gap-1.5">
+          <div className="space-y-0.5 flex flex-col items-center">
+            <div className="w-1/2 h-1.5 bg-slate-200 rounded"></div>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white border border-slate-150 rounded p-0.5 text-center">
+                <div className="w-full h-1 bg-slate-100 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'tabbed_interactive',
+      name: 'Etkileşimli Sekmeli Giriş',
+      description: 'Yatay kitle sekmeleri (Geliştirici, Tasarımcı vb.) barındırır ve sekmelere göre dinamik önizleme günceller.',
+      image: '/media/previews/hero_tabbed_interactive.png',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-2 flex flex-col gap-1">
+          <div className="flex gap-1 border-b border-slate-200 pb-0.5">
+            <div className="w-6 h-1.5 bg-primary/20 rounded"></div>
+            <div className="w-6 h-1.5 bg-slate-200 rounded"></div>
+          </div>
+          <div className="grid grid-cols-2 gap-1 items-center">
+            <div className="space-y-0.5">
+              <div className="w-full h-1 bg-slate-200 rounded"></div>
+            </div>
+            <div className="w-full h-4 bg-slate-200 rounded"></div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: 'slider_carousel',
+      name: 'Slider / Carousel Giriş',
+      description: 'Yatay geçişli slaytlar, otomatik oynatma, kontrol butonları ve nokta göstergeleri barındırır.',
+      image: '/media/previews/hero_slider_carousel.png',
+      wireframe: (
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-lg p-2.5 flex flex-col justify-between h-[60px] relative overflow-hidden">
+          <div className="flex justify-between items-center w-full mt-1.5">
+            <span className="text-[6px]">◀️</span>
+            <div className="w-1/2 h-1.5 bg-slate-200 rounded"></div>
+            <span className="text-[6px]">▶️</span>
+          </div>
+          <div className="flex gap-0.5 justify-center mt-auto">
+            <div className="w-1 h-1 rounded-full bg-primary"></div>
+            <div className="w-1 h-1 rounded-full bg-slate-350"></div>
           </div>
         </div>
       )
@@ -298,6 +462,43 @@ export default function ContentEntriesPage() {
   const [addBlockDrawerOpen, setAddBlockDrawerOpen] = useState(false);
   const [blockSearchQuery, setBlockSearchQuery] = useState('');
   const [selectedBlockForVariant, setSelectedBlockForVariant] = useState(null);
+  const [editingBlock, setEditingBlock] = useState(null);
+
+  // Fetch active languages for block editor
+  const { data: languagesResponse } = useQuery({
+    queryKey: ['admin-languages-active'],
+    queryFn: async () => {
+      const res = await apiFetch('/api/admin/languages?active_only=true');
+      if (!res.ok) throw new Error('Diller yüklenemedi.');
+      const json = await res.json();
+      return json.data || [];
+    },
+  });
+
+  const languages = languagesResponse || [{ id: 1, name: 'Türkçe', code: 'tr', is_default: true }];
+  const [activeTab, setActiveTab] = useState('tr');
+
+  const defaultLangCode = useMemo(() => {
+    return languages.find((l) => l.is_default)?.code || 'tr';
+  }, [languages]);
+
+  useEffect(() => {
+    if (languages.length > 0) {
+      const defaultLang = languages.find((l) => l.is_default) || languages[0];
+      setActiveTab(defaultLang.code);
+    }
+  }, [languagesResponse]);
+
+  const getMediaIds = (value) => {
+    if (value === null || value === undefined) return '';
+    if (Array.isArray(value)) {
+      return value.map(item => (typeof item === 'object' && item !== null ? item.id : item));
+    }
+    if (typeof value === 'object') {
+      return value.id ?? '';
+    }
+    return value;
+  };
 
   const readyBlocks = useMemo(() => [
     { id: 'hero_banner', name: 'Hero Giriş', type: 'hero_banner', icon: MonitorPlay, description: 'Giriş Görseli (Hero Banner)' },
@@ -543,11 +744,123 @@ export default function ContentEntriesPage() {
     }
   };
 
+  const handleSubFieldChange = (blockId, subSlug, val, isLocalized) => {
+    if (!activeType) return;
+    const singleTypeEntry = entries?.[0] || null;
+    const dynamicZoneField = activeType?.fields?.find(f => f.type === 'dynamic_zone');
+    if (!singleTypeEntry || !dynamicZoneField) return;
+
+    const newBlocksList = localBlocks.map(b => {
+      if (b.id !== blockId) return b;
+      const updatedData = { ...b.data };
+      if (isLocalized) {
+        updatedData[subSlug] = {
+          ...(updatedData[subSlug] || {}),
+          [activeTab]: val
+        };
+      } else {
+        updatedData[subSlug] = val;
+      }
+      return { ...b, data: updatedData };
+    });
+    setLocalBlocks(newBlocksList);
+
+    if (editingBlock && editingBlock.id === blockId) {
+      setEditingBlock(prev => {
+        const updatedData = { ...prev.data };
+        if (isLocalized) {
+          updatedData[subSlug] = {
+            ...(updatedData[subSlug] || {}),
+            [activeTab]: val
+          };
+        } else {
+          updatedData[subSlug] = val;
+        }
+        return { ...prev, data: updatedData };
+      });
+    }
+  };
+
+  const handleBlockVariantChange = (blockId, variantId) => {
+    const newBlocksList = localBlocks.map(b => {
+      if (b.id !== blockId) return b;
+      return { ...b, variant: variantId };
+    });
+    setLocalBlocks(newBlocksList);
+
+    if (editingBlock && editingBlock.id === blockId) {
+      setEditingBlock(prev => ({ ...prev, variant: variantId }));
+    }
+  };
+
+  const saveEditedBlock = () => {
+    if (editingBlock && activeType) {
+      const singleTypeEntry = entries?.[0] || null;
+      const dynamicZoneField = activeType?.fields?.find(f => f.type === 'dynamic_zone');
+      if (!singleTypeEntry || !dynamicZoneField) return;
+
+      const updatedData = {
+        ...singleTypeEntry.data,
+        [dynamicZoneField.slug]: localBlocks
+      };
+
+      updateBlocksMutation.mutate({
+        entryId: singleTypeEntry.id,
+        payload: {
+          data: updatedData,
+          status: singleTypeEntry.status || 'published'
+        },
+        successMessage: 'Bölüm içeriği başarıyla güncellendi.'
+      }, {
+        onSuccess: () => {
+          setEditingBlock(null);
+        }
+      });
+    }
+  };
+
   const handleAddBlock = (blockType, variantId) => {
     if (activeType) {
       const singleTypeEntry = entries?.[0] || null;
       const dynamicZoneField = activeType?.fields?.find(f => f.type === 'dynamic_zone');
       if (!singleTypeEntry || !dynamicZoneField) return;
+
+      const allowedBlocks = dynamicZoneField.options?.allowed_blocks || [];
+      const blockSchema = allowedBlocks.find(b => b.type === blockType);
+      const initialData = {};
+      
+      if (blockSchema && Array.isArray(blockSchema.fields)) {
+        blockSchema.fields.forEach(subField => {
+          const isRequired = !!(subField.validation_rules?.required);
+          const isLocalized = !!(subField.options?.localized || subField.localized);
+          
+          if (isRequired) {
+            if (isLocalized) {
+              const localizedVal = {};
+              languages.forEach(lang => {
+                localizedVal[lang.code] = `${subField.name} giriniz...`;
+              });
+              initialData[subField.slug] = localizedVal;
+            } else {
+              if (subField.type === 'number' || subField.type === 'integer') {
+                initialData[subField.slug] = 1;
+              } else if (subField.type === 'boolean') {
+                initialData[subField.slug] = false;
+              } else {
+                initialData[subField.slug] = `${subField.name} giriniz...`;
+              }
+            }
+          } else {
+            if (isLocalized) {
+              const localizedVal = {};
+              languages.forEach(lang => {
+                localizedVal[lang.code] = '';
+              });
+              initialData[subField.slug] = localizedVal;
+            }
+          }
+        });
+      }
 
       const newBlockId = `${blockType}_${Date.now()}`;
       const newBlock = {
@@ -555,7 +868,7 @@ export default function ContentEntriesPage() {
         type: blockType,
         variant: variantId,
         title: { tr: '', en: '' },
-        data: {}
+        data: initialData
       };
 
       const newBlocks = [...localBlocks, newBlock];
@@ -885,6 +1198,23 @@ export default function ContentEntriesPage() {
 
                 return (
                   <div className="space-y-4">
+                    {/* Page Actions Toolbar */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white border border-slate-200 p-5 rounded-2xl shadow-xs">
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-800">Sayfa Bölümleri ve Düzeni</h3>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Bu sayfaya ait sürükle-bırak bölümleri, yerleşimleri ve SEO meta verilerini buradan yönetin.</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="dim"
+                        size="sm"
+                        className="gap-1.5 h-9 rounded-lg font-bold text-xs shrink-0"
+                        onClick={(e) => handleEdit(singleTypeEntry, e)}
+                      >
+                        <Edit className="size-3.5 text-primary" /> Sayfa Ayarları & SEO Düzenle
+                      </Button>
+                    </div>
+
                     {/* Render existing blocks if any */}
                     {!hasNoBlocks && (
                       <Sortable value={localBlocks} onValueChange={handleReorder} getItemValue={(item) => item.id} className="space-y-3">
@@ -895,7 +1225,7 @@ export default function ContentEntriesPage() {
 
                           if (block.type === 'hero_banner') {
                             leftColor = 'border-l-blue-500';
-                            blockName = 'Giriş Görseli (Hero Banner)';
+                            blockName = 'Hero Giriş';
                             icon = '🖼️';
                           } else if (block.type === 'rich_text') {
                             leftColor = 'border-l-purple-500';
@@ -981,7 +1311,18 @@ export default function ContentEntriesPage() {
                                     <Grid className="size-4 text-slate-400" />
                                     <span className="text-lg">{icon}</span>
                                     <div>
-                                      <span className="font-bold text-sm text-slate-800">{blockName}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-bold text-sm text-slate-800">{blockName}</span>
+                                        {(() => {
+                                          const activeVar = blockVariations[block.type]?.find(v => v.id === block.variant);
+                                          const variantName = activeVar ? activeVar.name : block.variant;
+                                          return variantName ? (
+                                            <span className="text-[9px] font-semibold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">
+                                              {variantName}
+                                            </span>
+                                          ) : null;
+                                        })()}
+                                      </div>
                                       <span className="text-[10px] text-slate-400 block mt-0.5">Tip: {block.type}</span>
                                     </div>
                                   </div>
@@ -992,7 +1333,10 @@ export default function ContentEntriesPage() {
                                       variant="ghost"
                                       size="xs"
                                       className="h-8 px-3 text-xs font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
-                                      onClick={(e) => e.stopPropagation()}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingBlock(block);
+                                      }}
                                     >
                                       Düzenle
                                     </Button>
@@ -1133,22 +1477,30 @@ export default function ContentEntriesPage() {
               </button>
 
               {/* Variations list */}
-              <div className="space-y-3 overflow-y-auto pr-1 pb-6 flex-1 hover-scroll-overlay-y">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto pr-1 pb-6 flex-1 hover-scroll-overlay-y">
                 {(blockVariations[selectedBlockForVariant.type] || fallbackVariations).map((v) => (
                   <div
                     key={v.id}
                     onClick={() => handleAddBlock(selectedBlockForVariant.type, v.id)}
                     data-block-variant={v.id}
-                    className="group border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 rounded-xl p-4 flex flex-col md:flex-row items-center gap-4 cursor-pointer transition-all select-none"
+                    className="group border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 rounded-2xl p-4 flex flex-col gap-3 cursor-pointer transition-all select-none bg-white"
                   >
-                    <div className="w-full md:w-56 shrink-0">
-                      {v.wireframe}
+                    <div className="w-full flex-1 flex items-center justify-center bg-slate-50/50 p-2 rounded-xl border border-slate-100 min-h-[90px] overflow-hidden">
+                      {v.image ? (
+                        <img 
+                          src={v.image} 
+                          className="w-full h-auto max-h-[140px] object-cover rounded-lg group-hover:scale-[1.03] transition-all duration-300" 
+                          alt={v.name} 
+                        />
+                      ) : (
+                        v.wireframe
+                      )}
                     </div>
-                    <div className="flex-1 text-start space-y-1">
-                      <h4 className="font-bold text-sm text-slate-800 transition-colors group-hover:text-primary">
+                    <div className="text-start space-y-1 shrink-0 px-1">
+                      <h4 className="font-bold text-xs text-slate-800 transition-colors group-hover:text-primary leading-snug">
                         {v.name}
                       </h4>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-[10px] text-slate-400 leading-normal">
                         {v.description}
                       </p>
                     </div>
@@ -1275,6 +1627,223 @@ export default function ContentEntriesPage() {
           )}
         </div>
       </RightDrawer>
+      {/* Block Edit Dialog Modal */}
+      {editingBlock && activeType && (() => {
+        const dynamicZoneField = activeType?.fields?.find(f => f.type === 'dynamic_zone');
+        const allowedBlocks = dynamicZoneField?.options?.allowed_blocks || [];
+        const blockSchema = allowedBlocks.find(b => b.type === editingBlock.type);
+        if (!blockSchema) return null;
+
+        const displayBlockName = blockSchema.name || editingBlock.type;
+
+        return (
+          <Dialog open={!!editingBlock} onOpenChange={(open) => !open && setEditingBlock(null)}>
+            <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden p-0 rounded-2xl">
+              <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                <DialogTitle className="text-sm font-extrabold flex items-center gap-2 text-slate-800">
+                  ⚙️ Bölüm İçeriğini Düzenle: {displayBlockName}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-400">
+                  Bu bölüme ait parametreleri ve görsel varyasyonu girin. Değişiklikler kaydedildiğinde yayına alınır.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Languages selector if fields are localized */}
+                {languages.length > 1 && blockSchema.fields?.some(sub => !!(sub.options?.localized || sub.localized)) && (
+                  <div className="p-1 bg-slate-100/80 border border-slate-200/40 rounded-lg flex gap-1 max-w-xs mb-2">
+                    {languages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => setActiveTab(lang.code)}
+                        className={`flex-1 text-center py-1.5 rounded-md text-[10px] font-bold transition-all ${activeTab === lang.code ? 'bg-white shadow-xs text-slate-800' : 'text-slate-400 hover:text-slate-600'}`}
+                      >
+                        {lang.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Block Variation Selector */}
+                {blockVariations[editingBlock.type] && (
+                  <div className="space-y-3 pb-5 border-b border-slate-100">
+                    <Label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                      🎨 Bölüm Tasarım Varyasyonu (Layout Variant)
+                    </Label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {blockVariations[editingBlock.type].map((variant) => {
+                        const isSelected = editingBlock.variant === variant.id || (!editingBlock.variant && variant.id === 'minimal_centered');
+                        return (
+                          <div
+                            key={variant.id}
+                            onClick={() => handleBlockVariantChange(editingBlock.id, variant.id)}
+                            className={`border rounded-xl p-4 cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center gap-1.5 bg-white hover:bg-slate-50/50 ${isSelected ? 'border-primary bg-primary/5 shadow-xs ring-1 ring-primary' : 'border-slate-200 border-dashed hover:border-slate-400'}`}
+                          >
+                            {variant.image ? (
+                              <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded overflow-hidden flex items-center justify-center shrink-0 mb-1">
+                                <img src={variant.image} className="w-full h-full object-cover" alt="" />
+                              </div>
+                            ) : (
+                              <>
+                                {variant.id === 'minimal_centered' && (
+                                  <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded flex flex-col items-center justify-center gap-0.5 shrink-0 mb-1">
+                                    <div className="w-8 h-1 bg-slate-300 rounded"></div>
+                                    <div className="w-5 h-0.5 bg-slate-200 rounded"></div>
+                                    <div className="w-4 h-1.5 bg-primary/20 rounded mt-0.5"></div>
+                                  </div>
+                                )}
+                                {variant.id === 'image_supported' && (
+                                  <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded flex items-center justify-between px-1 shrink-0 mb-1">
+                                    <div className="flex flex-col gap-0.5">
+                                      <div className="w-6 h-1 bg-slate-300 rounded"></div>
+                                      <div className="w-4 h-0.5 bg-slate-200 rounded"></div>
+                                      <div className="w-3 h-1 bg-primary/20 rounded mt-0.5"></div>
+                                    </div>
+                                    <div className="w-6 h-6 bg-slate-200 rounded flex items-center justify-center text-[6px] text-slate-400">🖼️</div>
+                                  </div>
+                                )}
+                                {variant.id === 'form_input' && (
+                                  <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded flex items-center justify-between px-1 shrink-0 mb-1">
+                                    <div className="flex flex-col gap-0.5">
+                                      <div className="w-6 h-1 bg-slate-300 rounded"></div>
+                                      <div className="w-4 h-0.5 bg-slate-200 rounded"></div>
+                                    </div>
+                                    <div className="w-6 h-6 bg-white border border-slate-200 rounded flex flex-col items-center justify-center gap-0.5">
+                                      <div className="w-4 h-1 bg-slate-100 rounded"></div>
+                                      <div className="w-4 h-2 bg-primary/30 rounded"></div>
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                            <span className={`font-bold text-xs ${isSelected ? 'text-primary' : 'text-slate-700'}`}>
+                              {variant.name}
+                            </span>
+                            <span className="text-[9px] text-slate-400 leading-normal">
+                              {variant.description}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Block Fields Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {blockSchema.fields?.map(sub => {
+                    const isSubLocalized = !!(sub.options?.localized || sub.localized);
+                    const subVal = isSubLocalized 
+                      ? (editingBlock.data?.[sub.slug]?.[activeTab] ?? '') 
+                      : (editingBlock.data?.[sub.slug] ?? '');
+                    const subRequired = !!(sub.validation_rules?.required);
+                    const isSubReq = subRequired && (!isSubLocalized || activeTab === defaultLangCode);
+                    const isFullWidth = sub.type === 'text' || sub.slug === 'content' || sub.slug === 'subtitle' || sub.type === 'media' || sub.type === 'gallery';
+
+                    return (
+                      <div key={sub.slug} className={`space-y-1.5 ${isFullWidth ? 'col-span-2' : 'col-span-1'}`}>
+                        <Label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                          {sub.name}
+                          {isSubReq && <span className="text-red-500">*</span>}
+                          {isSubLocalized && <Globe className="size-3 text-primary" title="Çevrilebilir alan" />}
+                        </Label>
+
+                        {sub.type === 'boolean' ? (
+                          <div className="pt-1">
+                            <Switch
+                              checked={!!subVal}
+                              onCheckedChange={(checked) => handleSubFieldChange(editingBlock.id, sub.slug, checked, isSubLocalized)}
+                            />
+                          </div>
+                        ) : sub.type === 'text' ? (
+                          <RichTextEditor
+                            value={subVal}
+                            onChange={(html) => handleSubFieldChange(editingBlock.id, sub.slug, html, isSubLocalized)}
+                            placeholder={`${sub.name} girin...`}
+                          />
+                        ) : sub.type === 'media' || sub.type === 'gallery' || sub.type === 'media_gallery' ? (
+                          <FileUpload
+                            value={getMediaIds(subVal)}
+                            onChange={(newVal) => handleSubFieldChange(editingBlock.id, sub.slug, newVal, isSubLocalized)}
+                            isMultiple={sub.type !== 'media'}
+                            placeholder={`${sub.name} yüklemek için tıklayın veya sürükleyin`}
+                          />
+                        ) : sub.type === 'relation_content_type' || sub.slug === 'target_content_type_id' || sub.type === 'relation' ? (
+                          <Select
+                            value={subVal || ''}
+                            onValueChange={(val) => handleSubFieldChange(editingBlock.id, sub.slug, val, isSubLocalized)}
+                          >
+                            <SelectTrigger className="bg-card h-9 text-xs">
+                              <SelectValue placeholder="Koleksiyon seçin..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {contentTypes?.filter(t => t.is_collection).map(t => (
+                                <SelectItem key={t.id} value={t.slug} className="text-xs">
+                                  {t.name} (/{t.slug})
+                                </SelectItem>
+                              ))}
+                              {(!contentTypes || contentTypes.length === 0) && (
+                                <SelectItem value="_empty" disabled>Koleksiyon bulunamadı</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        ) : sub.type === 'select' ? (
+                          <Select
+                            value={subVal || ''}
+                            onValueChange={(val) => handleSubFieldChange(editingBlock.id, sub.slug, val, isSubLocalized)}
+                          >
+                            <SelectTrigger className="bg-card h-9 text-xs">
+                              <SelectValue placeholder="Seçim yapın..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {sub.options?.choices?.map(c => (
+                                <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            type={sub.type === 'number' ? 'number' : 'text'}
+                            value={subVal}
+                            onChange={(e) => handleSubFieldChange(editingBlock.id, sub.slug, sub.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value, isSubLocalized)}
+                            placeholder={`${sub.name} girin...`}
+                            className="h-9 text-xs"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-end gap-2 shrink-0">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => setEditingBlock(null)} 
+                  className="h-8.5 rounded-lg px-4 text-xs font-bold"
+                >
+                  Vazgeç
+                </Button>
+                <Button 
+                  type="button" 
+                  onClick={saveEditedBlock} 
+                  disabled={updateBlocksMutation.isPending}
+                  className="h-8.5 rounded-lg px-4 text-xs font-bold bg-primary text-white flex items-center gap-1.5"
+                >
+                  {updateBlocksMutation.isPending ? (
+                    <LoaderCircleIcon className="size-3.5 animate-spin" />
+                  ) : (
+                    <Check className="size-3.5" />
+                  )}
+                  Kaydet ve Kapat
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </>
   );
 }

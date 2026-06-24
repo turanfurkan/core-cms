@@ -50,6 +50,8 @@ import {
 } from '@/components/ui/select';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { RightDrawer } from '@/components/common/right-drawer';
+import BlockRenderer from '@/components/blocks/block-renderer';
 const advancedSeoSlugs = [
   'seo_title',
   'seo_description',
@@ -252,6 +254,33 @@ const getGroups = (contentTypeSlug, allFields) => {
   return groups;
 };
 
+const blockVariations = {
+  hero_banner: [
+    { id: 'minimal_centered', name: 'Minimal Ortalanmış Giriş', description: 'Sadece yazı ve buton içerir.', image: '/media/previews/hero_minimal_centered.png' },
+    { id: 'image_supported', name: 'Görsel Destekli Giriş', description: 'Solda yazı, sağda görsel önizlemesi içerir.', image: '/media/previews/hero_image_supported.png' },
+    { id: 'form_input', name: 'Formlu Giriş', description: 'Sol tarafta başlık, sağ tarafta bülten/kayıt formu içerir.', image: '/media/previews/hero_form_input.png' },
+    { id: 'video_popup', name: 'Video Destekli Giriş', description: 'Sol tarafta içerik, sağ tarafta popup açan video kartı içerir.', image: '/media/previews/hero_video_popup.png' },
+    { id: 'search_focused', name: 'Arama ve Filtre Odaklı Giriş', description: 'Ortalanmış başlık altında gelişmiş rezervasyon/arama formu barındırır.', image: '/media/previews/hero_search_focused.png' },
+    { id: 'dashboard_mockup', name: 'Dashboard Ön İzleme Girişi', description: 'Ortalanmış başlık altında modern 3D eğimli SaaS kontrol paneli barındırır.', image: '/media/previews/hero_dashboard_mockup.png' },
+    { id: 'social_proof', name: 'Sosyal Kanıt Odaklı Giriş', description: 'Sol tarafta beş yıldız değerlendirmeleri, sağ tarafta iş ortağı logoları ve kullanıcı avatarları içerir.', image: '/media/previews/hero_social_proof.png' },
+    { id: 'split_screen', name: 'Bölünmüş Ekran Girişi', description: 'Ekranı 50-50 ikiye bölerek sol tarafta metin, sağ tarafta tam kaplayan görsel sunar.', image: '/media/previews/hero_split_screen.png' },
+    { id: 'background_video', name: 'Arka Plan Videolu Giriş', description: 'Arka planda sessiz döngü video, ön planda ortalanmış şeffaf cam kart üzerinde içerik barındırır.', image: '/media/previews/hero_background_video.png' },
+    { id: 'metric_cards', name: 'Metrik ve İstatistik Girişi', description: 'Ana metinlerin hemen altında yan yana 3 adet sayısal başarı kartı/kolonu görüntüler.', image: '/media/previews/hero_metric_cards.png' },
+    { id: 'tabbed_interactive', name: 'Etkileşimli Sekmeli Giriş', description: 'Yatay kitle sekmeleri (Geliştirici, Tasarımcı vb.) barındırır ve sekmelere göre dinamik önizleme günceller.', image: '/media/previews/hero_tabbed_interactive.png' },
+    { id: 'slider_carousel', name: 'Slider / Carousel Giriş', description: 'Yatay geçişli slaytlar, otomatik oynatma, kontrol butonları ve nokta göstergeleri barındırır.', image: '/media/previews/hero_slider_carousel.png' }
+  ],
+  rich_text: [
+    { id: 'standard_centered', name: 'Ortalanmış Zengin Metin', description: 'Ortalanmış başlık ve paragraf düzeni.' },
+    { id: 'two_columns', name: 'İki Sütunlu Metin Düzeni', description: 'Yan yana iki sütundan oluşan uzun metin yerleşimi.' },
+    { id: 'callout_highlight', name: 'Öne Çıkarılmış Alıntı', description: 'Vurgulanmış kenar çizgili alıntı ve açıklama kartı.' }
+  ],
+  collection_display: [
+    { id: 'grid_cards', name: '3 Kolonlu Kart Izgarası', description: 'Görselli içerikleri 3 kolonlu ızgara şeklinde listeler.' },
+    { id: 'list_items', name: 'Detaylı Liste Düzeni', description: 'Alt alta sıralanmış resimli liste elemanları.' },
+    { id: 'carousel_slider', name: 'Yatay Kaydırıcı (Slider)', description: 'Kartları yana kaydırılabilir carousel şeklinde listeler.' }
+  ]
+};
+
 const getMediaIds = (value) => {
   if (value === null || value === undefined) return '';
   if (Array.isArray(value)) {
@@ -266,6 +295,19 @@ const getMediaIds = (value) => {
 function DynamicZoneField({ field, value, onChange, languages, activeTab, defaultLangCode, contentTypesList }) {
   const allowedBlocks = field.options?.allowed_blocks || [];
   const [editingBlock, setEditingBlock] = useState(null);
+  const [editingBlockDevice, setEditingBlockDevice] = useState('desktop');
+
+  const handleBlockVariantChange = (blockId, variantId) => {
+    const newBlocksList = value.map(b => {
+      if (b.id !== blockId) return b;
+      return { ...b, variant: variantId };
+    });
+    onChange(newBlocksList);
+
+    if (editingBlock && editingBlock.id === blockId) {
+      setEditingBlock(prev => ({ ...prev, variant: variantId }));
+    }
+  };
 
   const addBlock = (blockType) => {
     const blockSchema = allowedBlocks.find(b => b.type === blockType);
@@ -356,7 +398,7 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
           if (!blockSchema) return null;
 
           let leftBorderColor = 'border-l-blue-500';
-          let displayName = '🖼️ Giriş Alanı (Hero)';
+          let displayName = '🖼️ Hero Giriş';
           if (item.type === 'rich_text') {
             leftBorderColor = 'border-l-purple-500';
             displayName = '✍️ Zengin Metin Bloğu';
@@ -405,6 +447,15 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
                     </SortableItemHandle>
                     <span className="font-bold text-xs text-slate-800 tracking-wide flex items-center gap-1.5">
                       {displayName}
+                      {(() => {
+                        const activeVar = blockVariations[item.type]?.find(v => v.id === item.variant);
+                        const variantName = activeVar ? activeVar.name : item.variant;
+                        return variantName ? (
+                          <span className="text-[9px] font-semibold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">
+                            {variantName}
+                          </span>
+                        ) : null;
+                      })()}
                     </span>
                   </div>
 
@@ -509,7 +560,7 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
         </div>
       </div>
 
-      {/* Modern Dialog Modal Editor for block fields */}
+      {/* Modern RightDrawer Editor for block fields */}
       {editingBlock && (() => {
         const blockSchema = allowedBlocks.find(b => b.type === editingBlock.type);
         if (!blockSchema) return null;
@@ -517,18 +568,26 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
         let displayBlockName = blockSchema.name;
 
         return (
-          <Dialog open={!!editingBlock} onOpenChange={(open) => !open && setEditingBlock(null)}>
-            <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden p-0 rounded-2xl">
-              <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-slate-50">
-                <DialogTitle className="text-sm font-extrabold flex items-center gap-2 text-slate-800">
-                  ⚙️ Bölüm İçeriğini Düzenle: {displayBlockName}
-                </DialogTitle>
-                <DialogDescription className="text-xs text-slate-400">
-                  Bu bölüme ait parametreleri girin. Değişiklikler anında sayfa düzenine yansıtılır.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <RightDrawer
+            open={!!editingBlock}
+            onOpenChange={(open) => !open && setEditingBlock(null)}
+            title={`⚙️ Bölüm İçeriğini Düzenle: ${displayBlockName}`}
+            size="5xl"
+            footer={
+              <div className="flex justify-end gap-2 w-full">
+                <Button 
+                  type="button" 
+                  onClick={() => setEditingBlock(null)} 
+                  className="h-8.5 rounded-lg px-4 text-xs font-bold bg-primary text-white"
+                >
+                  Tamam
+                </Button>
+              </div>
+            }
+          >
+            <div className="grid grid-cols-12 gap-6 h-full min-h-[500px]">
+              {/* Form Column */}
+              <div className="col-span-12 xl:col-span-5 space-y-6">
                 {/* Languages selectors inside modal if fields are localized */}
                 {languages.length > 1 && blockSchema.fields?.some(sub => !!(sub.options?.localized || sub.localized)) && (
                   <div className="p-1 bg-slate-100 rounded-lg flex gap-1 max-w-xs mb-2">
@@ -546,7 +605,72 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4.5">
+                {/* Block Variation Selector */}
+                {blockVariations[editingBlock.type] && (
+                  <div className="space-y-3 pb-5 border-b border-slate-100">
+                    <Label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                      🎨 Bölüm Tasarım Varyasyonu (Layout Variant)
+                    </Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {blockVariations[editingBlock.type].map((variant) => {
+                        const isSelected = editingBlock.variant === variant.id || (!editingBlock.variant && variant.id === 'minimal_centered');
+                        return (
+                          <div
+                            key={variant.id}
+                            onClick={() => handleBlockVariantChange(editingBlock.id, variant.id)}
+                            className={`border rounded-xl p-4 cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center gap-1.5 bg-white hover:bg-slate-50/50 ${isSelected ? 'border-primary bg-primary/5 shadow-xs ring-1 ring-primary' : 'border-slate-200 border-dashed hover:border-slate-400'}`}
+                          >
+                            {variant.image ? (
+                              <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded overflow-hidden flex items-center justify-center shrink-0 mb-1">
+                                <img src={variant.image} className="w-full h-full object-cover" alt="" />
+                              </div>
+                            ) : (
+                              <>
+                                {variant.id === 'minimal_centered' && (
+                                  <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded flex flex-col items-center justify-center gap-0.5 shrink-0 mb-1">
+                                    <div className="w-8 h-1 bg-slate-300 rounded"></div>
+                                    <div className="w-5 h-0.5 bg-slate-200 rounded"></div>
+                                    <div className="w-4 h-1.5 bg-primary/20 rounded mt-0.5"></div>
+                                  </div>
+                                )}
+                                {variant.id === 'image_supported' && (
+                                  <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded flex items-center justify-between px-1 shrink-0 mb-1">
+                                    <div className="flex flex-col gap-0.5">
+                                      <div className="w-6 h-1 bg-slate-300 rounded"></div>
+                                      <div className="w-4 h-0.5 bg-slate-200 rounded"></div>
+                                      <div className="w-3 h-1 bg-primary/20 rounded mt-0.5"></div>
+                                    </div>
+                                    <div className="w-6 h-6 bg-slate-200 rounded flex items-center justify-center text-[6px] text-slate-400">🖼️</div>
+                                  </div>
+                                )}
+                                {variant.id === 'form_input' && (
+                                  <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded flex items-center justify-between px-1 shrink-0 mb-1">
+                                    <div className="flex flex-col gap-0.5">
+                                      <div className="w-6 h-1 bg-slate-300 rounded"></div>
+                                      <div className="w-4 h-0.5 bg-slate-200 rounded"></div>
+                                    </div>
+                                    <div className="w-6 h-6 bg-white border border-slate-200 rounded flex flex-col items-center justify-center gap-0.5">
+                                      <div className="w-4 h-1 bg-slate-100 rounded"></div>
+                                      <div className="w-4 h-2 bg-primary/30 rounded"></div>
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                            <span className={`font-bold text-xs ${isSelected ? 'text-primary' : 'text-slate-700'}`}>
+                              {variant.name}
+                            </span>
+                            <span className="text-[9px] text-slate-400 leading-normal">
+                              {variant.description}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4.5">
                   {blockSchema.fields?.map(sub => {
                     const isSubLocalized = !!(sub.options?.localized || sub.localized);
                     const subVal = isSubLocalized 
@@ -554,10 +678,10 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
                       : (editingBlock.data?.[sub.slug] ?? '');
                     const subRequired = !!(sub.validation_rules?.required);
                     const isSubReq = subRequired && (!isSubLocalized || activeTab === defaultLangCode);
-                    const isFullWidth = sub.type === 'text' || sub.slug === 'content' || sub.slug === 'subtitle' || sub.type === 'media' || sub.type === 'gallery';
+                    const isFullWidth = true; // Use single column inside drawer form for compact vertical spacing
 
                     return (
-                      <div key={sub.slug} className={`space-y-1.5 ${isFullWidth ? 'col-span-2' : 'col-span-1'}`}>
+                      <div key={sub.slug} className="space-y-1.5 col-span-1">
                         <Label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
                           {sub.name}
                           {isSubReq && <span className="text-red-500">*</span>}
@@ -632,17 +756,53 @@ function DynamicZoneField({ field, value, onChange, languages, activeTab, defaul
                 </div>
               </div>
 
-              <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
-                <Button 
-                  type="button" 
-                  onClick={() => setEditingBlock(null)} 
-                  className="h-8.5 rounded-lg px-4 text-xs font-bold bg-primary text-white"
-                >
-                  Tamam
-                </Button>
+              {/* Live Preview Column */}
+              <div className="col-span-12 xl:col-span-7 border-t xl:border-t-0 xl:border-l border-slate-100 pt-6 xl:pt-0 xl:pl-6 flex flex-col h-full space-y-4">
+                <div className="flex items-center justify-between shrink-0">
+                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    🖥️ Canlı Bölüm Önizlemesi (Live Preview)
+                  </span>
+                  
+                  {/* Device selectors */}
+                  <div className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-200/40">
+                    {[
+                      { device: 'desktop', label: 'Masaüstü' },
+                      { device: 'tablet', label: 'Tablet' },
+                      { device: 'mobile', label: 'Mobil' }
+                    ].map((item) => (
+                      <button
+                        key={item.device}
+                        type="button"
+                        onClick={() => setEditingBlockDevice(item.device)}
+                        className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
+                          editingBlockDevice === item.device
+                            ? 'bg-white shadow-xs text-slate-800'
+                            : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Simulated frame */}
+                <div className="flex-1 bg-slate-50 border border-slate-200/60 rounded-2xl p-4 flex justify-center items-start overflow-y-auto max-h-[60vh] xl:max-h-none">
+                  <div 
+                    className="transition-all duration-300 w-full"
+                    style={{ 
+                      maxWidth: editingBlockDevice === 'mobile' ? '375px' : editingBlockDevice === 'tablet' ? '768px' : '100%',
+                      boxShadow: '0 4px 20px -2px rgba(0,0,0,0.05)'
+                    }}
+                  >
+                    <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+                      <BlockRenderer blocks={[editingBlock]} locale={activeTab} />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </DialogContent>
-          </Dialog>
+            </div>
+          </RightDrawer>
         );
       })()}
     </div>
@@ -1518,17 +1678,110 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
 
             if (block.type === 'hero_banner') {
               const bg = getBlockVal('background_image');
-              const bgUrl = bg && typeof bg === 'object' && bg.url ? bg.url : bg || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80';
+              const bgUrl = bg && typeof bg === 'object' && bg.url ? bg.url : bg || '';
+              const heading = getBlockVal('heading', true) || 'Giriş Başlığı Belirtilmemiş';
+              const subtitle = getBlockVal('subtitle', true) || 'Giriş alt başlığı veya açıklama metni buraya gelecektir.';
+              const ctaText = getBlockVal('cta_text', true) || 'Keşfet';
+              const variant = block.variant || 'minimal_centered';
+
+              const bgStyle = bgUrl ? { backgroundImage: `url('${bgUrl}')` } : {};
+
+              if (variant === 'image_supported') {
+                return (
+                  <section key={block.id || idx} className="bg-slate-950 text-white py-16 px-8 relative overflow-hidden text-left">
+                    <div className="absolute inset-0 bg-cover bg-center opacity-10" style={bgStyle} />
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+                    <div className="max-w-5xl mx-auto relative z-10 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                      <div className="md:col-span-7 space-y-5">
+                        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                          {heading}
+                        </h1>
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                          {subtitle}
+                        </p>
+                        {ctaText && (
+                          <div className="pt-2">
+                            <span className="inline-flex items-center justify-center px-5 py-2.5 bg-primary text-white text-xs font-bold rounded-lg shadow-sm">
+                              {ctaText} →
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="md:col-span-5 flex justify-center">
+                        <div className="w-full max-w-sm aspect-video bg-slate-800 rounded-xl overflow-hidden shadow-lg border border-slate-700/50 flex items-center justify-center relative group">
+                          {bgUrl ? (
+                            <img src={bgUrl} alt={heading} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-slate-500 text-xs font-semibold">🖼️ Görsel Seçilmedi</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                );
+              }
+
+              if (variant === 'form_input') {
+                return (
+                  <section key={block.id || idx} className="bg-slate-950 text-white py-16 px-8 relative overflow-hidden text-left">
+                    <div className="absolute inset-0 bg-cover bg-center opacity-10" style={bgStyle} />
+                    <div className="absolute bottom-0 left-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+                    <div className="max-w-5xl mx-auto relative z-10 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                      <div className="md:col-span-7 space-y-4">
+                        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                          {heading}
+                        </h1>
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                          {subtitle}
+                        </p>
+                      </div>
+                      <div className="md:col-span-5">
+                        <div className="w-full max-w-sm bg-slate-900/60 backdrop-blur-md border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Bültene Katılın</h3>
+                          <div className="space-y-3">
+                            <input 
+                              type="email" 
+                              placeholder="E-posta adresiniz" 
+                              disabled
+                              className="w-full h-9 px-3 rounded-lg bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none"
+                            />
+                            <button 
+                              type="button" 
+                              disabled
+                              className="w-full h-9 bg-primary text-white text-xs font-bold rounded-lg shadow-md hover:bg-primary/95 transition-all"
+                            >
+                              Abone Ol
+                            </button>
+                          </div>
+                          <p className="text-[9px] text-slate-500 text-center leading-normal">
+                            Verileriniz KVKK kapsamında gizli tutulmaktadır.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                );
+              }
+
+              // default: minimal_centered
               return (
-                <section key={block.id || idx} className="bg-slate-900 text-white py-20 px-8 text-center relative overflow-hidden">
-                  <div className="absolute inset-0 bg-cover bg-center opacity-25" style={{ backgroundImage: `url('${bgUrl}')` }} />
-                  <div className="max-w-2xl mx-auto relative z-10 space-y-4">
-                    <h1 className="text-3xl font-extrabold tracking-tight">
-                      {getBlockVal('heading', true) || 'Hero Başlığı'}
+                <section key={block.id || idx} className="bg-slate-950 text-white py-20 px-8 text-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-cover bg-center opacity-15" style={bgStyle} />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-950/90" />
+                  <div className="max-w-2xl mx-auto relative z-10 space-y-6">
+                    <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                      {heading}
                     </h1>
-                    <p className="text-sm text-slate-300 leading-relaxed max-w-xl mx-auto">
-                      {getBlockVal('subtitle', true) || 'Hero alt başlığı...'}
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl mx-auto">
+                      {subtitle}
                     </p>
+                    {ctaText && (
+                      <div className="pt-2">
+                        <span className="inline-flex items-center justify-center px-6 py-3 bg-primary text-white text-xs font-bold rounded-xl shadow-md">
+                          {ctaText} →
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </section>
               );
