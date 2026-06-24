@@ -463,6 +463,7 @@ export default function ContentEntriesPage() {
   const [blockSearchQuery, setBlockSearchQuery] = useState('');
   const [selectedBlockForVariant, setSelectedBlockForVariant] = useState(null);
   const [editingBlock, setEditingBlock] = useState(null);
+  const [editingBlockDevice, setEditingBlockDevice] = useState('desktop');
 
   // Fetch active languages for block editor
   const { data: languagesResponse } = useQuery({
