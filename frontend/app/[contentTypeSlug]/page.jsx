@@ -1,10 +1,29 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getContentEntries, getSeoMetadata } from '@/lib/api-server';
+import { getContentEntries, getSeoMetadata, getPublicSettings, getPublicNavigation } from '@/lib/api-server';
 import { Container } from '@/components/common/container';
 import BlockRenderer from '@/components/blocks/block-renderer';
 import { CardPost, CardProject, CardWork } from '@/partials/cards';
+import PublicHeader from '@/components/common/public-header';
+import PublicFooter from '@/components/common/public-footer';
+import MaintenanceScreen from '@/components/common/maintenance-screen';
 
+export const dynamic = 'force-dynamic';
+
+// Helper to resolve localized values
+function getLocalizedValue(value, lang = 'tr') {
+  if (!value) return '';
+  if (typeof value === 'object') {
+    return value[lang] || value['tr'] || value['en'] || '';
+  }
+  try {
+    const parsed = JSON.parse(value);
+    if (typeof parsed === 'object') {
+      return parsed[lang] || parsed['tr'] || parsed['en'] || '';
+    }
+  } catch (e) {}
+  return String(value);
+}
 
 // Generate dynamic metadata for the listing page using SEO override endpoint
 export async function generateMetadata({ params }) {
@@ -16,10 +35,14 @@ export async function generateMetadata({ params }) {
     return seo;
   }
 
+  const settings = await getPublicSettings();
+  const rawSiteName = settings['site.name'];
+  const siteName = getLocalizedValue(rawSiteName, 'tr') || 'Core CMS';
+
   // Fallback title
   const prettyTitle = contentTypeSlug.charAt(0).toUpperCase() + contentTypeSlug.slice(1) + 's';
   return {
-    title: prettyTitle,
+    title: `${prettyTitle} | ${siteName}`,
   };
 }
 
@@ -27,6 +50,48 @@ export default async function Page({ params, searchParams }) {
   const { contentTypeSlug } = await params;
   const resolvedSearchParams = await searchParams;
   const page = parseInt(resolvedSearchParams.page || '1', 10);
+
+  // Fetch settings
+  const settings = await getPublicSettings();
+
+  // Parse frontend settings
+  let frontSettings = settings['frontend.system_settings'] || {};
+  if (typeof frontSettings === 'string') {
+    try {
+      frontSettings = JSON.parse(frontSettings);
+    } catch (e) {
+      frontSettings = {};
+    }
+  }
+
+  // Check Maintenance Mode & Site Active
+  const isMaintenanceMode = !!settings['site.maintenance_mode'];
+  const isSiteActive = frontSettings.active !== false;
+
+  if (isMaintenanceMode) {
+    return <MaintenanceScreen settings={settings} />;
+  }
+
+  if (!isSiteActive) {
+    return <MaintenanceScreen settings={settings} isOffline={true} />;
+  }
+
+  // Fetch dynamic navigations if configured
+  const headerMenuKey = frontSettings.headerMenu || 'header';
+  const footerMenuKey = frontSettings.footerMenu || '';
+  
+  let headerMenuItems = null;
+  let footerMenuItems = null;
+
+  if (headerMenuKey && headerMenuKey !== 'none_static') {
+    const nav = await getPublicNavigation(headerMenuKey);
+    headerMenuItems = nav?.items || null;
+  }
+
+  if (footerMenuKey && footerMenuKey !== 'none_static') {
+    const nav = await getPublicNavigation(footerMenuKey);
+    footerMenuItems = nav?.items || null;
+  }
 
   const resData = await getContentEntries(contentTypeSlug, {
     page,
@@ -81,20 +146,8 @@ export default async function Page({ params, searchParams }) {
     return (
       <div className="w-full min-h-screen bg-background text-foreground flex flex-col justify-between">
         <div>
-          {/* Header */}
-          <header className="border-b border-border py-4 bg-muted/30">
-            <Container className="flex justify-between items-center">
-              <Link href="/" className="font-bold text-xl tracking-tight text-primary">
-                Core CMS
-              </Link>
-              <nav className="flex gap-4 text-sm font-medium">
-                <Link href="/blog" className="hover:text-primary transition-colors">Blog</Link>
-                <Link href="/services" className="hover:text-primary transition-colors">Hizmetler</Link>
-                <Link href="/about-us" className="hover:text-primary transition-colors">Hakkımızda</Link>
-                <Link href="/contact" className="hover:text-primary transition-colors">İletişim</Link>
-              </nav>
-            </Container>
-          </header>
+          {/* Dynamic Header */}
+          <PublicHeader settings={settings} menuItems={headerMenuItems} />
 
           {/* If page has dynamic blocks structure, render blocks */}
           {blocks.length > 0 ? (
@@ -165,12 +218,8 @@ export default async function Page({ params, searchParams }) {
           )}
         </div>
 
-        {/* Footer */}
-        <footer className="border-t border-border py-6 bg-muted/10">
-          <Container className="text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Core CMS. Tüm Hakları Saklıdır.
-          </Container>
-        </footer>
+        {/* Dynamic Footer */}
+        <PublicFooter settings={settings} menuItems={footerMenuItems} />
       </div>
     );
   }
@@ -179,20 +228,8 @@ export default async function Page({ params, searchParams }) {
   return (
     <div className="w-full min-h-screen bg-background text-foreground flex flex-col justify-between">
       <div>
-        {/* Simple Header */}
-        <header className="border-b border-border py-4 bg-muted/30">
-          <Container className="flex justify-between items-center">
-            <Link href="/" className="font-bold text-xl tracking-tight text-primary">
-              Core CMS
-            </Link>
-            <nav className="flex gap-4 text-sm font-medium">
-              <Link href="/blog" className="hover:text-primary transition-colors">Blog</Link>
-              <Link href="/services" className="hover:text-primary transition-colors">Hizmetler</Link>
-              <Link href="/about-us" className="hover:text-primary transition-colors">Hakkımızda</Link>
-              <Link href="/contact" className="hover:text-primary transition-colors">İletişim</Link>
-            </nav>
-          </Container>
-        </header>
+        {/* Dynamic Header */}
+        <PublicHeader settings={settings} menuItems={headerMenuItems} />
 
         {/* Content Section */}
         <main className="py-12">
@@ -313,11 +350,8 @@ export default async function Page({ params, searchParams }) {
         </main>
       </div>
 
-      <footer className="border-t border-border py-6 bg-muted/10">
-        <Container className="text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Core CMS. Tüm Hakları Saklıdır.
-        </Container>
-      </footer>
+      {/* Dynamic Footer */}
+      <PublicFooter settings={settings} menuItems={footerMenuItems} />
     </div>
   );
 }

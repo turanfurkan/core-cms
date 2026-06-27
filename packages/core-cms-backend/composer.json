@@ -1,0 +1,22 @@
+{
+    "name": "turanfurkan/core-cms",
+    "description": "Core CMS Backend service provider, models, and migrations core library.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "TuranFurkan\\CoreCms\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^11.0 || ^12.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "TuranFurkan\\CoreCms\\Providers\\CoreCmsServiceProvider"
+            ]
+        }
+    }
+}

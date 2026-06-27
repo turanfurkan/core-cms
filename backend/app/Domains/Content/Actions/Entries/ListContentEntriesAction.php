@@ -13,7 +13,7 @@ class ListContentEntriesAction
         ?string $status = null,
         int $perPage = 15
     ): LengthAwarePaginator {
-        $query = $contentType->entries();
+        $query = $contentType->entries()->orderBy('id', 'desc');
 
         if ($status !== null) {
             $query->where('status', $status);

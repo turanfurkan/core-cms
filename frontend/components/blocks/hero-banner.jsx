@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Play, X, Search, MapPin, Calendar, Compass, Star, Code, Palette, BarChart, Shield, Cloud, Terminal, Cpu, Check, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 export default function HeroBanner({ data, locale = 'tr' }) {
   const [email, setEmail] = useState('');
@@ -23,13 +24,56 @@ export default function HeroBanner({ data, locale = 'tr' }) {
 
   const fields = data?.data || {};
   const variant = data?.variant || 'minimal_centered';
-  
+
+  // State to store resolved media URLs when passed as raw IDs in local preview
+  const [resolvedMedia, setResolvedMedia] = useState({});
+
+  useEffect(() => {
+    const mediaFieldKeys = ['background_image', 'video_file', 'slide_2_background_image', 'slide_3_background_image'];
+    
+    mediaFieldKeys.forEach(async (key) => {
+      const val = fields[key];
+      if (val && (typeof val === 'number' || (typeof val === 'string' && /^\d+$/.test(val)))) {
+        try {
+          const res = await apiFetch(`/api/admin/media/files/${val}`);
+          if (res.ok) {
+            const json = await res.json();
+            const mediaObj = json.data;
+            if (mediaObj && mediaObj.url) {
+              const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8000';
+              const fullUrl = mediaObj.url.startsWith('http') ? mediaObj.url : `${backendUrl}${mediaObj.url}`;
+              setResolvedMedia(prev => ({
+                ...prev,
+                [key]: fullUrl
+              }));
+            }
+          }
+        } catch (err) {
+          console.error(`Error resolving media for ${key}:`, err);
+        }
+      } else if (val && typeof val === 'object' && val.url) {
+        setResolvedMedia(prev => ({
+          ...prev,
+          [key]: val.url
+        }));
+      } else {
+        setResolvedMedia(prev => ({
+          ...prev,
+          [key]: null
+        }));
+      }
+    });
+  }, [fields]);
+
   // Extract fields
   const heading = getLocalized(fields.heading, locale);
   const subtitle = getLocalized(fields.subtitle, locale);
   const ctaText = getLocalized(fields.cta_text || fields.button_text, locale);
-  const ctaUrl = fields.cta_link || fields.button_url || '#';
-  const bgImage = fields.background_image?.url || fields.background?.url || null;
+  const ctaUrl = fields.cta_url || fields.cta_link || fields.button_url || '#';
+  
+  const bgImage = resolvedMedia.background_image || fields.background_image?.url || fields.background?.url || null;
+  const videoFileUrl = resolvedMedia.video_file || fields.video_file?.url || null;
+  const videoUrl = videoFileUrl || fields.video_url || '';
 
   // Slider Carousel State & Slides Logic
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -43,18 +87,18 @@ export default function HeroBanner({ data, locale = 'tr' }) {
       ctaUrl: ctaUrl,
     },
     {
-      heading: locale === 'tr' ? 'Geleceğin Teknolojisiyle Tanışın' : 'Meet the Technology of the Future',
-      subtitle: locale === 'tr' ? 'Yapay zeka entegrasyonu ve üstün altyapı performansı tek bir platformda.' : 'AI integration and superior infrastructure performance in a single platform.',
-      bgImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80',
-      ctaText: locale === 'tr' ? 'Daha Fazla Bilgi' : 'Learn More',
-      ctaUrl: '#',
+      heading: getLocalized(fields.slide_2_heading, locale) || (locale === 'tr' ? 'Geleceğin Teknolojisiyle Tanışın' : 'Meet the Technology of the Future'),
+      subtitle: getLocalized(fields.slide_2_subtitle, locale) || (locale === 'tr' ? 'Yapay zeka entegrasyonu ve üstün altyapı performansı tek bir platformda.' : 'AI integration and superior infrastructure performance in a single platform.'),
+      bgImage: resolvedMedia.slide_2_background_image || fields.slide_2_background_image?.url || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80',
+      ctaText: getLocalized(fields.slide_2_cta_text, locale) || (locale === 'tr' ? 'Daha Fazla Bilgi' : 'Learn More'),
+      ctaUrl: fields.slide_2_cta_url || '#',
     },
     {
-      heading: locale === 'tr' ? 'İş Akışlarınızı Otomatize Edin' : 'Automate Your Workflows',
-      subtitle: locale === 'tr' ? 'Yinelenen görevleri ortadan kaldırın ve üretkenliğinizi iki katına çıkarın.' : 'Eliminate repetitive tasks and double your productivity.',
-      bgImage: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
-      ctaText: locale === 'tr' ? 'Ücretsiz Başlayın' : 'Start Free',
-      ctaUrl: '#',
+      heading: getLocalized(fields.slide_3_heading, locale) || (locale === 'tr' ? 'İş Akışlarınızı Otomatize Edin' : 'Automate Your Workflows'),
+      subtitle: getLocalized(fields.slide_3_subtitle, locale) || (locale === 'tr' ? 'Yinelenen görevleri ortadan kaldırın ve üretkenliğinizi iki katına çıkarın.' : 'Eliminate repetitive tasks and double your productivity.'),
+      bgImage: resolvedMedia.slide_3_background_image || fields.slide_3_background_image?.url || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+      ctaText: getLocalized(fields.slide_3_cta_text, locale) || (locale === 'tr' ? 'Ücretsiz Başlayın' : 'Start Free'),
+      ctaUrl: fields.slide_3_cta_url || '#',
     }
   ];
 
@@ -135,9 +179,10 @@ export default function HeroBanner({ data, locale = 'tr' }) {
                 </h1>
               )}
               {subtitle && (
-                <p className="text-lg text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl">
-                  {subtitle}
-                </p>
+                <div 
+                  className="text-lg text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl [&>p]:m-0"
+                  dangerouslySetInnerHTML={{ __html: subtitle }}
+                />
               )}
               {ctaText && (
                 <div className="pt-2">
@@ -181,9 +226,10 @@ export default function HeroBanner({ data, locale = 'tr' }) {
                 </h1>
               )}
               {subtitle && (
-                <p className="text-lg text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl">
-                  {subtitle}
-                </p>
+                <div 
+                  className="text-lg text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl [&>p]:m-0"
+                  dangerouslySetInnerHTML={{ __html: subtitle }}
+                />
               )}
             </div>
             <div className="md:col-span-5 animate-fade-in-delayed">
@@ -240,9 +286,10 @@ export default function HeroBanner({ data, locale = 'tr' }) {
                 </h1>
               )}
               {subtitle && (
-                <p className="text-lg text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl">
-                  {subtitle}
-                </p>
+                <div 
+                  className="text-lg text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl [&>p]:m-0"
+                  dangerouslySetInnerHTML={{ __html: subtitle }}
+                />
               )}
               {ctaText && (
                 <div className="pt-2">
@@ -292,9 +339,10 @@ export default function HeroBanner({ data, locale = 'tr' }) {
               </h1>
             )}
             {subtitle && (
-              <p className="text-lg sm:text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs">
-                {subtitle}
-              </p>
+              <div 
+                className="text-lg sm:text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs [&>p]:m-0"
+                dangerouslySetInnerHTML={{ __html: subtitle }}
+              />
             )}
           </div>
 
@@ -378,9 +426,10 @@ export default function HeroBanner({ data, locale = 'tr' }) {
               </h1>
             )}
             {subtitle && (
-              <p className="text-lg sm:text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs">
-                {subtitle}
-              </p>
+              <div 
+                className="text-lg sm:text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs [&>p]:m-0"
+                dangerouslySetInnerHTML={{ __html: subtitle }}
+              />
             )}
             {ctaText && (
               <div className="pt-4">
@@ -464,9 +513,10 @@ export default function HeroBanner({ data, locale = 'tr' }) {
                 </h1>
               )}
               {subtitle && (
-                <p className="text-lg text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl">
-                  {subtitle}
-                </p>
+                <div 
+                  className="text-lg text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl [&>p]:m-0"
+                  dangerouslySetInnerHTML={{ __html: subtitle }}
+                />
               )}
               {ctaText && (
                 <div className="pt-2 flex items-center gap-4">
@@ -517,9 +567,10 @@ export default function HeroBanner({ data, locale = 'tr' }) {
                 </h1>
               )}
               {subtitle && (
-                <p className="text-lg text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl">
-                  {subtitle}
-                </p>
+                <div 
+                  className="text-lg text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl [&>p]:m-0"
+                  dangerouslySetInnerHTML={{ __html: subtitle }}
+                />
               )}
               {ctaText && (
                 <div className="pt-2">
@@ -555,35 +606,43 @@ export default function HeroBanner({ data, locale = 'tr' }) {
       )}
 
       {variant === 'background_video' && (
-        <div className="absolute inset-0 z-0">
+        <div 
+          className="absolute inset-0 z-0 select-none"
+          onContextMenu={(e) => e.preventDefault()}
+        >
           <video
+            key={videoUrl}
+            src={videoUrl || "https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-32210-large.mp4"}
             autoPlay
             loop
             muted
             playsInline
-            className="w-full h-full object-cover opacity-35"
-          >
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-32210-large.mp4" type="video/mp4" />
-          </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/95 to-zinc-950" />
+            controlsList="nodownload nofullscreen noremoteplayback"
+            disablePictureInPicture
+            disableRemotePlayback
+            className="w-full h-full object-cover pointer-events-none"
+          />
+          {/* Darker overlay over the video */}
+          <div className="absolute inset-0 bg-black/45 z-10 pointer-events-none" />
         </div>
       )}
 
       {variant === 'background_video' && (
         <div className="container relative z-10 mx-auto px-6 max-w-4xl text-center animate-fade-in">
-          <div className="bg-zinc-900/40 backdrop-blur-xl border border-white/10 p-8 sm:p-14 rounded-3xl shadow-2xl space-y-6">
+          <div className="space-y-6">
             {heading && (
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
                 {heading}
               </h1>
             )}
             {subtitle && (
-              <p className="text-lg text-zinc-300 leading-relaxed max-w-xl mx-auto drop-shadow-xs">
-                {subtitle}
-              </p>
+              <div 
+                className="text-lg sm:text-xl text-zinc-100 leading-relaxed max-w-2xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] [&>p]:m-0"
+                dangerouslySetInnerHTML={{ __html: subtitle }}
+              />
             )}
             {ctaText && (
-              <div className="pt-2">
+              <div className="pt-4">
                 <Link
                   href={ctaUrl}
                   className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary/90 hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group"
@@ -606,9 +665,10 @@ export default function HeroBanner({ data, locale = 'tr' }) {
               </h1>
             )}
             {subtitle && (
-              <p className="text-lg sm:text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs">
-                {subtitle}
-              </p>
+              <div 
+                className="text-lg sm:text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs [&>p]:m-0"
+                dangerouslySetInnerHTML={{ __html: subtitle }}
+              />
             )}
             {ctaText && (
               <div className="pt-2">
@@ -626,9 +686,9 @@ export default function HeroBanner({ data, locale = 'tr' }) {
           {/* Metric Columns */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto pt-6">
             {[
-              { num: '99.9%', title: 'Uptime Garantisi', desc: 'Kesintisiz servis ve hızlı API yanıtları.' },
-              { num: '24/7', title: 'Destek Ekibi', desc: 'Deneyimli mühendislerden canlı teknik yardım.' },
-              { num: '100k+', title: 'Geliştirici', desc: 'Dünya çapında bizi tercih eden mutlu topluluk.' }
+              { num: fields.metric_1_number || '99.9%', title: getLocalized(fields.metric_1_label, locale) || 'Uptime Garantisi', desc: getLocalized(fields.metric_1_desc, locale) || 'Kesintisiz servis ve hızlı API yanıtları.' },
+              { num: fields.metric_2_number || '24/7', title: getLocalized(fields.metric_2_label, locale) || 'Destek Ekibi', desc: getLocalized(fields.metric_2_desc, locale) || 'Deneyimli mühendislerden canlı teknik yardım.' },
+              { num: fields.metric_3_number || '100k+', title: getLocalized(fields.metric_3_label, locale) || 'Geliştirici', desc: getLocalized(fields.metric_3_desc, locale) || 'Dünya çapında bizi tercih eden mutlu topluluk.' }
             ].map((metric, i) => (
               <div key={i} className="bg-zinc-900/60 backdrop-blur-md border border-zinc-800/80 p-6 rounded-2xl space-y-2 text-center group hover:border-primary/30 transition-all duration-300 hover:scale-[1.02]">
                 <div className="text-3xl font-extrabold text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500">{metric.num}</div>
@@ -670,30 +730,30 @@ export default function HeroBanner({ data, locale = 'tr' }) {
               {activeAudience === 'dev' && (
                 <div className="space-y-6 animate-fade-in">
                   <h2 className="text-4xl font-extrabold tracking-tight text-white leading-tight">
-                    API ve SDK'lar ile Geliştiriciler İçin Hız
+                    {getLocalized(fields.tab_1_heading, locale) || 'API ve SDK\'lar ile Geliştiriciler İçin Hız'}
                   </h2>
                   <p className="text-lg text-zinc-300 leading-relaxed">
-                    Gelişmiş REST API entegrasyonu, kapsamlı SDK'lar ve zengin dokümantasyon ile projelerinizi saniyeler içinde yayına alın.
+                    {getLocalized(fields.tab_1_desc, locale) || 'Gelişmiş REST API entegrasyonu, kapsamlı SDK\'lar ve zengin dokümantasyon ile projelerinizi saniyeler içinde yayına alın.'}
                   </p>
                 </div>
               )}
               {activeAudience === 'design' && (
                 <div className="space-y-6 animate-fade-in">
                   <h2 className="text-4xl font-extrabold tracking-tight text-white leading-tight">
-                    Sürükle-Bırak ile Tasarımcı Dostu Arayüz
+                    {getLocalized(fields.tab_2_heading, locale) || 'Sürükle-Bırak ile Tasarımcı Dostu Arayüz'}
                   </h2>
                   <p className="text-lg text-zinc-300 leading-relaxed">
-                    Tasarım-kod eşleşmesini tamamen kusursuzlaştırın. Görsel bileşen sihirbazıyla sürükle bırak tasarım yapın.
+                    {getLocalized(fields.tab_2_desc, locale) || 'Tasarım-kod eşleşmesini tamamen kusursuzlaştırın. Görsel bileşen sihirbazıyla sürükle bırak tasarım yapın.'}
                   </p>
                 </div>
               )}
               {activeAudience === 'market' && (
                 <div className="space-y-6 animate-fade-in">
                   <h2 className="text-4xl font-extrabold tracking-tight text-white leading-tight">
-                    SEO ve Analitik ile Pazarlamacı Odaklı
+                    {getLocalized(fields.tab_3_heading, locale) || 'SEO ve Analitik ile Pazarlamacı Odaklı'}
                   </h2>
                   <p className="text-lg text-zinc-300 leading-relaxed">
-                    Dinamik sayfa oluşturucu ve yerleşik SEO yönetim paneli ile sayfa yüklenme hızınızı artırın ve dönüşümlerinizi katlayın.
+                    {getLocalized(fields.tab_3_desc, locale) || 'Dinamik sayfa oluşturucu ve yerleşik SEO yönetim paneli ile sayfa yüklenme hızınızı artırın ve dönüşümlerinizi katlayın.'}
                   </p>
                 </div>
               )}
@@ -797,9 +857,10 @@ export default function HeroBanner({ data, locale = 'tr' }) {
                   </h1>
                 )}
                 {slide.subtitle && (
-                  <p className="text-lg sm:text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs">
-                    {slide.subtitle}
-                  </p>
+                  <div 
+                    className="text-lg sm:text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs [&>p]:m-0"
+                    dangerouslySetInnerHTML={{ __html: slide.subtitle }}
+                  />
                 )}
                 {slide.ctaText && (
                   <div className="pt-4">
@@ -861,9 +922,10 @@ export default function HeroBanner({ data, locale = 'tr' }) {
             </h1>
           )}
           {subtitle && (
-            <p className="text-lg sm:text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs">
-              {subtitle}
-            </p>
+            <div 
+              className="text-lg sm:text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs [&>p]:m-0"
+              dangerouslySetInnerHTML={{ __html: subtitle }}
+            />
           )}
           
           {ctaText && (
@@ -881,26 +943,40 @@ export default function HeroBanner({ data, locale = 'tr' }) {
       )}
 
       {/* Video Popup Modal */}
-      {isVideoOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs p-4 animate-fade-in">
-          <div className="relative w-full max-w-4xl aspect-video bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
-            <button 
-              onClick={() => setIsVideoOpen(false)}
-              className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/10 flex items-center justify-center text-white transition-all"
-            >
-              <X className="size-5" />
-            </button>
-            <iframe
-              className="w-full h-full"
-              src="https://www.youtube.com/embed/ysz5S6PUM-U?autoplay=1"
-              title="Video Player"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
+      {isVideoOpen && (() => {
+        const activeVideoUrl = videoUrl || '';
+        const isYouTube = activeVideoUrl.includes('youtube.com') || activeVideoUrl.includes('youtu.be') || !activeVideoUrl;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs p-4 animate-fade-in">
+            <div className="relative w-full max-w-4xl aspect-video bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+              <button 
+                onClick={() => setIsVideoOpen(false)}
+                className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/10 flex items-center justify-center text-white transition-all"
+              >
+                <X className="size-5" />
+              </button>
+              {isYouTube ? (
+                <iframe
+                  className="w-full h-full"
+                  src={getYouTubeEmbedUrl(activeVideoUrl)}
+                  title="Video Player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <video
+                  key={activeVideoUrl}
+                  src={activeVideoUrl}
+                  autoPlay
+                  controls
+                  className="w-full h-full object-contain"
+                />
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </section>
   );
 }
@@ -911,4 +987,19 @@ function getLocalized(val, locale) {
     return val[locale] || val['tr'] || val['en'] || Object.values(val)[0] || '';
   }
   return val || '';
+}
+
+// YouTube URL formatting helper
+function getYouTubeEmbedUrl(url) {
+  if (!url) return "https://www.youtube.com/embed/ysz5S6PUM-U?autoplay=1";
+  if (url.includes('youtube.com/embed/') || url.includes('youtu.be/embed/')) {
+    return url.includes('autoplay') ? url : `${url}${url.includes('?') ? '&' : '?'}autoplay=1`;
+  }
+  
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  if (match && match[2].length === 11) {
+    return `https://www.youtube.com/embed/${match[2]}?autoplay=1`;
+  }
+  return url;
 }

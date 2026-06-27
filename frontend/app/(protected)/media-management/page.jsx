@@ -560,6 +560,13 @@ export default function MediaManagementPage() {
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                   loading="lazy"
                                 />
+                              ) : file.mime_type?.startsWith('video/') && fileUrl ? (
+                                <video
+                                  src={fileUrl}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  muted
+                                  playsInline
+                                />
                               ) : (
                                 <File className="size-10 text-muted-foreground" />
                               )}

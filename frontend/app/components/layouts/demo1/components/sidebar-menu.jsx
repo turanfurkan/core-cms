@@ -85,6 +85,9 @@ export function SidebarMenu() {
           }
         ];
         contentTypes.forEach(type => {
+          // Skip categories and races since they now have dedicated pages
+          if (type.slug === 'categories' || type.slug === 'yarislar') return;
+
           const emojiPrefix = slugIconMap[type.slug] || '📄 ';
           dynamicChildren.push({
             title: `${emojiPrefix}${type.name}`,

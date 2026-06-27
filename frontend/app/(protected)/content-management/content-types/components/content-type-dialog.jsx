@@ -261,32 +261,47 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
 
   // Field schema movement helpers
   const moveField = (index, direction) => {
-    if (direction === 'up' && index > 2) { 
+    if (direction === 'up') {
+      if (index <= 0) return;
+      const currentField = fields[index];
+      const targetField = fields[index - 1];
+      if (isLockedField(currentField) || isLockedField(targetField)) return;
+
       const updated = [...fields];
-      const temp = updated[index];
-      updated[index] = updated[index - 1];
-      updated[index - 1] = temp;
+      updated[index] = targetField;
+      updated[index - 1] = currentField;
       setFields(updated);
-    } else if (direction === 'down' && index >= 2 && index < fields.length - 1) {
+    } else if (direction === 'down') {
+      if (index >= fields.length - 1) return;
+      const currentField = fields[index];
+      const targetField = fields[index + 1];
+      if (isLockedField(currentField) || isLockedField(targetField)) return;
+
       const updated = [...fields];
-      const temp = updated[index];
-      updated[index] = updated[index + 1];
-      updated[index + 1] = temp;
+      updated[index] = targetField;
+      updated[index + 1] = currentField;
       setFields(updated);
     }
   };
 
   const removeField = (index) => {
-    if (index >= 2) {
+    const field = fields[index];
+    if (field && !isLockedField(field)) {
       setFields(fields.filter((_, idx) => idx !== index));
     }
   };
 
   const handleFieldsReorder = (newFields) => {
-    const titleField = fields.find(f => f.slug === 'title') || fields[0];
-    const slugField = fields.find(f => f.slug === 'slug') || fields[1];
+    const titleField = fields.find(f => f.slug === 'title');
+    const slugField = fields.find(f => f.slug === 'slug');
     const customFields = newFields.filter(f => f.slug !== 'title' && f.slug !== 'slug');
-    setFields([titleField, slugField, ...customFields]);
+    
+    const reordered = [];
+    if (titleField) reordered.push(titleField);
+    if (slugField) reordered.push(slugField);
+    reordered.push(...customFields);
+    
+    setFields(reordered);
   };
 
   const addFieldType = (label, type, categoryOptions = {}) => {
@@ -315,9 +330,9 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
     }, 150);
   };
 
-  const isLockedField = (field) => {
-    return field.slug === 'title' || field.slug === 'slug';
-  };
+  function isLockedField(field) {
+    return field?.slug === 'title' || field?.slug === 'slug';
+  }
 
   // Mutation logic
   const mutation = useMutation({
@@ -1714,6 +1729,19 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                   onCheckedChange={(val) => handleUpdateSettingsOptions('localized', val)}
                 />
                 <Label htmlFor="opt-local" className="cursor-pointer">Dile Göre Çevrilebilir Alan (Translatable)</Label>
+              </div>
+            </div>
+
+            {/* Table Visibility */}
+            <div className="space-y-4 pt-4 border-t border-border">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-1">Liste Görünümü</h4>
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="opt-show-in-list" 
+                  checked={!!currentSettingsField.options?.show_in_list} 
+                  onCheckedChange={(val) => handleUpdateSettingsOptions('show_in_list', val)}
+                />
+                <Label htmlFor="opt-show-in-list" className="cursor-pointer">İçerik Tablo Listesinde Göster (Show in Table List)</Label>
               </div>
             </div>
 

@@ -11,7 +11,10 @@ export async function GET(req, { params }) {
     }
 
     const { id } = await params;
-    const response = await backendFetch(`/api/admin/content-types/${id}/entries`);
+    const { searchParams } = new URL(req.url);
+    const queryString = searchParams.toString();
+    const path = `/api/admin/content-types/${id}/entries${queryString ? `?${queryString}` : ''}`;
+    const response = await backendFetch(path);
     const data = await response.json();
 
     if (!response.ok) {

@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getCoreRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import {
@@ -17,6 +18,7 @@ import {
   Globe,
   LoaderCircleIcon,
   Grid,
+  GripVertical,
   MonitorPlay,
   FileText,
   Library,
@@ -56,10 +58,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Card, CardHeader, CardTable } from '@/components/ui/card';
+import { Card, CardFooter, CardHeader, CardTable } from '@/components/ui/card';
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGridTable } from '@/components/ui/data-grid-table';
+import { DataGridPagination } from '@/components/ui/data-grid-pagination';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -252,12 +255,12 @@ const blockVariations = {
           <div className="space-y-1">
             <div className="w-full h-2 bg-slate-200 rounded"></div>
             <div className="flex gap-0.5">
-              {[1,2,3,4,5].map(i => <div key={i} className="text-[6px]">⭐</div>)}
+              {[1, 2, 3, 4, 5].map(i => <div key={i} className="text-[6px]">⭐</div>)}
             </div>
             <div className="w-1/2 h-1 bg-slate-150 rounded"></div>
           </div>
           <div className="flex -space-x-1.5 overflow-hidden justify-end">
-            {[1,2,3].map(i => <div key={i} className="inline-block h-4 w-4 rounded-full ring-1 ring-white bg-slate-200"></div>)}
+            {[1, 2, 3].map(i => <div key={i} className="inline-block h-4 w-4 rounded-full ring-1 ring-white bg-slate-200"></div>)}
           </div>
         </div>
       )
@@ -455,6 +458,7 @@ export default function ContentEntriesPage() {
   const [selectedTypeId, setSelectedTypeId] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
+  const [isFormView, setIsFormView] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [idToDelete, setIdToDelete] = useState(null);
@@ -465,6 +469,7 @@ export default function ContentEntriesPage() {
   const [selectedBlockForVariant, setSelectedBlockForVariant] = useState(null);
   const [editingBlock, setEditingBlock] = useState(null);
   const [editingBlockDevice, setEditingBlockDevice] = useState('desktop');
+  const [newBlockIdToCancel, setNewBlockIdToCancel] = useState(null);
 
   // Fetch active languages for block editor
   const { data: languagesResponse } = useQuery({
@@ -567,7 +572,7 @@ export default function ContentEntriesPage() {
     queryKey: ['admin-content-entries', selectedTypeId],
     queryFn: async () => {
       if (selectedTypeId === 'all') return [];
-      const res = await apiFetch(`/api/admin/content-types/${selectedTypeId}/entries`);
+      const res = await apiFetch(`/api/admin/content-types/${selectedTypeId}/entries?limit=1000`);
       if (!res.ok) throw new Error('Failed to fetch entries');
       const json = await res.json();
       return json.data || [];
@@ -702,7 +707,11 @@ export default function ContentEntriesPage() {
   const handleEdit = (entry, e) => {
     e.stopPropagation();
     setSelectedEntry(entry);
-    setDialogOpen(true);
+    if (activeType?.is_collection) {
+      setIsFormView(true);
+    } else {
+      setDialogOpen(true);
+    }
   };
 
   const handleDelete = (id, e) => {
@@ -812,13 +821,22 @@ export default function ContentEntriesPage() {
           data: updatedData,
           status: singleTypeEntry.status || 'published'
         },
-        successMessage: 'Bölüm içeriği başarıyla güncellendi.'
+        successMessage: newBlockIdToCancel ? 'Yeni bölüm başarıyla eklendi.' : 'Bölüm içeriği başarıyla güncellendi.'
       }, {
         onSuccess: () => {
           setEditingBlock(null);
+          setNewBlockIdToCancel(null);
         }
       });
     }
+  };
+
+  const handleCancelEditBlock = () => {
+    if (newBlockIdToCancel) {
+      setLocalBlocks(prev => prev.filter(b => b.id !== newBlockIdToCancel));
+      setNewBlockIdToCancel(null);
+    }
+    setEditingBlock(null);
   };
 
   const handleAddBlock = (blockType, variantId) => {
@@ -830,12 +848,12 @@ export default function ContentEntriesPage() {
       const allowedBlocks = dynamicZoneField.options?.allowed_blocks || [];
       const blockSchema = allowedBlocks.find(b => b.type === blockType);
       const initialData = {};
-      
+
       if (blockSchema && Array.isArray(blockSchema.fields)) {
         blockSchema.fields.forEach(subField => {
           const isRequired = !!(subField.validation_rules?.required);
           const isLocalized = !!(subField.options?.localized || subField.localized);
-          
+
           if (isRequired) {
             if (isLocalized) {
               const localizedVal = {};
@@ -864,6 +882,17 @@ export default function ContentEntriesPage() {
         });
       }
 
+      if (blockType === 'hero_banner') {
+        initialData.heading = initialData.heading || { tr: 'Başlık giriniz...', en: 'Enter heading...' };
+        initialData.subtitle = initialData.subtitle || { tr: 'Alt başlık giriniz...', en: 'Enter subtitle...' };
+        initialData.background_image = initialData.background_image || null;
+        initialData.cta_text = { tr: 'Keşfet', en: 'Explore' };
+        initialData.cta_url = '#';
+        initialData.video_url = '';
+        initialData.video_file = null;
+        initialData.form_placeholder = { tr: 'E-posta adresiniz...', en: 'Your email address...' };
+      }
+
       const newBlockId = `${blockType}_${Date.now()}`;
       const newBlock = {
         id: newBlockId,
@@ -875,25 +904,11 @@ export default function ContentEntriesPage() {
 
       const newBlocks = [...localBlocks, newBlock];
       setLocalBlocks(newBlocks);
+      setNewBlockIdToCancel(newBlockId);
 
-      const updatedData = {
-        ...singleTypeEntry.data,
-        [dynamicZoneField.slug]: newBlocks
-      };
-
-      updateBlocksMutation.mutate({
-        entryId: singleTypeEntry.id,
-        payload: {
-          data: updatedData,
-          status: singleTypeEntry.status || 'published'
-        },
-        successMessage: 'Yeni bölüm başarıyla eklendi.'
-      }, {
-        onSuccess: () => {
-          setAddBlockDrawerOpen(false);
-          setSelectedBlockForVariant(null);
-        }
-      });
+      setAddBlockDrawerOpen(false);
+      setSelectedBlockForVariant(null);
+      setEditingBlock(newBlock);
     }
   };
 
@@ -967,6 +982,48 @@ export default function ContentEntriesPage() {
           size: 150,
         });
       }
+
+      // Add custom list fields if configured
+      const customListFields = activeType?.fields?.filter(f => f.options?.show_in_list === true) || [];
+      customListFields.forEach((field) => {
+        baseCols.push({
+          id: `custom_field_${field.slug}`,
+          header: ({ column }) => (
+            <DataGridColumnHeader title={field.name} visibility={true} column={column} />
+          ),
+          cell: ({ row }) => {
+            const val = row.original.data?.[field.slug];
+            if (val === null || val === undefined) return <span className="text-xs text-muted-foreground">-</span>;
+            
+            if (field.type === 'boolean' || field.options?.field_type === 'Boolean' || typeof val === 'boolean') {
+              return (
+                <Badge variant={val ? 'success' : 'secondary'} className="text-xs">
+                  {val ? 'Evet' : 'Hayır'}
+                </Badge>
+              );
+            }
+            if (field.type === 'media' || field.options?.field_type === 'Media') {
+              const mediaUrl = typeof val === 'object' && val !== null ? val.url : val;
+              if (typeof mediaUrl === 'string' && mediaUrl.startsWith('http')) {
+                return (
+                  <div className="w-28 h-16 rounded-xl border border-border overflow-hidden bg-muted flex items-center justify-center shadow-xs">
+                    <img src={mediaUrl} className="w-full h-full object-cover" alt="" />
+                  </div>
+                );
+              }
+              return <span className="text-xs text-muted-foreground">Medya</span>;
+            }
+            if (typeof val === 'object' && !Array.isArray(val)) {
+              return <span className="text-xs">{getLocalizedValue(val, i18n.language)}</span>;
+            }
+            if (Array.isArray(val)) {
+              return <span className="text-xs">{val.join(', ')}</span>;
+            }
+            return <span className="text-xs">{String(val)}</span>;
+          },
+          size: 150,
+        });
+      });
 
       baseCols.push(
         {
@@ -1052,6 +1109,12 @@ export default function ContentEntriesPage() {
     data: filteredEntries,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 15,
+      },
+    },
   });
 
   const DataGridToolbar = () => {
@@ -1094,7 +1157,7 @@ export default function ContentEntriesPage() {
             disabled={isLoading}
             onClick={() => {
               setSelectedEntry(null);
-              setDialogOpen(true);
+              setIsFormView(true);
             }}
           >
             <Plus className="size-4" />
@@ -1107,68 +1170,94 @@ export default function ContentEntriesPage() {
 
   return (
     <>
-      <Container>
-        <Toolbar>
-          <ToolbarHeading>
-            <ToolbarTitle>{t('content_entries.title', 'İçerik Yönetimi')}</ToolbarTitle>
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/dashboard">{t('common.home', 'Home')}</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{t('common.content_management', 'Content Management')}</BreadcrumbPage>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{t('content_entries.title', 'Content Entries')}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </ToolbarHeading>
-        </Toolbar>
-      </Container>
+      {!isFormView && (
+        <Container>
+          <Toolbar>
+            <ToolbarHeading>
+              <ToolbarTitle>{t('content_entries.title', 'İçerik Yönetimi')}</ToolbarTitle>
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href="/dashboard">{t('common.home', 'Home')}</BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>{t('common.content_management', 'Content Management')}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>{t('content_entries.title', 'Content Entries')}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </ToolbarHeading>
+          </Toolbar>
+        </Container>
+      )}
 
       <Container className="space-y-4">
         {/* Content Type Selector */}
-        <Card className="p-5 flex flex-col md:flex-row items-center gap-4">
-          <div className="w-full md:w-64 space-y-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">{t('content_entries.select_template', 'Düzenlenecek İçerik Şablonu')}</span>
-            <Select value={selectedTypeId} onValueChange={setSelectedTypeId}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('content_entries.select_placeholder', 'Bir şablon seçin...')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('content_entries.select_option_none', 'Seçiniz...')}</SelectItem>
-                {contentTypes?.map((type) => (
-                  <SelectItem key={type.id} value={String(type.id)}>
-                    {type.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </Card>
+        {!isFormView && (
+          <Card className="p-5 flex flex-col md:flex-row items-center gap-4">
+            <div className="w-full md:w-64 space-y-1.5">
+              <span className="text-xs font-semibold text-muted-foreground">{t('content_entries.select_template', 'Düzenlenecek İçerik Şablonu')}</span>
+              <Select value={selectedTypeId} onValueChange={(val) => {
+                setSelectedTypeId(val);
+                setIsFormView(false);
+                setSelectedEntry(null);
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('content_entries.select_placeholder', 'Bir şablon seçin...')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('content_entries.select_option_none', 'Seçiniz...')}</SelectItem>
+                  {contentTypes?.map((type) => (
+                    <SelectItem key={type.id} value={String(type.id)}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </Card>
+        )}
 
         {selectedTypeId !== 'all' && activeType && (
           activeType.is_collection ? (
-            <DataGrid
-              table={table}
-              recordCount={filteredEntries.length}
-              isLoading={isLoading}
-              tableClassNames={{ edgeCell: 'px-5' }}
-            >
-              <Card>
-                <DataGridToolbar />
-                <CardTable>
-                  <ScrollArea>
-                    <DataGridTable />
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
-                </CardTable>
-              </Card>
-            </DataGrid>
+            isFormView ? (
+              <div className="space-y-4">
+                <ContentEntryForm
+                  contentType={activeType}
+                  entry={selectedEntry}
+                  onSuccess={() => {
+                    setIsFormView(false);
+                    queryClient.invalidateQueries({ queryKey: ['admin-content-entries', selectedTypeId] });
+                  }}
+                  onCancel={() => setIsFormView(false)}
+                  isInline={true}
+                />
+              </div>
+            ) : (
+              <DataGrid
+                table={table}
+                recordCount={filteredEntries.length}
+                isLoading={isLoading}
+                tableClassNames={{ edgeCell: 'px-5' }}
+              >
+                <Card>
+                  <DataGridToolbar />
+                  <CardTable>
+                    <ScrollArea>
+                      <DataGridTable />
+                      <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                  </CardTable>
+                  <CardFooter>
+                    <DataGridPagination />
+                  </CardFooter>
+                </Card>
+              </DataGrid>
+            )
           ) : (
             isLoading ? (
               <div className="flex justify-center items-center p-20 bg-white border border-slate-200 rounded-2xl">
@@ -1307,54 +1396,59 @@ export default function ContentEntriesPage() {
                             <SortableItem key={block.id || idx} value={block.id}>
                               <SortableItemHandle asChild>
                                 <div
-                                  className={`bg-white border border-slate-200 border-l-4 ${leftColor} p-4 rounded-xl flex items-center justify-between hover:shadow-xs transition-all`}
+                                  className={`bg-white border border-slate-200 border-l-4 ${leftColor} py-5 px-5 rounded-xl flex items-center justify-between hover:shadow-sm hover:bg-slate-50/50 hover:border-slate-300 transition-all duration-200 group group-hover:border-l-[6px]`}
                                 >
                                   <div className="flex items-center gap-3">
-                                    <Grid className="size-4 text-slate-400" />
-                                    <span className="text-lg">{icon}</span>
-                                    <div>
+                                    <GripVertical className="size-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-grab active:cursor-grabbing flex-shrink-0" />
+                                    <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-lg shadow-xs flex-shrink-0">
+                                      {icon}
+                                    </div>
+                                    <div className="flex flex-col justify-center">
                                       <div className="flex items-center gap-2">
-                                        <span className="font-bold text-sm text-slate-800">{blockName}</span>
+                                        <span className="font-semibold text-[15px] text-slate-800">{blockName}</span>
                                         {(() => {
                                           const activeVar = blockVariations[block.type]?.find(v => v.id === block.variant);
                                           const variantName = activeVar ? activeVar.name : block.variant;
                                           return variantName ? (
-                                            <span className="text-[9px] font-semibold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">
+                                            <span className="text-xs font-medium bg-blue-50/70 text-blue-600 px-2.5 py-0.5 rounded-full border border-blue-100/50">
                                               {variantName}
                                             </span>
                                           ) : null;
                                         })()}
                                       </div>
-                                      <span className="text-[10px] text-slate-400 block mt-0.5">Tip: {block.type}</span>
                                     </div>
                                   </div>
 
-                                  <div className="flex gap-2">
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="xs"
-                                      className="h-8 px-3 text-xs font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEditingBlock(block);
-                                      }}
-                                    >
-                                      Düzenle
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="xs"
-                                      className="h-8 w-8 p-0 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setBlockToDeleteId(block.id);
-                                        setBlockDeleteConfirmOpen(true);
-                                      }}
-                                    >
-                                      <Trash className="size-3.5" />
-                                    </Button>
+                                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                    <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all duration-200">
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="xs"
+                                        className="h-8 px-3 text-xs font-medium text-blue-600 bg-blue-50/80 hover:bg-blue-100 hover:text-blue-700 rounded-lg flex items-center gap-1.5 transition-all"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingBlock(block);
+                                        }}
+                                      >
+                                        <Edit className="size-3.5" />
+                                        Düzenle
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="xs"
+                                        className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all flex items-center justify-center"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setBlockToDeleteId(block.id);
+                                          setBlockDeleteConfirmOpen(true);
+                                        }}
+                                      >
+                                        <Trash className="size-3.5" />
+                                      </Button>
+                                    </div>
+                                    <span className="text-[10px] font-mono text-slate-400/80">Tip: {block.type}</span>
                                   </div>
                                 </div>
                               </SortableItemHandle>
@@ -1365,14 +1459,14 @@ export default function ContentEntriesPage() {
                     )}
 
                     {/* Always visible Add Block button at the bottom */}
-                    <div className={`flex flex-col items-center justify-center p-8 border border-dashed border-slate-200 rounded-2xl bg-white shadow-xs ${!hasNoBlocks ? 'mt-4' : 'p-20'}`}>
+                    <div
+                      onClick={() => setAddBlockDrawerOpen(true)}
+                      className={`flex flex-col items-center justify-center p-8 border border-dashed border-slate-200 hover:border-blue-400 rounded-2xl bg-white hover:bg-blue-50/5 cursor-pointer shadow-xs transition-all duration-200 group ${!hasNoBlocks ? 'mt-4' : 'p-20'}`}
+                    >
                       <Button
                         type="button"
                         size="lg"
-                        className="gap-2 font-bold px-6 py-5 rounded-xl shadow-md hover:shadow-lg transition-all"
-                        onClick={() => {
-                          setAddBlockDrawerOpen(true);
-                        }}
+                        className="gap-2 font-bold px-6 py-5 rounded-xl shadow-md group-hover:shadow-lg group-hover:bg-blue-600 transition-all duration-200 pointer-events-none"
                       >
                         <Plus className="size-5" />
                         Add Block
@@ -1489,10 +1583,10 @@ export default function ContentEntriesPage() {
                   >
                     <div className="w-full flex-1 flex items-center justify-center bg-slate-50/50 p-2 rounded-xl border border-slate-100 min-h-[90px] overflow-hidden">
                       {v.image ? (
-                        <img 
-                          src={v.image} 
-                          className="w-full h-auto max-h-[140px] object-cover rounded-lg group-hover:scale-[1.03] transition-all duration-300" 
-                          alt={v.name} 
+                        <img
+                          src={v.image}
+                          className="w-full h-auto max-h-[140px] object-cover rounded-lg group-hover:scale-[1.03] transition-all duration-300"
+                          alt={v.name}
                         />
                       ) : (
                         v.wireframe
@@ -1636,27 +1730,107 @@ export default function ContentEntriesPage() {
         const blockSchema = allowedBlocks.find(b => b.type === editingBlock.type);
         if (!blockSchema) return null;
 
+        const getVisibleFields = (schema, block) => {
+          if (!schema) return [];
+          if (block.type !== 'hero_banner') return schema.fields || [];
+
+          const variant = block.variant || 'minimal_centered';
+          const headingField = { name: 'Başlık (Heading)', slug: 'heading', type: 'string', validation_rules: { required: true }, options: { localized: true } };
+          const subtitleField = { name: 'Alt Başlık (Subtitle)', slug: 'subtitle', type: 'text', validation_rules: { required: false }, options: { localized: true } };
+          const bgImageField = { name: 'Arka Plan Görseli', slug: 'background_image', type: 'media', validation_rules: { required: false } };
+          const ctaTextField = { name: 'Buton Metni (CTA Text)', slug: 'cta_text', type: 'string', validation_rules: { required: false }, options: { localized: true } };
+          const ctaUrlField = { name: 'Buton Linki (CTA URL)', slug: 'cta_url', type: 'string', validation_rules: { required: false } };
+          const videoUrlField = { name: 'Video Linki / URL (MP4 veya YouTube)', slug: 'video_url', type: 'string', validation_rules: { required: true } };
+          const formPlaceholderField = { name: 'Form İçi Metin (Placeholder)', slug: 'form_placeholder', type: 'string', validation_rules: { required: false }, options: { localized: true } };
+
+          if (variant === 'minimal_centered' || variant === 'search_focused') {
+            return [headingField, subtitleField, ctaTextField, ctaUrlField];
+          }
+          if (variant === 'video_popup' || variant === 'background_video') {
+            const customBgImageField = { ...bgImageField, name: variant === 'video_popup' ? 'Video Kapak Görseli' : 'Yedek Arka Plan Görseli' };
+            const customVideoFileField = { name: 'Video Dosyası Yükle (MP4 / WebM)', slug: 'video_file', type: 'media', validation_rules: { required: false } };
+            const customVideoUrlField = { name: 'Veya Video Linki / URL (YouTube veya MP4)', slug: 'video_url', type: 'string', validation_rules: { required: false } };
+            return [headingField, subtitleField, customBgImageField, customVideoFileField, customVideoUrlField, ctaTextField, ctaUrlField];
+          }
+          if (variant === 'form_input') {
+            return [headingField, subtitleField, formPlaceholderField, ctaTextField];
+          }
+          if (variant === 'metric_cards') {
+            return [
+              headingField, subtitleField, ctaTextField, ctaUrlField,
+              { name: '1. İstatistik Sayı', slug: 'metric_1_number', type: 'string' },
+              { name: '1. İstatistik Başlık', slug: 'metric_1_label', type: 'string', options: { localized: true } },
+              { name: '1. İstatistik Açıklama', slug: 'metric_1_desc', type: 'string', options: { localized: true } },
+              { name: '2. İstatistik Sayı', slug: 'metric_2_number', type: 'string' },
+              { name: '2. İstatistik Başlık', slug: 'metric_2_label', type: 'string', options: { localized: true } },
+              { name: '2. İstatistik Açıklama', slug: 'metric_2_desc', type: 'string', options: { localized: true } },
+              { name: '3. İstatistik Sayı', slug: 'metric_3_number', type: 'string' },
+              { name: '3. İstatistik Başlık', slug: 'metric_3_label', type: 'string', options: { localized: true } },
+              { name: '3. İstatistik Açıklama', slug: 'metric_3_desc', type: 'string', options: { localized: true } }
+            ];
+          }
+          if (variant === 'tabbed_interactive') {
+            return [
+              ctaTextField, ctaUrlField,
+              { name: '1. Sekme Adı (Tab Label)', slug: 'tab_1_title', type: 'string', options: { localized: true } },
+              { name: '1. Sekme Başlığı (Heading)', slug: 'tab_1_heading', type: 'string', options: { localized: true } },
+              { name: '1. Sekme Açıklaması', slug: 'tab_1_desc', type: 'text', options: { localized: true } },
+              { name: '2. Sekme Adı (Tab Label)', slug: 'tab_2_title', type: 'string', options: { localized: true } },
+              { name: '2. Sekme Başlığı (Heading)', slug: 'tab_2_heading', type: 'string', options: { localized: true } },
+              { name: '2. Sekme Açıklaması', slug: 'tab_2_desc', type: 'text', options: { localized: true } },
+              { name: '3. Sekme Adı (Tab Label)', slug: 'tab_3_title', type: 'string', options: { localized: true } },
+              { name: '3. Sekme Başlığı (Heading)', slug: 'tab_3_heading', type: 'string', options: { localized: true } },
+              { name: '3. Sekme Açıklaması', slug: 'tab_3_desc', type: 'text', options: { localized: true } }
+            ];
+          }
+          if (variant === 'slider_carousel') {
+            return [
+              { name: '1. Slayt Başlık', slug: 'heading', type: 'string', options: { localized: true } },
+              { name: '1. Slayt Açıklama', slug: 'subtitle', type: 'text', options: { localized: true } },
+              { name: '1. Slayt Görsel', slug: 'background_image', type: 'media' },
+              { name: '1. Slayt Buton Metni', slug: 'cta_text', type: 'string', options: { localized: true } },
+              { name: '1. Slayt Buton Linki', slug: 'cta_url', type: 'string' },
+
+              { name: '2. Slayt Başlık', slug: 'slide_2_heading', type: 'string', options: { localized: true } },
+              { name: '2. Slayt Açıklama', slug: 'slide_2_subtitle', type: 'text', options: { localized: true } },
+              { name: '2. Slayt Görsel', slug: 'slide_2_background_image', type: 'media' },
+              { name: '2. Slayt Buton Metni', slug: 'slide_2_cta_text', type: 'string', options: { localized: true } },
+              { name: '2. Slayt Buton Linki', slug: 'slide_2_cta_url', type: 'string' },
+
+              { name: '3. Slayt Başlık', slug: 'slide_3_heading', type: 'string', options: { localized: true } },
+              { name: '3. Slayt Açıklama', slug: 'slide_3_subtitle', type: 'text', options: { localized: true } },
+              { name: '3. Slayt Görsel', slug: 'slide_3_background_image', type: 'media' },
+              { name: '3. Slayt Buton Metni', slug: 'slide_3_cta_text', type: 'string', options: { localized: true } },
+              { name: '3. Slayt Buton Linki', slug: 'slide_3_cta_url', type: 'string' }
+            ];
+          }
+
+          const customBgImageField = { ...bgImageField, name: variant === 'dashboard_mockup' ? 'Dashboard Ön İzleme Görseli' : variant === 'split_screen' ? 'Sol/Sağ Görsel' : 'Arka Plan Görseli' };
+          return [headingField, subtitleField, customBgImageField, ctaTextField, ctaUrlField];
+        };
+
+        const visibleFields = getVisibleFields(blockSchema, editingBlock);
         const displayBlockName = blockSchema.name || editingBlock.type;
 
         return (
           <RightDrawer
             open={!!editingBlock}
-            onOpenChange={(open) => !open && setEditingBlock(null)}
-            title={`⚙️ Bölüm İçeriğini Düzenle: ${displayBlockName}`}
+            onOpenChange={(open) => !open && handleCancelEditBlock()}
+            title={newBlockIdToCancel ? `✨ Yeni Bölüm Ekle: ${displayBlockName}` : `⚙️ Bölüm İçeriğini Düzenle: ${displayBlockName}`}
             size="5xl"
             footer={
               <div className="flex justify-end gap-2 w-full">
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   variant="outline"
-                  onClick={() => setEditingBlock(null)} 
+                  onClick={handleCancelEditBlock}
                   className="h-8.5 rounded-lg px-4 text-xs font-bold"
                 >
                   Vazgeç
                 </Button>
-                <Button 
-                  type="button" 
-                  onClick={saveEditedBlock} 
+                <Button
+                  type="button"
+                  onClick={saveEditedBlock}
                   disabled={updateBlocksMutation.isPending}
                   className="h-8.5 rounded-lg px-4 text-xs font-bold bg-primary text-white flex items-center gap-1.5"
                 >
@@ -1665,7 +1839,7 @@ export default function ContentEntriesPage() {
                   ) : (
                     <Check className="size-3.5" />
                   )}
-                  Kaydet ve Kapat
+                  {newBlockIdToCancel ? 'Ekle ve Kapat' : 'Kaydet ve Kapat'}
                 </Button>
               </div>
             }
@@ -1674,7 +1848,7 @@ export default function ContentEntriesPage() {
               {/* Form Column */}
               <div className="col-span-12 xl:col-span-5 space-y-6">
                 {/* Languages selector if fields are localized */}
-                {languages.length > 1 && blockSchema.fields?.some(sub => !!(sub.options?.localized || sub.localized)) && (
+                {languages.length > 1 && visibleFields?.some(sub => !!(sub.options?.localized || sub.localized)) && (
                   <div className="p-1 bg-slate-100/80 border border-slate-200/40 rounded-lg flex gap-1 max-w-xs mb-2">
                     {languages.map((lang) => (
                       <button
@@ -1689,77 +1863,14 @@ export default function ContentEntriesPage() {
                   </div>
                 )}
 
-                {/* Block Variation Selector */}
-                {blockVariations[editingBlock.type] && (
-                  <div className="space-y-3 pb-5 border-b border-slate-100">
-                    <Label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-                      🎨 Bölüm Tasarım Varyasyonu (Layout Variant)
-                    </Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {blockVariations[editingBlock.type].map((variant) => {
-                        const isSelected = editingBlock.variant === variant.id || (!editingBlock.variant && variant.id === 'minimal_centered');
-                        return (
-                          <div
-                            key={variant.id}
-                            onClick={() => handleBlockVariantChange(editingBlock.id, variant.id)}
-                            className={`border rounded-xl p-4 cursor-pointer select-none transition-all flex flex-col items-center justify-center text-center gap-1.5 bg-white hover:bg-slate-50/50 ${isSelected ? 'border-primary bg-primary/5 shadow-xs ring-1 ring-primary' : 'border-slate-200 border-dashed hover:border-slate-400'}`}
-                          >
-                            {variant.image ? (
-                              <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded overflow-hidden flex items-center justify-center shrink-0 mb-1">
-                                <img src={variant.image} className="w-full h-full object-cover" alt="" />
-                              </div>
-                            ) : (
-                              <>
-                                {variant.id === 'minimal_centered' && (
-                                  <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded flex flex-col items-center justify-center gap-0.5 shrink-0 mb-1">
-                                    <div className="w-8 h-1 bg-slate-300 rounded"></div>
-                                    <div className="w-5 h-0.5 bg-slate-200 rounded"></div>
-                                    <div className="w-4 h-1.5 bg-primary/20 rounded mt-0.5"></div>
-                                  </div>
-                                )}
-                                {variant.id === 'image_supported' && (
-                                  <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded flex items-center justify-between px-1 shrink-0 mb-1">
-                                    <div className="flex flex-col gap-0.5">
-                                      <div className="w-6 h-1 bg-slate-300 rounded"></div>
-                                      <div className="w-4 h-0.5 bg-slate-200 rounded"></div>
-                                      <div className="w-3 h-1 bg-primary/20 rounded mt-0.5"></div>
-                                    </div>
-                                    <div className="w-6 h-6 bg-slate-200 rounded flex items-center justify-center text-[6px] text-slate-400">🖼️</div>
-                                  </div>
-                                )}
-                                {variant.id === 'form_input' && (
-                                  <div className="w-16 h-8 bg-slate-50 border border-slate-100 rounded flex items-center justify-between px-1 shrink-0 mb-1">
-                                    <div className="flex flex-col gap-0.5">
-                                      <div className="w-6 h-1 bg-slate-300 rounded"></div>
-                                      <div className="w-4 h-0.5 bg-slate-200 rounded"></div>
-                                    </div>
-                                    <div className="w-6 h-6 bg-white border border-slate-200 rounded flex flex-col items-center justify-center gap-0.5">
-                                      <div className="w-4 h-1 bg-slate-100 rounded"></div>
-                                      <div className="w-4 h-2 bg-primary/30 rounded"></div>
-                                    </div>
-                                  </div>
-                                )}
-                              </>
-                            )}
-                            <span className={`font-bold text-xs ${isSelected ? 'text-primary' : 'text-slate-700'}`}>
-                              {variant.name}
-                            </span>
-                            <span className="text-[9px] text-slate-400 leading-normal">
-                              {variant.description}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+
 
                 {/* Block Fields Grid */}
                 <div className="grid grid-cols-1 gap-4.5">
-                  {blockSchema.fields?.map(sub => {
+                  {visibleFields?.map(sub => {
                     const isSubLocalized = !!(sub.options?.localized || sub.localized);
-                    const subVal = isSubLocalized 
-                      ? (editingBlock.data?.[sub.slug]?.[activeTab] ?? '') 
+                    const subVal = isSubLocalized
+                      ? (editingBlock.data?.[sub.slug]?.[activeTab] ?? '')
                       : (editingBlock.data?.[sub.slug] ?? '');
                     const subRequired = !!(sub.validation_rules?.required);
                     const isSubReq = subRequired && (!isSubLocalized || activeTab === defaultLangCode);
@@ -1791,6 +1902,8 @@ export default function ContentEntriesPage() {
                             value={getMediaIds(subVal)}
                             onChange={(newVal) => handleSubFieldChange(editingBlock.id, sub.slug, newVal, isSubLocalized)}
                             isMultiple={sub.type !== 'media'}
+                            accept={sub.slug === 'video_file' ? 'video/*' : 'image/*'}
+                            description={sub.slug === 'video_file' ? 'MP4, WebM veya OGG formatında video yükleyin.' : 'PNG, JPG, GIF veya WEBP formatları desteklenir.'}
                             placeholder={`${sub.name} yüklemek için tıklayın veya sürükleyin`}
                           />
                         ) : sub.type === 'relation_content_type' || sub.slug === 'target_content_type_id' || sub.type === 'relation' ? (
@@ -1847,7 +1960,7 @@ export default function ContentEntriesPage() {
                   <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                     🖥️ Canlı Bölüm Önizlemesi (Live Preview)
                   </span>
-                  
+
                   {/* Device selectors */}
                   <div className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-200/40">
                     {[
@@ -1859,11 +1972,10 @@ export default function ContentEntriesPage() {
                         key={item.device}
                         type="button"
                         onClick={() => setEditingBlockDevice(item.device)}
-                        className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
-                          editingBlockDevice === item.device
+                        className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${editingBlockDevice === item.device
                             ? 'bg-white shadow-xs text-slate-800'
                             : 'text-slate-400 hover:text-slate-600'
-                        }`}
+                          }`}
                       >
                         {item.label}
                       </button>
@@ -1873,9 +1985,9 @@ export default function ContentEntriesPage() {
 
                 {/* Simulated frame */}
                 <div className="flex-1 bg-slate-50 border border-slate-200/60 rounded-2xl p-4 flex justify-center items-start overflow-y-auto max-h-[60vh] xl:max-h-none">
-                  <div 
+                  <div
                     className="transition-all duration-300 w-full"
-                    style={{ 
+                    style={{
                       maxWidth: editingBlockDevice === 'mobile' ? '375px' : editingBlockDevice === 'tablet' ? '768px' : '100%',
                       boxShadow: '0 4px 20px -2px rgba(0,0,0,0.05)'
                     }}

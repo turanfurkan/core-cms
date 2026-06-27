@@ -32,6 +32,7 @@ class EntryValidator
                         $rules["{$blockPrefix}.type"] = ['required', 'string', 'in:' . implode(',', $allowedTypes)];
                         $rules["{$blockPrefix}.variant"] = ['nullable', 'string'];
                         $rules["{$blockPrefix}.data"] = ['required', 'array'];
+                        $rules["{$blockPrefix}.data.*"] = ['nullable'];
 
                         $blockType = $block['type'] ?? null;
                         if ($blockType) {

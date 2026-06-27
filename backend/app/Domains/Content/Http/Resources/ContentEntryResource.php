@@ -70,6 +70,32 @@ class ContentEntryResource extends JsonResource
 
                         $blockType = $block['type'];
                         $blockData = $block['data'];
+
+                        // Hydrate all potential media fields inside block data (e.g. video_file, slide_2_background_image)
+                        foreach ($blockData as $subSlug => $subVal) {
+                            if (!$subVal) {
+                                continue;
+                            }
+                            $mediaSlugs = [
+                                'background_image', 'video_file', 
+                                'slide_2_background_image', 'slide_3_background_image',
+                                'cover_image', 'gallery', 'media_gallery', 'logo', 'photo'
+                            ];
+                            $isMedia = in_array($subSlug, $mediaSlugs) 
+                                || str_ends_with($subSlug, '_image')
+                                || str_ends_with($subSlug, '_file')
+                                || str_ends_with($subSlug, '_gallery');
+                            
+                            $isAlreadyResolved = is_array($subVal) && (
+                                isset($subVal['url']) || 
+                                (isset($subVal[0]) && is_array($subVal[0]) && isset($subVal[0]['url']))
+                            );
+                            
+                            if ($isMedia && !$isAlreadyResolved) {
+                                $blockData[$subSlug] = $this->resolveMedia($subVal);
+                            }
+                        }
+
                         $allowedBlocks = $field->options['allowed_blocks'] ?? [];
                         $blockSchema = collect($allowedBlocks)->firstWhere('type', $blockType);
 
@@ -161,28 +187,25 @@ class ContentEntryResource extends JsonResource
                 foreach ($mediaValue as $locale => $locVal) {
                     if ($locVal) {
                         if (is_array($locVal)) {
-                            $mediaValue[$locale] = \Illuminate\Support\Facades\DB::table('media')
-                                ->whereIn('id', $locVal)
+                            $mediaValue[$locale] = \App\Domains\Media\Models\MediaItem::whereIn('id', $locVal)
                                 ->get()
                                 ->map(fn($media) => [
                                     'id' => $media->id,
                                     'name' => $media->name,
                                     'file_name' => $media->file_name,
-                                    'url' => asset("storage/{$media->id}/{$media->file_name}"),
+                                    'url' => $media->getUrl(),
                                     'size' => $media->size,
                                     'mime_type' => $media->mime_type,
                                 ])
                                 ->toArray();
                         } else {
-                            $media = \Illuminate\Support\Facades\DB::table('media')
-                                ->where('id', $locVal)
-                                ->first();
+                            $media = \App\Domains\Media\Models\MediaItem::find($locVal);
                             if ($media) {
                                 $mediaValue[$locale] = [
                                     'id' => $media->id,
                                     'name' => $media->name,
                                     'file_name' => $media->file_name,
-                                    'url' => asset("storage/{$media->id}/{$media->file_name}"),
+                                    'url' => $media->getUrl(),
                                     'size' => $media->size,
                                     'mime_type' => $media->mime_type,
                                 ];
@@ -192,29 +215,26 @@ class ContentEntryResource extends JsonResource
                 }
                 return $mediaValue;
             } else {
-                return \Illuminate\Support\Facades\DB::table('media')
-                    ->whereIn('id', $mediaValue)
+                return \App\Domains\Media\Models\MediaItem::whereIn('id', $mediaValue)
                     ->get()
                     ->map(fn($media) => [
                         'id' => $media->id,
                         'name' => $media->name,
                         'file_name' => $media->file_name,
-                        'url' => asset("storage/{$media->id}/{$media->file_name}"),
+                        'url' => $media->getUrl(),
                         'size' => $media->size,
                         'mime_type' => $media->mime_type,
                     ])
                     ->toArray();
             }
         } else {
-            $media = \Illuminate\Support\Facades\DB::table('media')
-                ->where('id', $mediaValue)
-                ->first();
+            $media = \App\Domains\Media\Models\MediaItem::find($mediaValue);
             if ($media) {
                 return [
                     'id' => $media->id,
                     'name' => $media->name,
                     'file_name' => $media->file_name,
-                    'url' => asset("storage/{$media->id}/{$media->file_name}"),
+                    'url' => $media->getUrl(),
                     'size' => $media->size,
                     'mime_type' => $media->mime_type,
                 ];

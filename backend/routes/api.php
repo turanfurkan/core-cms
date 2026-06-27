@@ -15,6 +15,8 @@ use App\Domains\Identity\Http\Controllers\Profile\ProfileController;
 use App\Domains\Content\Http\Controllers\Admin\ContentTypeController;
 use App\Domains\Content\Http\Controllers\Admin\ContentEntryController;
 use App\Domains\Content\Http\Controllers\Public\ContentDeliveryController;
+use App\Domains\Category\Http\Controllers\Admin\CategoryController;
+use App\Domains\Race\Http\Controllers\Admin\RaceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -114,6 +116,17 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // Admin Content Type Schemas Management
     Route::post('/admin/content-types/reorder', [ContentTypeController::class, 'reorder']);
     Route::apiResource('/admin/content-types', ContentTypeController::class);
+
+    // Admin Categories Management
+    Route::post('/admin/categories/reorder', [CategoryController::class, 'reorder']);
+    Route::apiResource('/admin/categories', CategoryController::class);
+
+    // Admin Races Management
+    Route::post('/admin/races/reorder', [RaceController::class, 'reorder']);
+    Route::apiResource('/admin/races', RaceController::class);
+
+    // Admin Posts Management
+    Route::apiResource('/admin/posts', \App\Domains\Post\Http\Controllers\Admin\PostController::class);
 
     // Admin Content Entries Management
     Route::get('/admin/content-types/{content_type}/entries', [ContentEntryController::class, 'index']);
@@ -264,6 +277,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
 // Public Content Delivery API (Read-only)
 Route::middleware('api_key:content:read')->group(function (): void {
+    // Intercept blog delivery to route to Post domain
+    Route::get('/content/delivery/blog', [\App\Domains\Post\Http\Controllers\Public\PostController::class, 'index']);
+    Route::get('/content/delivery/blog/{slug}', [\App\Domains\Post\Http\Controllers\Public\PostController::class, 'show']);
+
     Route::get('/content/delivery/{contentTypeSlug}', [ContentDeliveryController::class, 'index']);
     Route::get('/content/delivery/{contentTypeSlug}/{entrySlug}', [ContentDeliveryController::class, 'show']);
 });

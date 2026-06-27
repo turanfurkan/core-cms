@@ -1,6 +1,27 @@
 import { notFound } from 'next/navigation';
-import { backendFetch, getSeoMetadata } from '@/lib/api-server';
+import { backendFetch, getSeoMetadata, getPublicSettings, getPublicNavigation } from '@/lib/api-server';
 import { Container } from '@/components/common/container';
+import PublicHeader from '@/components/common/public-header';
+import PublicFooter from '@/components/common/public-footer';
+import MaintenanceScreen from '@/components/common/maintenance-screen';
+import PostBlockRenderer from '@/components/blocks/post-block-renderer';
+
+export const dynamic = 'force-dynamic';
+
+// Helper to resolve localized values
+function getLocalizedValue(value, lang = 'tr') {
+  if (!value) return '';
+  if (typeof value === 'object') {
+    return value[lang] || value['tr'] || value['en'] || '';
+  }
+  try {
+    const parsed = JSON.parse(value);
+    if (typeof parsed === 'object') {
+      return parsed[lang] || parsed['tr'] || parsed['en'] || '';
+    }
+  } catch (e) {}
+  return String(value);
+}
 
 // Generate dynamic metadata via the backend SEO resolver
 export async function generateMetadata({ params }) {
@@ -12,6 +33,10 @@ export async function generateMetadata({ params }) {
     return seo;
   }
 
+  const settings = await getPublicSettings();
+  const rawSiteName = settings['site.name'];
+  const siteName = getLocalizedValue(rawSiteName, 'tr') || 'Core CMS';
+
   // Fallback to title from URL
   const prettyTitle = entrySlug
     .split('-')
@@ -19,12 +44,54 @@ export async function generateMetadata({ params }) {
     .join(' ');
 
   return {
-    title: prettyTitle,
+    title: `${prettyTitle} | ${siteName}`,
   };
 }
 
 export default async function Page({ params }) {
   const { contentTypeSlug, entrySlug } = await params;
+
+  // Fetch settings
+  const settings = await getPublicSettings();
+
+  // Parse frontend settings
+  let frontSettings = settings['frontend.system_settings'] || {};
+  if (typeof frontSettings === 'string') {
+    try {
+      frontSettings = JSON.parse(frontSettings);
+    } catch (e) {
+      frontSettings = {};
+    }
+  }
+
+  // Check Maintenance Mode & Site Active
+  const isMaintenanceMode = !!settings['site.maintenance_mode'];
+  const isSiteActive = frontSettings.active !== false;
+
+  if (isMaintenanceMode) {
+    return <MaintenanceScreen settings={settings} />;
+  }
+
+  if (!isSiteActive) {
+    return <MaintenanceScreen settings={settings} isOffline={true} />;
+  }
+
+  // Fetch dynamic navigations if configured
+  const headerMenuKey = frontSettings.headerMenu || 'header';
+  const footerMenuKey = frontSettings.footerMenu || '';
+  
+  let headerMenuItems = null;
+  let footerMenuItems = null;
+
+  if (headerMenuKey && headerMenuKey !== 'none_static') {
+    const nav = await getPublicNavigation(headerMenuKey);
+    headerMenuItems = nav?.items || null;
+  }
+
+  if (footerMenuKey && footerMenuKey !== 'none_static') {
+    const nav = await getPublicNavigation(footerMenuKey);
+    footerMenuItems = nav?.items || null;
+  }
 
   let entry;
   try {
@@ -94,19 +161,8 @@ export default async function Page({ params }) {
   return (
     <div className="w-full min-h-screen bg-background text-foreground flex flex-col justify-between">
       <div>
-        {/* Simple Header */}
-        <header className="border-b border-border py-4 bg-muted/30">
-          <Container className="flex justify-between items-center">
-            <a href="/" className="font-bold text-xl tracking-tight text-primary">
-              Core CMS
-            </a>
-            <nav className="flex gap-4 text-sm">
-              <a href={`/${contentTypeSlug}`} className="hover:text-primary transition-colors">
-                ← {contentTypeSlug.charAt(0).toUpperCase() + contentTypeSlug.slice(1)} Listesi
-              </a>
-            </nav>
-          </Container>
-        </header>
+        {/* Dynamic Header */}
+        <PublicHeader settings={settings} menuItems={headerMenuItems} />
 
         {/* Main Content Area */}
         <main className="py-12">
@@ -148,10 +204,14 @@ export default async function Page({ params }) {
                 </div>
               )}
 
-              {/* Content body with HTML/Rich-Text compatibility */}
+              {/* Content body with HTML/Rich-Text compatibility or Blocks */}
               <div className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-lg pt-4">
                 {content ? (
-                  <div dangerouslySetInnerHTML={{ __html: content }} />
+                  Array.isArray(content) ? (
+                    <PostBlockRenderer blocks={content} locale="tr" />
+                  ) : (
+                    <div dangerouslySetInnerHTML={{ __html: content }} />
+                  )
                 ) : (
                   <p className="italic text-muted-foreground">İçerik bulunmamaktadır.</p>
                 )}
@@ -192,11 +252,8 @@ export default async function Page({ params }) {
         </main>
       </div>
 
-      <footer className="border-t border-border py-6 bg-muted/10">
-        <Container className="text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Core CMS. Tüm Hakları Saklıdır.
-        </Container>
-      </footer>
+      {/* Dynamic Footer */}
+      <PublicFooter settings={settings} menuItems={footerMenuItems} />
     </div>
   );
 }

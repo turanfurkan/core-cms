@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useMemo } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,10 +11,7 @@ import {
   RiErrorWarningFill,
 } from '@remixicon/react';
 import {
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  ArrowUp,
+  ChevronDown,
   ChevronRight,
   Edit2,
   FolderOpen,
@@ -25,6 +22,8 @@ import {
   Save,
   Trash2,
   X,
+  Indent,
+  Outdent,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -42,6 +41,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { RightDrawer } from '@/components/common/right-drawer';
+import { Sortable, SortableItem, SortableItemHandle } from '@/components/ui/sortable';
+import { cn } from '@/lib/utils';
 
 // Schema for the Navigation settings (Name, Key, Active)
 const NavigationSettingsSchema = z.object({
@@ -54,10 +56,10 @@ const NavigationSettingsSchema = z.object({
   is_active: z.boolean(),
 });
 
-// Schema for adding an individual menu item
+// Schema for adding/editing an individual menu item
 const MenuItemSchema = z.object({
   titleTr: z.string().min(1, 'Turkish Title is required').max(255),
-  titleEn: z.string().min(1, 'English Title is required').max(255),
+  titleEn: z.string().max(255).optional().or(z.literal('')),
   type: z.enum(['custom', 'content']).default('custom'),
   url: z.string().max(2000).nullable().optional(),
   target: z.enum(['_self', '_blank']).default('_self'),
@@ -90,6 +92,13 @@ export default function MenuBuilder({ navigation }) {
     return mapNodes(navigation.items);
   });
 
+  // Drawer, Modal & Language tab states
+  const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
+  const [addLang, setAddLang] = useState('tr');
+  const [editLang, setEditLang] = useState('tr');
+  const [collapsedItems, setCollapsedItems] = useState({});
+  const [itemToDelete, setItemToDelete] = useState(null);
+
   // Add Item form state
   const addItemForm = useForm({
     resolver: zodResolver(MenuItemSchema),
@@ -108,6 +117,79 @@ export default function MenuBuilder({ navigation }) {
   const editItemForm = useForm({
     resolver: zodResolver(MenuItemSchema),
   });
+
+  // Fetch active CMS content types
+  const { data: contentTypes = [] } = useQuery({
+    queryKey: ['admin-content-types'],
+    queryFn: async () => {
+      const res = await apiFetch('/api/admin/content-types');
+      if (!res.ok) return [];
+      const json = await res.json();
+      return json.data || [];
+    },
+  });
+
+  // Fetch entries for all content types
+  const [contentEntries, setContentEntries] = useState([]);
+  const [loadingEntries, setLoadingEntries] = useState(false);
+
+  useEffect(() => {
+    if (contentTypes.length > 0) {
+      const fetchAllEntries = async () => {
+        setLoadingEntries(true);
+        try {
+          const allEntries = [];
+          await Promise.all(
+            contentTypes.map(async (type) => {
+              try {
+                const res = await apiFetch(`/api/admin/content-types/${type.id}/entries`);
+                if (res.ok) {
+                  const json = await res.json();
+                  const data = json.data || [];
+                  data.forEach((entry) => {
+                    allEntries.push({
+                      ...entry,
+                      contentTypeSlug: type.slug,
+                      contentTypeName: type.name,
+                    });
+                  });
+                }
+              } catch (e) {
+                console.error(e);
+              }
+            })
+          );
+          setContentEntries(allEntries);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoadingEntries(false);
+        }
+      };
+      fetchAllEntries();
+    }
+  }, [contentTypes]);
+
+  // Tab auto-switching on validation errors
+  const addTrError = addItemForm.formState.errors.titleTr;
+  const addEnError = addItemForm.formState.errors.titleEn;
+  useEffect(() => {
+    if (addTrError && !addEnError) {
+      setAddLang('tr');
+    } else if (addEnError && !addTrError) {
+      setAddLang('en');
+    }
+  }, [addTrError, addEnError]);
+
+  const editTrError = editItemForm.formState.errors.titleTr;
+  const editEnError = editItemForm.formState.errors.titleEn;
+  useEffect(() => {
+    if (editTrError && !editEnError) {
+      setEditLang('tr');
+    } else if (editEnError && !editTrError) {
+      setEditLang('en');
+    }
+  }, [editTrError, editEnError]);
 
   // Mutation for saving navigation and items
   const mutation = useMutation({
@@ -263,7 +345,7 @@ export default function MenuBuilder({ navigation }) {
       id: `temp_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`,
       title: {
         tr: values.titleTr,
-        en: values.titleEn,
+        en: values.titleEn || values.titleTr,
       },
       type: values.type,
       url: values.url || '',
@@ -302,7 +384,7 @@ export default function MenuBuilder({ navigation }) {
         if (list[i].id === editingItem.id) {
           list[i].title = {
             tr: values.titleTr,
-            en: values.titleEn,
+            en: values.titleEn || values.titleTr,
           };
           list[i].type = values.type;
           list[i].url = values.url || '';
@@ -326,166 +408,207 @@ export default function MenuBuilder({ navigation }) {
     mutation.mutate(settingsValues);
   };
 
+  const toggleCollapse = (id) => {
+    setCollapsedItems((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const updateListAtParent = (parentId, newList) => {
+    const tree = copyTree();
+    if (!parentId) {
+      setItems(newList);
+      return;
+    }
+    const updateNode = (list) => {
+      for (let i = 0; i < list.length; i++) {
+        if (list[i].id === parentId) {
+          list[i].children = newList;
+          return true;
+        }
+        if (list[i].children && list[i].children.length > 0) {
+          const updated = updateNode(list[i].children);
+          if (updated) return true;
+        }
+      }
+      return false;
+    };
+    updateNode(tree);
+    setItems(tree);
+  };
+
   // Helper to recursively render tree items with indents
   const renderMenuItemsList = (list, depth = 0, parentNode = null) => {
     if (!list || list.length === 0) return null;
 
-    return list.map((item, index) => {
-      const isFirst = index === 0;
-      const isLast = index === list.length - 1;
-      const hasSiblingAbove = index > 0;
-      const hasParent = parentNode !== null;
+    return (
+      <Sortable
+        value={list}
+        onValueChange={(newList) => updateListAtParent(parentNode?.id, newList)}
+        getItemValue={(item) => item.id}
+        className="space-y-2"
+      >
+        {list.map((item, index) => {
+          const isFirst = index === 0;
+          const isLast = index === list.length - 1;
+          const hasSiblingAbove = index > 0;
+          const hasParent = parentNode !== null;
+          const hasChildren = item.children && item.children.length > 0;
+          const isCollapsed = collapsedItems[item.id];
 
-      const titleDisplay =
-        typeof item.title === 'string'
-          ? item.title
-          : `${item.title?.tr || ''} (${item.title?.en || ''})`;
+          const titleDisplay =
+            typeof item.title === 'string'
+              ? item.title
+              : `${item.title?.tr || ''} (${item.title?.en || ''})`;
 
-      return (
-        <div key={item.id} className="w-full">
-          {/* Menu Item Box */}
-          <div
-            style={{ paddingLeft: `${depth * 24}px` }}
-            className="group relative flex items-center justify-between border-b border-border/40 py-3 hover:bg-slate-50 dark:hover:bg-slate-900/20 transition-all rounded-md"
-          >
-            {/* Guide line indicator */}
-            {depth > 0 && (
+          return (
+            <SortableItem key={item.id} value={item.id} className="w-full relative">
+              {/* Branching Guide Lines */}
+              {depth > 0 && (
+                <>
+                  {/* Vertical Line */}
+                  <div
+                    className={cn(
+                      "absolute left-[-10px] w-[1px] bg-border/60 z-10",
+                      isLast ? "top-0 h-[22px]" : "top-0 bottom-0"
+                    )}
+                  />
+                  {/* Horizontal Line */}
+                  <div className="absolute left-[-10px] top-[22px] w-2.5 h-[1px] bg-border/60 z-10" />
+                </>
+              )}
+
+              {/* Menu Item Box */}
               <div
-                style={{ left: `${(depth - 1) * 24 + 12}px` }}
-                className="absolute top-0 bottom-0 w-[1px] bg-slate-200 dark:bg-slate-800"
-              />
-            )}
+                className="group relative flex items-center justify-between border border-border/40 py-2.5 px-3 hover:bg-slate-50 dark:hover:bg-slate-900/20 transition-all rounded-md bg-card"
+              >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  {/* Drag Handle */}
+                  <SortableItemHandle className="flex items-center shrink-0">
+                    <GripVertical className="size-4 text-muted-foreground/40 cursor-grab" />
+                  </SortableItemHandle>
 
-            <div className="flex items-center gap-3">
-              {/* Drag placement helper icon */}
-              <GripVertical className="size-4 text-muted-foreground/40" />
+                  {/* Accordion Expand/Collapse Trigger */}
+                  {hasChildren ? (
+                    <button
+                      type="button"
+                      className="p-1 hover:bg-muted rounded text-muted-foreground transition-transform shrink-0"
+                      onClick={() => toggleCollapse(item.id)}
+                    >
+                      <ChevronRight
+                        className={cn(
+                          "size-3.5 transition-transform duration-200",
+                          !isCollapsed && "rotate-90"
+                        )}
+                      />
+                    </button>
+                  ) : (
+                    <span className="w-6 shrink-0" /> // Spacer
+                  )}
 
-              <div className="flex items-center gap-2">
-                {item.type === 'custom' ? (
-                  <LinkIcon className="size-4 text-primary" />
-                ) : (
-                  <FolderOpen className="size-4 text-success" />
-                )}
-                <span className="font-medium text-sm text-gray-800 dark:text-gray-200">
-                  {titleDisplay}
-                </span>
-                <span className="text-xs text-muted-foreground hidden md:inline truncate max-w-xs">
-                  {item.url || '#'}
-                </span>
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {item.type === 'custom' ? (
+                      <LinkIcon className="size-4 text-primary shrink-0" />
+                    ) : (
+                      <FolderOpen className="size-4 text-success shrink-0" />
+                    )}
+                    <span className="font-medium text-sm text-gray-800 dark:text-gray-200 truncate max-w-[150px] sm:max-w-[240px]">
+                      {titleDisplay}
+                    </span>
+                    <span className="text-xs text-muted-foreground hidden md:inline truncate max-w-xs">
+                      {item.url || '#'}
+                    </span>
+                  </div>
+
+                  {/* Badges */}
+                  <div className="flex items-center gap-1.5 ms-2 shrink-0">
+                    {item.target === '_blank' && (
+                      <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4">
+                        New Tab
+                      </Badge>
+                    )}
+                    {!item.is_active && (
+                      <Badge variant="dim" className="text-[10px] py-0 px-1.5 h-4">
+                        Disabled
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tree manipulation controls */}
+                <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity shrink-0">
+                  {/* Indent (Make Submenu) */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    onClick={() => handleIndent(item.id)}
+                    disabled={!hasSiblingAbove}
+                    title="Make Submenu"
+                  >
+                    <Indent className="size-3.5" />
+                  </Button>
+
+                  {/* Outdent (Promote Level) */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    onClick={() => handleOutdent(item.id)}
+                    disabled={!hasParent}
+                    title="Promote Level"
+                  >
+                    <Outdent className="size-3.5" />
+                  </Button>
+
+                  {/* Edit details */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-primary hover:text-primary-active"
+                    onClick={() => handleOpenEditItem(item)}
+                    title="Edit Details"
+                  >
+                    <Edit2 className="size-3.5" />
+                  </Button>
+
+                  {/* Delete item */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive hover:text-destructive-active"
+                    onClick={() => setItemToDelete(item)}
+                    title="Delete Link"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
               </div>
 
-              {/* Badges */}
-              <div className="flex items-center gap-1.5 ms-2">
-                {item.target === '_blank' && (
-                  <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4">
-                    New Tab
-                  </Badge>
-                )}
-                {!item.is_active && (
-                  <Badge variant="dim" className="text-[10px] py-0 px-1.5 h-4">
-                    Disabled
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Tree manipulation controls */}
-            <div className="flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-              {/* Move Up */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => handleMoveUp(item.id)}
-                disabled={isFirst}
-                title="Move Up"
-              >
-                <ArrowUp className="size-3.5" />
-              </Button>
-
-              {/* Move Down */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => handleMoveDown(item.id)}
-                disabled={isLast}
-                title="Move Down"
-              >
-                <ArrowDown className="size-3.5" />
-              </Button>
-
-              {/* Indent (Make Submenu) */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => handleIndent(item.id)}
-                disabled={!hasSiblingAbove}
-                title="Make Submenu"
-              >
-                <ArrowRight className="size-3.5" />
-              </Button>
-
-              {/* Outdent (Promote Level) */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => handleOutdent(item.id)}
-                disabled={!hasParent}
-                title="Move Level Up"
-              >
-                <ArrowLeft className="size-3.5" />
-              </Button>
-
-              {/* Edit details */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-primary hover:text-primary-active"
-                onClick={() => handleOpenEditItem(item)}
-                title="Edit Details"
-              >
-                <Edit2 className="size-3.5" />
-              </Button>
-
-              {/* Delete item */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-destructive hover:text-destructive-active"
-                onClick={() => handleDeleteItem(item.id)}
-                title="Delete Link"
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Children nodes recursive rendering */}
-          {item.children && item.children.length > 0 && (
-            <div className="w-full">
-              {renderMenuItemsList(item.children, depth + 1, item)}
-            </div>
-          )}
-        </div>
-      );
-    });
+              {/* Children nodes recursive rendering */}
+              {!isCollapsed && hasChildren && (
+                <div className="pl-[20px] relative space-y-2 mt-2">
+                  {renderMenuItemsList(item.children, depth + 1, item)}
+                </div>
+              )}
+            </SortableItem>
+          );
+        })}
+      </Sortable>
+    );
   };
 
   return (
     <div className="space-y-6">
       {/* Visual form wrapper */}
       <form onSubmit={settingsForm.handleSubmit(onSubmit)}>
-        {/* Menu Settings Toolbar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-accent/40 rounded-lg p-5 border border-border/50 mb-6">
+        {/* Menu Settings Toolbar - STICKY */}
+        <div className="sticky top-0 z-30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-background/95 backdrop-blur-md rounded-lg p-5 border border-border/50 mb-6 shadow-sm">
           <div className="space-y-1">
             <h3 className="font-semibold text-lg">Menu Management</h3>
             <p className="text-muted-foreground text-xs">Configure menu settings and layout items list.</p>
@@ -506,7 +629,7 @@ export default function MenuBuilder({ navigation }) {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Settings & Add Item Column */}
+          {/* Settings Column */}
           <div className="lg:col-span-1 space-y-6">
             {/* General menu settings */}
             <Card>
@@ -554,107 +677,21 @@ export default function MenuBuilder({ navigation }) {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Quick addition of links form */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Add Menu Link</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Localized Turkish Title */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="item-title-tr">Title (Turkish)</Label>
-                    <Input
-                      id="item-title-tr"
-                      placeholder="e.g. Anasayfa"
-                      {...addItemForm.register('titleTr')}
-                    />
-                    {addItemForm.formState.errors.titleTr && (
-                      <p className="text-xs text-red-500">{addItemForm.formState.errors.titleTr.message}</p>
-                    )}
-                  </div>
-
-                  {/* Localized English Title */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="item-title-en">Title (English)</Label>
-                    <Input
-                      id="item-title-en"
-                      placeholder="e.g. Home"
-                      {...addItemForm.register('titleEn')}
-                    />
-                    {addItemForm.formState.errors.titleEn && (
-                      <p className="text-xs text-red-500">{addItemForm.formState.errors.titleEn.message}</p>
-                    )}
-                  </div>
-
-                  {/* URL */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="item-url">Link URL</Label>
-                    <Input
-                      id="item-url"
-                      placeholder="e.g. /home or https://..."
-                      {...addItemForm.register('url')}
-                    />
-                  </div>
-
-                  {/* Type Selector */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="item-type">Link Type</Label>
-                    <select
-                      id="item-type"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                      {...addItemForm.register('type')}
-                    >
-                      <option value="custom">Custom Link</option>
-                      <option value="content">Content Route</option>
-                    </select>
-                  </div>
-
-                  {/* Target Selector */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="item-target">Target</Label>
-                    <select
-                      id="item-target"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                      {...addItemForm.register('target')}
-                    >
-                      <option value="_self">Same Window (_self)</option>
-                      <option value="_blank">New Window (_blank)</option>
-                    </select>
-                  </div>
-
-                  {/* Active Toggle */}
-                  <div className="flex items-center justify-between border rounded-md p-3.5 bg-accent/30">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="item-active" className="text-sm font-semibold">Active Link</Label>
-                    </div>
-                    <Switch
-                      id="item-active"
-                      checked={addItemForm.watch('is_active')}
-                      onCheckedChange={(val) => addItemForm.setValue('is_active', val)}
-                    />
-                  </div>
-
-                  {/* Submit item */}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={addItemForm.handleSubmit(handleAddMenuItem)}
-                  >
-                    <Plus className="size-4 mr-2" /> Add to Menu List
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Tree Builder list */}
           <div className="lg:col-span-2">
             <Card className="h-full">
-              <CardHeader className="border-b border-border">
+              <CardHeader className="border-b border-border flex flex-row items-center justify-between py-4">
                 <CardTitle>Menu Structure Tree</CardTitle>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setIsAddDrawerOpen(true)}
+                >
+                  <Plus className="size-3.5 mr-1.5" /> Yeni Link Ekle
+                </Button>
               </CardHeader>
               <CardContent className="py-6">
                 <div className="space-y-2 min-h-[300px] border border-dashed rounded-lg p-4 bg-slate-50/20">
@@ -662,7 +699,7 @@ export default function MenuBuilder({ navigation }) {
                     <div className="flex flex-col items-center justify-center py-20 text-center space-y-2">
                       <GripVertical className="size-10 text-muted-foreground/35" />
                       <p className="font-semibold text-gray-500">Menu list is currently empty</p>
-                      <p className="text-xs text-muted-foreground">Add links using the sidebar panel and arrange structure.</p>
+                      <p className="text-xs text-muted-foreground">Click "Yeni Link Ekle" to add links and build your menu hierarchy.</p>
                     </div>
                   ) : (
                     renderMenuItemsList(items)
@@ -674,6 +711,198 @@ export default function MenuBuilder({ navigation }) {
         </div>
       </form>
 
+      {/* Add Item Drawer */}
+      <RightDrawer
+        open={isAddDrawerOpen}
+        onOpenChange={setIsAddDrawerOpen}
+        title="Yeni Link Ekle"
+        size="md"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAddDrawerOpen(false)}
+            >
+              İptal
+            </Button>
+            <Button
+              type="button"
+              onClick={addItemForm.handleSubmit((values) => {
+                handleAddMenuItem(values);
+                setIsAddDrawerOpen(false);
+              })}
+            >
+              Ekle
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4 pt-2.5">
+          {/* Language tabs */}
+          <div className="flex border-b border-border mb-2">
+            <button
+              type="button"
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                addLang === 'tr'
+                  ? 'border-primary text-primary font-semibold'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setAddLang('tr')}
+            >
+              Türkçe
+            </button>
+            <button
+              type="button"
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                addLang === 'en'
+                  ? 'border-primary text-primary font-semibold'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setAddLang('en')}
+            >
+              English
+            </button>
+          </div>
+
+          {/* Title based on selected tab */}
+          {addLang === 'tr' ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="item-title-tr">Başlık (Türkçe)</Label>
+              <Input
+                id="item-title-tr"
+                placeholder="Örn. Anasayfa"
+                {...addItemForm.register('titleTr')}
+              />
+              {addItemForm.formState.errors.titleTr && (
+                <p className="text-xs text-red-500">{addItemForm.formState.errors.titleTr.message}</p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label htmlFor="item-title-en">Title (English) <span className="text-muted-foreground font-normal text-xs">(İsteğe bağlı)</span></Label>
+              <Input
+                id="item-title-en"
+                placeholder="e.g. Home"
+                {...addItemForm.register('titleEn')}
+              />
+              {addItemForm.formState.errors.titleEn && (
+                <p className="text-xs text-red-500">{addItemForm.formState.errors.titleEn.message}</p>
+              )}
+            </div>
+          )}
+
+          {/* Link Type Selector */}
+          <div className="space-y-1.5">
+            <Label htmlFor="item-type">Link Type</Label>
+            <select
+              id="item-type"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              {...addItemForm.register('type')}
+            >
+              <option value="custom">Custom Link</option>
+              <option value="content">Content Route</option>
+            </select>
+          </div>
+
+          {/* Content Route Dynamic Dropdown Selector */}
+          {addItemForm.watch('type') === 'content' && (
+            <div className="space-y-1.5 transition-all">
+              <Label htmlFor="item-content-route">Content Page/Category</Label>
+              {loadingEntries ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <LoaderCircleIcon className="size-4 animate-spin" />
+                  Loading contents...
+                </div>
+              ) : (
+                <select
+                  id="item-content-route"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  onChange={(e) => {
+                    const entryId = e.target.value;
+                    const selectedEntry = contentEntries.find((entry) => String(entry.id) === entryId);
+                    if (selectedEntry) {
+                      const titleTr = selectedEntry.data?.title?.tr || selectedEntry.title?.tr || selectedEntry.data?.title || selectedEntry.title || '';
+                      const titleEn = selectedEntry.data?.title?.en || selectedEntry.title?.en || selectedEntry.data?.title || selectedEntry.title || '';
+                      const slugTr = selectedEntry.data?.slug?.tr || selectedEntry.slug?.tr || selectedEntry.data?.slug || selectedEntry.slug || '';
+                      const slugEn = selectedEntry.data?.slug?.en || selectedEntry.slug?.en || selectedEntry.data?.slug || selectedEntry.slug || '';
+                      const finalSlug = slugTr || slugEn || '';
+                      const isPage = ['pages', 'page'].includes(selectedEntry.contentTypeSlug.toLowerCase());
+                      const finalUrl = isPage ? `/${finalSlug}` : `/${selectedEntry.contentTypeSlug}/${finalSlug}`;
+
+                      addItemForm.setValue('url', finalUrl);
+                      const finalTitleTr = typeof titleTr === 'object' ? titleTr.tr || titleTr.en : titleTr;
+                      const finalTitleEn = typeof titleEn === 'object' ? titleEn.en || titleEn.tr : titleEn;
+                      if (finalTitleTr) addItemForm.setValue('titleTr', finalTitleTr);
+                      if (finalTitleEn) addItemForm.setValue('titleEn', finalTitleEn || finalTitleTr);
+                      if (finalTitleTr && !finalTitleEn) addItemForm.setValue('titleEn', finalTitleTr);
+                    }
+                  }}
+                >
+                  <option value="">-- Select content --</option>
+                  {Object.entries(
+                    contentEntries.reduce((groups, entry) => {
+                      const groupName = entry.contentTypeName || 'Other';
+                      if (!groups[groupName]) groups[groupName] = [];
+                      groups[groupName].push(entry);
+                      return groups;
+                    }, {})
+                  ).map(([groupName, entries]) => (
+                    <optgroup key={groupName} label={groupName}>
+                      {entries.map((entry) => {
+                        const titleTr = entry.data?.title?.tr || entry.title?.tr || entry.data?.title || entry.title || `Entry #${entry.id}`;
+                        const titleDisplay = typeof titleTr === 'object' ? titleTr.tr || titleTr.en : titleTr;
+                        return (
+                          <option key={entry.id} value={entry.id}>
+                            {titleDisplay}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
+          {/* URL Input */}
+          <div className="space-y-1.5">
+            <Label htmlFor="item-url">Link URL</Label>
+            <Input
+              id="item-url"
+              placeholder="e.g. /home or https://..."
+              disabled={addItemForm.watch('type') === 'content'}
+              {...addItemForm.register('url')}
+            />
+          </div>
+
+          {/* Target Selector */}
+          <div className="space-y-1.5">
+            <Label htmlFor="item-target">Target</Label>
+            <select
+              id="item-target"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              {...addItemForm.register('target')}
+            >
+              <option value="_self">Same Window (_self)</option>
+              <option value="_blank">New Window (_blank)</option>
+            </select>
+          </div>
+
+          {/* Active Toggle */}
+          <div className="flex items-center justify-between border rounded-md p-3.5 bg-accent/30 mt-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="item-active" className="text-sm font-semibold">Active Link</Label>
+            </div>
+            <Switch
+              id="item-active"
+              checked={addItemForm.watch('is_active')}
+              onCheckedChange={(val) => addItemForm.setValue('is_active', val)}
+            />
+          </div>
+        </div>
+      </RightDrawer>
+
       {/* Edit Item Details Dialog Modal */}
       {editingItem && (
         <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
@@ -682,33 +911,60 @@ export default function MenuBuilder({ navigation }) {
               <DialogTitle>Edit Menu Link Details</DialogTitle>
             </DialogHeader>
             <DialogBody className="space-y-4 pt-2.5">
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-title-tr">Title (Turkish)</Label>
-                <Input
-                  id="edit-title-tr"
-                  placeholder="e.g. Anasayfa"
-                  {...editItemForm.register('titleTr')}
-                />
+              {/* Language tabs */}
+              <div className="flex border-b border-border mb-2">
+                <button
+                  type="button"
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                    editLang === 'tr'
+                      ? 'border-primary text-primary font-semibold'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setEditLang('tr')}
+                >
+                  Türkçe
+                </button>
+                <button
+                  type="button"
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-all ${
+                    editLang === 'en'
+                      ? 'border-primary text-primary font-semibold'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setEditLang('en')}
+                >
+                  English
+                </button>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-title-en">Title (English)</Label>
-                <Input
-                  id="edit-title-en"
-                  placeholder="e.g. Home"
-                  {...editItemForm.register('titleEn')}
-                />
-              </div>
+              {/* Localized Title field */}
+              {editLang === 'tr' ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-title-tr">Başlık (Türkçe)</Label>
+                  <Input
+                    id="edit-title-tr"
+                    placeholder="Örn. Anasayfa"
+                    {...editItemForm.register('titleTr')}
+                  />
+                  {editItemForm.formState.errors.titleTr && (
+                    <p className="text-xs text-red-500">{editItemForm.formState.errors.titleTr.message}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-title-en">Title (English) <span className="text-muted-foreground font-normal text-xs">(İsteğe bağlı)</span></Label>
+                  <Input
+                    id="edit-title-en"
+                    placeholder="e.g. Home"
+                    {...editItemForm.register('titleEn')}
+                  />
+                  {editItemForm.formState.errors.titleEn && (
+                    <p className="text-xs text-red-500">{editItemForm.formState.errors.titleEn.message}</p>
+                  )}
+                </div>
+              )}
 
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-url">Link URL</Label>
-                <Input
-                  id="edit-url"
-                  placeholder="e.g. /home"
-                  {...editItemForm.register('url')}
-                />
-              </div>
-
+              {/* Link Type */}
               <div className="space-y-1.5">
                 <Label htmlFor="edit-type">Link Type</Label>
                 <select
@@ -721,6 +977,78 @@ export default function MenuBuilder({ navigation }) {
                 </select>
               </div>
 
+              {/* Content Route Dynamic Dropdown Selector */}
+              {editItemForm.watch('type') === 'content' && (
+                <div className="space-y-1.5 transition-all">
+                  <Label htmlFor="edit-content-route">Content Page/Category</Label>
+                  {loadingEntries ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <LoaderCircleIcon className="size-4 animate-spin" />
+                      Loading contents...
+                    </div>
+                  ) : (
+                    <select
+                      id="edit-content-route"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      onChange={(e) => {
+                        const entryId = e.target.value;
+                        const selectedEntry = contentEntries.find((entry) => String(entry.id) === entryId);
+                        if (selectedEntry) {
+                          const titleTr = selectedEntry.data?.title?.tr || selectedEntry.title?.tr || selectedEntry.data?.title || selectedEntry.title || '';
+                          const titleEn = selectedEntry.data?.title?.en || selectedEntry.title?.en || selectedEntry.data?.title || selectedEntry.title || '';
+                          const slugTr = selectedEntry.data?.slug?.tr || selectedEntry.slug?.tr || selectedEntry.data?.slug || selectedEntry.slug || '';
+                          const slugEn = selectedEntry.data?.slug?.en || selectedEntry.slug?.en || selectedEntry.data?.slug || selectedEntry.slug || '';
+                          const finalSlug = slugTr || slugEn || '';
+                          const isPage = ['pages', 'page'].includes(selectedEntry.contentTypeSlug.toLowerCase());
+                          const finalUrl = isPage ? `/${finalSlug}` : `/${selectedEntry.contentTypeSlug}/${finalSlug}`;
+
+                          editItemForm.setValue('url', finalUrl);
+                          const finalTitleTr = typeof titleTr === 'object' ? titleTr.tr || titleTr.en : titleTr;
+                          const finalTitleEn = typeof titleEn === 'object' ? titleEn.en || titleEn.tr : titleEn;
+                          if (finalTitleTr) editItemForm.setValue('titleTr', finalTitleTr);
+                          if (finalTitleEn) editItemForm.setValue('titleEn', finalTitleEn || finalTitleTr);
+                          if (finalTitleTr && !finalTitleEn) editItemForm.setValue('titleEn', finalTitleTr);
+                        }
+                      }}
+                    >
+                      <option value="">-- Select content --</option>
+                      {Object.entries(
+                        contentEntries.reduce((groups, entry) => {
+                          const groupName = entry.contentTypeName || 'Other';
+                          if (!groups[groupName]) groups[groupName] = [];
+                          groups[groupName].push(entry);
+                          return groups;
+                        }, {})
+                      ).map(([groupName, entries]) => (
+                        <optgroup key={groupName} label={groupName}>
+                          {entries.map((entry) => {
+                            const titleTr = entry.data?.title?.tr || entry.title?.tr || entry.data?.title || entry.title || `Entry #${entry.id}`;
+                            const titleDisplay = typeof titleTr === 'object' ? titleTr.tr || titleTr.en : titleTr;
+                            return (
+                              <option key={entry.id} value={entry.id}>
+                                {titleDisplay}
+                              </option>
+                            );
+                          })}
+                        </optgroup>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {/* URL */}
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-url">Link URL</Label>
+                <Input
+                  id="edit-url"
+                  placeholder="e.g. /home"
+                  disabled={editItemForm.watch('type') === 'content'}
+                  {...editItemForm.register('url')}
+                />
+              </div>
+
+              {/* Target Selector */}
               <div className="space-y-1.5">
                 <Label htmlFor="edit-target">Target</Label>
                 <select
@@ -733,7 +1061,8 @@ export default function MenuBuilder({ navigation }) {
                 </select>
               </div>
 
-              <div className="flex items-center justify-between border rounded-md p-3.5 bg-accent/30">
+              {/* Status */}
+              <div className="flex items-center justify-between border rounded-md p-3.5 bg-accent/30 mt-2">
                 <div className="space-y-0.5">
                   <Label htmlFor="edit-active" className="text-sm font-semibold">Active Link</Label>
                 </div>
@@ -750,6 +1079,44 @@ export default function MenuBuilder({ navigation }) {
               </Button>
               <Button type="button" onClick={editItemForm.handleSubmit(handleSaveEditItem)}>
                 Update Link
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {itemToDelete && (
+        <Dialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-destructive flex items-center gap-2">
+                <RiErrorWarningFill className="size-5" />
+                Delete Menu Item
+              </DialogTitle>
+            </DialogHeader>
+            <DialogBody>
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to delete <strong>{typeof itemToDelete.title === 'string' ? itemToDelete.title : (itemToDelete.title?.tr || itemToDelete.title?.en)}</strong>?
+              </p>
+              {itemToDelete.children && itemToDelete.children.length > 0 && (
+                <p className="text-xs text-red-500 font-semibold mt-2">
+                  Warning: This will also delete all of its {itemToDelete.children.length} nested child item(s)!
+                </p>
+              )}
+            </DialogBody>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setItemToDelete(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  handleDeleteItem(itemToDelete.id);
+                  setItemToDelete(null);
+                }}
+              >
+                Confirm Delete
               </Button>
             </DialogFooter>
           </DialogContent>

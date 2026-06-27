@@ -149,6 +149,14 @@ export default function MediaMetaDrawer({ open, onOpenChange, file, folderId }) 
               alt={file.name || 'Görsel'}
               className="max-h-full max-w-full object-contain"
             />
+          ) : file.mime_type?.startsWith('video/') && fileUrl ? (
+            <video
+              src={fileUrl}
+              className="max-h-full max-w-full object-contain shadow-sm rounded-lg"
+              controls
+              muted
+              playsInline
+            />
           ) : (
             <File className="size-16 text-muted-foreground" />
           )}

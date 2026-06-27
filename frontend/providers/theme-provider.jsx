@@ -10,10 +10,8 @@ export function ThemeProvider({ children }) {
     <NextThemesProvider
       attribute="class"
       defaultTheme="light"
-      storageKey="nextjs-theme"
-      enableSystem
+      forcedTheme="light"
       disableTransitionOnChange
-      enableColorScheme
     >
       <TooltipProvider delayDuration={0}>{children}</TooltipProvider>
     </NextThemesProvider>

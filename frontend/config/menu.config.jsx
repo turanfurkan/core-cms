@@ -55,6 +55,7 @@ import {
   FolderOpen,
   ClipboardCheck,
   Send,
+  Tag,
 } from 'lucide-react';
 
 export const MENU_SIDEBAR = [
@@ -310,6 +311,21 @@ export const MENU_SIDEBAR = [
     ],
   },
   {
+    title: 'Races',
+    icon: Flag,
+    path: '/content-management/races',
+  },
+  {
+    title: 'Blog / Haberler',
+    icon: FileText,
+    path: '/content-management/posts',
+  },
+  {
+    title: 'Categories',
+    icon: Tag,
+    path: '/content-management/categories',
+  },
+  {
     title: 'Navigations',
     icon: Network,
     path: '/user-management/navigations',
@@ -352,6 +368,11 @@ export const MENU_SIDEBAR = [
     title: 'System Settings',
     icon: Settings,
     path: '/system-settings',
+  },
+  {
+    title: 'Header & Footer',
+    icon: Layout,
+    path: '/interface-settings',
   },
   {
     title: 'Notification Templates',
@@ -743,6 +764,21 @@ export const MENU_SIDEBAR_COMPACT = [
         path: '/content-management/content-entries',
       },
     ],
+  },
+  {
+    title: 'Races',
+    icon: Flag,
+    path: '/content-management/races',
+  },
+  {
+    title: 'Blog / Haberler',
+    icon: FileText,
+    path: '/content-management/posts',
+  },
+  {
+    title: 'Categories',
+    icon: Tag,
+    path: '/content-management/categories',
   },
   {
     title: 'Navigations',

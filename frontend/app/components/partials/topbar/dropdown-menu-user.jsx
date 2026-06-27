@@ -227,22 +227,7 @@ export function DropdownMenuUser({ trigger }) {
 
         <DropdownMenuSeparator />
 
-        {/* Footer */}
-        <DropdownMenuItem
-          className="flex items-center gap-2"
-          onSelect={(event) => event.preventDefault()}
-        >
-          <Moon />
-          <div className="flex items-center gap-2 justify-between grow">
-            Dark Mode
-            <Switch
-              size="sm"
-              checked={resolvedTheme === 'dark'}
-              onCheckedChange={handleThemeToggle}
-              aria-label="Dark mode"
-            />
-          </div>
-        </DropdownMenuItem>
+
         <div className="p-2 mt-1">
           <Button
             variant="outline"

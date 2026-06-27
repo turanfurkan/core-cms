@@ -1,0 +1,12 @@
+{
+  "name": "@turanfurkan/core-cms-ui",
+  "version": "1.0.0",
+  "description": "Core CMS Frontend UI components and services library",
+  "main": "index.js",
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "next": "^13.0.0 || ^14.0.0 || ^15.0.0 || ^16.0.0",
+    "lucide-react": "*"
+  }
+}

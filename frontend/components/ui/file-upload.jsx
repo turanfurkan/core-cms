@@ -12,10 +12,10 @@ export function FileUpload({
   value,
   onChange,
   isMultiple = false,
-  accept = 'image/*',
-  maxSizeMB = 10,
+  accept = 'image/*,video/*',
+  maxSizeMB = 100,
   placeholder = 'Dosyaları buraya sürükleyin veya seçin',
-  description = 'PNG, JPG, GIF veya WEBP formatları desteklenir.',
+  description = 'Görsel (PNG, JPG, WEBP) veya Video (MP4, WebM) formatları desteklenir.',
   folderId = null,
 }) {
   const fileInputRef = useRef(null);
@@ -243,6 +243,7 @@ export function FileUpload({
             const item = mediaCache[id];
             const isLoading = loadingIds.has(id);
             const isImage = item?.mime_type?.startsWith('image/');
+            const isVideo = item?.mime_type?.startsWith('video/');
             const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8000';
             const imageUrl = item?.url ? (item.url.startsWith('http') ? item.url : `${backendUrl}${item.url}`) : null;
 
@@ -273,6 +274,13 @@ export function FileUpload({
                           src={imageUrl}
                           alt={item.name || 'Görsel'}
                           className="w-full h-full object-cover"
+                        />
+                      ) : isVideo && imageUrl ? (
+                        <video
+                          src={imageUrl}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
                         />
                       ) : (
                         <File className="size-6 text-muted-foreground" />
