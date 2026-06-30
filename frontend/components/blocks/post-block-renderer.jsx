@@ -43,6 +43,56 @@ function EntityCard({ item, type, showPrice = true, locale = 'tr' }) {
   );
 }
 
+function ShowcaseCarousel({ resolved, entityType, showPrice, locale, basisClass, isMobile, isTablet }) {
+  const [api, setApi] = React.useState(null);
+  const [current, setCurrent] = React.useState(0);
+  const [count, setCount] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!api) return;
+    setCount(api.scrollSnapList().length);
+    setCurrent(api.selectedScrollSnap());
+    api.on('select', () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
+
+  return (
+    <div className={cn("relative", isMobile ? "px-6" : isTablet ? "px-6" : "px-8")}>
+      <Carousel setApi={setApi} className="w-full">
+        <CarouselContent className="-ml-4">
+          {resolved.map((item) => (
+            <CarouselItem className={cn("pl-4", basisClass)} key={item.id}>
+              <EntityCard item={item} type={entityType} showPrice={showPrice} locale={locale} />
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious className={cn("bg-card/80 border-border z-10", isMobile ? "-left-3" : isTablet ? "-left-3" : "-left-4")} />
+        <CarouselNext className={cn("bg-card/80 border-border z-10", isMobile ? "-right-3" : isTablet ? "-right-3" : "-right-4")} />
+      </Carousel>
+
+      {/* Dots Indicator */}
+      {count > 1 && (
+        <div className="flex items-center justify-center gap-1.5 pt-4">
+          {Array.from({ length: count }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => api?.scrollTo(i)}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-200",
+                current === i 
+                  ? "w-4 bg-primary" 
+                  : "w-1.5 bg-muted-foreground/35 hover:bg-muted-foreground/50"
+              )}
+              aria-label={`Slayt ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PostBlockRenderer({ blocks = [], locale = 'tr', previewSize = 'desktop' }) {
   if (!blocks || !Array.isArray(blocks)) return null;
 
@@ -172,23 +222,15 @@ export default function PostBlockRenderer({ blocks = [], locale = 'tr', previewS
             return (
               <div key={key} className="my-8 not-prose space-y-4">
                 {displayStyle === 'carousel' ? (
-                  <div className={cn("relative", isMobile ? "px-0" : isTablet ? "px-6" : "px-8")}>
-                    <Carousel className="w-full">
-                      <CarouselContent className="-ml-4">
-                        {resolved.map((item) => (
-                          <CarouselItem className={cn("pl-4", basisClass)} key={item.id}>
-                            <EntityCard item={item} type={entityType} showPrice={showPrice} locale={locale} />
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                      {!isMobile && (
-                        <>
-                          <CarouselPrevious className={cn("bg-card/80 border-border", isTablet ? "-left-3" : "-left-4")} />
-                          <CarouselNext className={cn("bg-card/80 border-border", isTablet ? "-right-3" : "-right-4")} />
-                        </>
-                      )}
-                    </Carousel>
-                  </div>
+                  <ShowcaseCarousel
+                    resolved={resolved}
+                    entityType={entityType}
+                    showPrice={showPrice}
+                    locale={locale}
+                    basisClass={basisClass}
+                    isMobile={isMobile}
+                    isTablet={isTablet}
+                  />
                 ) : (
                   <div className={cn("grid gap-6", gridClass)}>
                     {resolved.map((item) => (
