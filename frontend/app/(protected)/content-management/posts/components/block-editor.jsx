@@ -489,6 +489,11 @@ export default function BlockEditor({ value = [], onChange, activeLang = 'tr' })
 
   return (
     <div className="space-y-4 relative w-full blocknote-editor-wrapper">
+      <style>{`
+        .blocknote-editor-wrapper .bn-editor {
+          padding-inline: 0px !important;
+        }
+      `}</style>
       <BlockNoteView
         editor={editor}
         onChange={handleEditorChange}
