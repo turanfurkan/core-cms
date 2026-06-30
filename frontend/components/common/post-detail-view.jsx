@@ -133,98 +133,82 @@ export default function PostDetailView({
         <h1 className={titleClass}>
           {title}
         </h1>
-        <div className="border-b border-border pb-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] sm:text-xs text-muted-foreground font-medium">
-          {publishDate && (
-            <time dateTime={entry.published_at}>{publishDate}</time>
-          )}
-          <span>•</span>
-          <span>Yazar: {author}</span>
-        </div>
-      </header>
-
-      {/* Render custom metadata fields if any exist */}
-      {customMetaFields.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 bg-muted/50 p-4 rounded-xl text-sm border border-border">
-          {customMetaFields.map(field => (
-            <div key={field.key} className="space-y-1">
-              <span className="text-muted-foreground capitalize font-medium">{field.key.replace(/_/g, ' ')}:</span>
-              <p className="font-semibold">{field.value}</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4 pt-1">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase shadow-xs">
+              {author ? author.charAt(0) : 'Y'}
             </div>
-          ))}
-        </div>
-      )}
+            <div className="flex flex-col">
+              <span className="font-semibold text-foreground text-xs sm:text-sm">
+                Yazar: {author}
+              </span>
+              {publishDate && (
+                <time className="text-[10px] sm:text-xs text-muted-foreground font-medium" dateTime={entry.published_at}>
+                  {publishDate}
+                </time>
+              )}
+            </div>
+          </div>
 
-      {/* Featured Image */}
-      {featuredImage && (
-        <div className="flex justify-center w-full">
-          <div className="relative w-full max-w-[480px] sm:max-w-[540px] md:max-w-[600px] rounded-2xl overflow-hidden bg-muted border border-border">
-            <img
-              src={featuredImage.url}
-              alt={title}
-              className="w-full h-auto object-contain block mx-auto"
-            />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground font-bold mr-1">Paylaş:</span>
+            
+            <a
+              href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-foreground/20 transition-all duration-200"
+              title="X (Twitter) ile Paylaş"
+            >
+              <img src="/media/brand-logos/x.svg" alt="X" className="size-3.5 dark:hidden" />
+              <img src="/media/brand-logos/x-dark.svg" alt="X" className="size-3.5 hidden dark:block" />
+            </a>
+
+            <a
+              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-[#1877F2]/20 transition-all duration-200"
+              title="Facebook'ta Paylaş"
+            >
+              <img src="/media/brand-logos/facebook.svg" alt="Facebook" className="size-3.5" />
+            </a>
+
+            <a
+              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-[#0A66C2]/20 transition-all duration-200"
+              title="LinkedIn'de Paylaş"
+            >
+              <img src="/media/brand-logos/linkedin.svg" alt="LinkedIn" className="size-3.5" />
+            </a>
+
+            <a
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(title + ' ' + shareUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-[#25D366]/20 transition-all duration-200"
+              title="WhatsApp ile Paylaş"
+            >
+              <img src="/media/brand-logos/whatsapp.svg" alt="WhatsApp" className="size-3.5 dark:invert" />
+            </a>
+
+            <button
+              onClick={handleCopyLink}
+              className="p-2 rounded-full border border-border bg-card text-muted-foreground hover:text-primary hover:bg-primary/5 hover:border-primary/20 transition-all duration-200 relative"
+              title="Bağlantıyı Kopyala"
+            >
+              {copied ? <Check className="size-3.5 text-green-600 dark:text-green-400" /> : <LinkIcon className="size-3.5" />}
+              {copied && (
+                <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-green-600 text-white text-[10px] rounded shadow-md font-bold whitespace-nowrap z-30">
+                  Kopyalandı!
+                </span>
+              )}
+            </button>
           </div>
         </div>
-      )}
-
-      {/* Social Share Buttons */}
-      <div className="flex items-center justify-center gap-2.5 py-3 border-b border-t border-border/80 max-w-[480px] sm:max-w-[540px] md:max-w-[600px] mx-auto">
-        <span className="text-xs text-muted-foreground font-bold mr-1">Paylaş:</span>
-        
-        <a
-          href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-foreground/20 transition-all duration-200"
-          title="X (Twitter) ile Paylaş"
-        >
-          <img src="/media/brand-logos/x.svg" alt="X" className="size-3.5 dark:hidden" />
-          <img src="/media/brand-logos/x-dark.svg" alt="X" className="size-3.5 hidden dark:block" />
-        </a>
-
-        <a
-          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-[#1877F2]/20 transition-all duration-200"
-          title="Facebook'ta Paylaş"
-        >
-          <img src="/media/brand-logos/facebook.svg" alt="Facebook" className="size-3.5" />
-        </a>
-
-        <a
-          href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-[#0A66C2]/20 transition-all duration-200"
-          title="LinkedIn'de Paylaş"
-        >
-          <img src="/media/brand-logos/linkedin.svg" alt="LinkedIn" className="size-3.5" />
-        </a>
-
-        <a
-          href={`https://api.whatsapp.com/send?text=${encodeURIComponent(title + ' ' + shareUrl)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-[#25D366]/20 transition-all duration-200"
-          title="WhatsApp ile Paylaş"
-        >
-          <img src="/media/brand-logos/whatsapp.svg" alt="WhatsApp" className="size-3.5 dark:invert" />
-        </a>
-
-        <button
-          onClick={handleCopyLink}
-          className="p-2 rounded-full border border-border bg-card text-muted-foreground hover:text-primary hover:bg-primary/5 hover:border-primary/20 transition-all duration-200 relative"
-          title="Bağlantıyı Kopyala"
-        >
-          {copied ? <Check className="size-3.5 text-green-600 dark:text-green-400" /> : <LinkIcon className="size-3.5" />}
-          {copied && (
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-green-600 text-white text-[10px] rounded shadow-md font-bold whitespace-nowrap z-30">
-              Kopyalandı!
-            </span>
-          )}
-        </button>
-      </div>
+      </header>
 
       {/* Content body with HTML/Rich-Text compatibility or Blocks */}
       <div className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-base md:text-lg pt-4">
