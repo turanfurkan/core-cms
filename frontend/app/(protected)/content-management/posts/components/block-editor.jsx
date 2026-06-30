@@ -53,6 +53,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from '@/components/ui/carousel';
 import { apiFetch } from '@/lib/api';
 
 // Block Selection Grid
@@ -199,37 +206,71 @@ const ImageBlock = createReactBlockSpec(
   }
 );
 
-function PreviewCard({ item, type, showPrice }) {
+function PreviewCard({ item, type, showPrice = true }) {
   const title = item.title || item.name;
   const label = typeof title === 'object' ? (title.tr || title.en || '') : (title || '');
-  const slug = typeof item.slug === 'object' ? (item.slug.tr || item.slug.en || '') : (item.slug || '');
   
-  const imageUrl = item.cover_image?.url || item.image?.url || null;
+  // Try resolving cover image URL
+  let coverUrl = '/media/previews/placeholder.png';
+  if (item.cover_image && typeof item.cover_image === 'object') {
+    coverUrl = item.cover_image.url || coverUrl;
+  } else if (item.image && typeof item.image === 'object') {
+    coverUrl = item.image.url || coverUrl;
+  }
   const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8000';
-  const fullImageUrl = imageUrl ? (imageUrl.startsWith('http') ? imageUrl : `${backendUrl}${imageUrl}`) : null;
+  const fullCoverUrl = coverUrl.startsWith('http') || coverUrl.startsWith('/') ? coverUrl : `${backendUrl}${coverUrl}`;
+  const resolvedCoverUrl = fullCoverUrl.startsWith('/') && !fullCoverUrl.startsWith('//') ? `${backendUrl}${fullCoverUrl}` : fullCoverUrl;
 
-  return (
-    <div className="border border-border/80 rounded-xl p-2.5 bg-card flex flex-col justify-between h-[180px] shadow-2xs hover:shadow-xs transition-shadow">
-      <div className="space-y-2 min-w-0">
-        <div className="w-full h-20 rounded-lg bg-muted/40 overflow-hidden flex items-center justify-center border border-border/30 shrink-0">
-          {fullImageUrl ? (
-            <img src={fullImageUrl} alt={label} className="w-full h-full object-cover" />
-          ) : (
-            <ImageIcon className="size-5 text-muted-foreground/30" />
+  if (type === 'race') {
+    const date = item.start_date
+      ? new Date(item.start_date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+      : null;
+    const isFree = item.is_free;
+    const price = item.price;
+
+    return (
+      <div className="group block border border-border bg-card rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-border/60 transition-all duration-200 w-full select-none">
+        <div className="aspect-video w-full relative overflow-hidden bg-muted/20">
+          <img
+            src={resolvedCoverUrl}
+            alt={label}
+            className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-200"
+            onError={(e) => {
+              e.target.src = '/media/previews/placeholder.png';
+            }}
+          />
+          {showPrice && (
+            <div className="absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-zinc-950/85 backdrop-blur-xs text-white">
+              {isFree ? 'Ücretsiz' : `${price} TL`}
+            </div>
           )}
         </div>
-        <div className="space-y-0.5 px-0.5 min-w-0">
-          <h5 className="text-[11px] font-bold text-foreground line-clamp-1 truncate" title={label}>{label}</h5>
-          <p className="text-[9px] text-muted-foreground/80 font-mono line-clamp-1 truncate">{slug}</p>
+        <div className="p-4 space-y-1.5 text-left">
+          <h4 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+            {label}
+          </h4>
+          {date && (
+            <p className="text-[10px] text-muted-foreground font-bold flex items-center gap-1.5">
+              <span>📅</span> {date}
+            </p>
+          )}
         </div>
       </div>
-      
-      {type === 'race' && showPrice !== false && (
-        <div className="flex items-center justify-between border-t border-border/30 pt-1.5 mt-1.5 px-0.5">
-          <span className="text-[9px] text-muted-foreground font-semibold">Başlangıç</span>
-          <span className="text-[10px] font-extrabold text-primary">{item.price ? `${item.price} ₺` : 'Ücretsiz'}</span>
-        </div>
-      )}
+    );
+  }
+
+  // category card
+  return (
+    <div className="group flex items-center justify-between p-3.5 border border-border bg-card rounded-xl shadow-xs hover:shadow-md hover:border-border/60 transition-all duration-200 text-left w-full select-none">
+      <div className="min-w-0 flex-1">
+        <h4 className="font-bold text-xs text-foreground truncate group-hover:text-primary transition-colors">
+          {label}
+        </h4>
+        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">
+          {item.type || 'Kategori'}
+        </p>
+      </div>
+      <span className="text-zinc-400 group-hover:translate-x-0.5 transition-transform text-xs font-bold">→</span>
     </div>
   );
 }
@@ -369,12 +410,18 @@ const ShowcaseBlock = createReactBlockSpec(
               )}
 
               {block.props.display_style === 'carousel' && (
-                <div className="flex items-center gap-3 overflow-x-auto w-full no-scrollbar pb-1 pt-0.5 animate-in fade-in-50 duration-200">
-                  {selectedItems.map(item => (
-                    <div key={item.id} className="w-[180px] shrink-0">
-                      <PreviewCard item={item} type={block.props.entity_type} showPrice={block.props.show_price} />
-                    </div>
-                  ))}
+                <div className="relative px-8 w-full not-prose animate-in fade-in-50 duration-200" contentEditable={false}>
+                  <Carousel className="w-full">
+                    <CarouselContent className="-ml-4">
+                      {selectedItems.map((item) => (
+                        <CarouselItem className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4" key={item.id}>
+                          <PreviewCard item={item} type={block.props.entity_type} showPrice={block.props.show_price} />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="-left-4 bg-card/80 border-border shadow-xs cursor-pointer z-10" />
+                    <CarouselNext className="-right-4 bg-card/80 border-border shadow-xs cursor-pointer z-10" />
+                  </Carousel>
                 </div>
               )}
 
