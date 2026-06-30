@@ -166,8 +166,8 @@ export default function PostBlockRenderer({ blocks = [], locale = 'tr' }) {
                           </CarouselItem>
                         ))}
                       </CarouselContent>
-                      <CarouselPrevious className="-left-4 sm:-left-6 h-10 w-10 sm:h-11 sm:w-11 bg-card/90 hover:bg-card text-foreground shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all border border-border/80 z-20" />
-                      <CarouselNext className="-right-4 sm:-right-6 h-10 w-10 sm:h-11 sm:w-11 bg-card/90 hover:bg-card text-foreground shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all border border-border/80 z-20" />
+                      <CarouselPrevious className="-left-4 bg-card/80 border-border" />
+                      <CarouselNext className="-right-4 bg-card/80 border-border" />
                     </Carousel>
                   </div>
                 ) : (
