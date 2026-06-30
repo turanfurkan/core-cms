@@ -141,7 +141,7 @@ export default function PostDetailView({
       </header>
 
       {/* Content body with HTML/Rich-Text compatibility or Blocks */}
-      <div className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-base md:text-lg !mt-2 pt-0 [&_p:first-of-type]:mt-0">
+      <div className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-[15px] sm:text-base md:text-lg !mt-2 pt-0 [&_p:first-of-type]:mt-0">
         {content ? (
           Array.isArray(content) ? (
             <PostBlockRenderer blocks={content} locale={locale} previewSize={previewSize} />
