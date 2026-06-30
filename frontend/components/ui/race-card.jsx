@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Image as ImageIcon, Calendar, MapPin, ArrowUpRight, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 // Helper to get localized values
 function getLocalized(val, locale = 'tr') {
@@ -37,6 +38,10 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
   const discountedPrice = item.discounted_price;
   const isSalesActive = item.is_sales_active !== false;
 
+  const showElevation = item.elevation && Number(item.elevation) > 0;
+  const showParticipants = item.max_participants && Number(item.max_participants) > 0;
+  const showStartPoint = item.start_point && item.start_point.trim().length > 0;
+
   const detailUrl = `/races/${getLocalized(item.slug, locale)}`;
 
   const RootComponent = previewOnly ? 'div' : Link;
@@ -62,48 +67,66 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
       </div>
 
       {/* Content details */}
-      <div className="p-4 flex-1 flex flex-col justify-between gap-4">
-        <div className="space-y-2">
-          {/* Distance Tag */}
+      <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+        <div className="space-y-3">
           {/* Title */}
-          <h4 className="font-extrabold text-sm text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors text-left pt-0.5">
+          <h4 className="font-black text-sm sm:text-[15px] text-zinc-900 dark:text-zinc-50 line-clamp-2 leading-snug group-hover:text-primary transition-colors text-left">
             {title}
           </h4>
 
           {/* Metadata Grid */}
-          <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 pt-1 text-[10px] text-muted-foreground/80 font-medium">
+          <div className="flex flex-col gap-1.5 pt-0.5 text-xs text-muted-foreground/75 font-medium">
             {date && (
-              <div className="flex items-center gap-1.5 truncate text-left" title={date}>
-                <Calendar className="size-3 text-muted-foreground/50 shrink-0" />
+              <div className="flex items-center gap-2 text-left" title={date}>
+                <Calendar className="size-3.5 text-muted-foreground/40 shrink-0" />
                 <span className="truncate">{date}</span>
               </div>
             )}
-            {item.start_point && (
-              <div className="flex items-center gap-1.5 truncate text-left" title={item.start_point}>
-                <MapPin className="size-3 text-muted-foreground/50 shrink-0" />
+            {showStartPoint && (
+              <div className="flex items-center gap-2 text-left" title={item.start_point}>
+                <MapPin className="size-3.5 text-muted-foreground/40 shrink-0" />
                 <span className="truncate">{item.start_point}</span>
               </div>
             )}
-            {item.elevation && (
-              <div className="flex items-center gap-1.5 truncate text-left" title={`${item.elevation}m`}>
-                <ArrowUpRight className="size-3 text-muted-foreground/50 shrink-0" />
-                <span className="truncate">+{item.elevation}m İrtifa</span>
+            {showElevation && (
+              <div className="flex items-center gap-2 text-left" title={`${item.elevation}m`}>
+                <ArrowUpRight className="size-3.5 text-muted-foreground/40 shrink-0" />
+                <span className="truncate">+{item.elevation}m İrtifa Kazancı</span>
               </div>
             )}
-            {item.max_participants && (
-              <div className="flex items-center gap-1.5 truncate text-left" title={`${item.max_participants} Kişi`}>
-                <Users className="size-3 text-muted-foreground/50 shrink-0" />
-                <span className="truncate">{item.max_participants} Kontenjan</span>
+            {showParticipants && (
+              <div className="flex items-center gap-2 text-left" title={`${item.max_participants} Kişi`}>
+                <Users className="size-3.5 text-muted-foreground/40 shrink-0" />
+                <span className="truncate">{item.max_participants} Kişilik Kontenjan</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Footer/Action Row */}
-        <div className="border-t border-border/40 pt-3 flex items-center justify-between mt-auto">
-          <div className="flex flex-col gap-1 items-start text-left select-none">
+        <div className="flex items-end justify-between mt-auto pt-2">
+          <div className="flex flex-col gap-0.5 text-left select-none">
+            {/* Price */}
+            {showPrice && (
+              <div>
+                {isFree ? (
+                  <span className="text-sm font-black text-green-600">Ücretsiz</span>
+                ) : discountedPrice && Number(discountedPrice) > 0 ? (
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-primary font-black text-[15px]">{Number(discountedPrice).toFixed(0)} TL</span>
+                    <span className="line-through text-muted-foreground/40 text-xs font-semibold">{Number(price).toFixed(0)} TL</span>
+                  </div>
+                ) : (
+                  <span className="text-zinc-900 dark:text-zinc-50 font-black text-[15px]">
+                    {price ? `${Number(price).toFixed(0)} TL` : 'Ücretsiz'}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Status */}
             {isSalesActive ? (
-              <span className="text-[9px] font-extrabold text-green-600 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[9px] font-extrabold text-green-600 uppercase tracking-wider flex items-center gap-1.5 mt-0.5">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
@@ -111,30 +134,15 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
                 Kayıtlar Açık
               </span>
             ) : (
-              <span className="text-[9px] font-extrabold text-muted-foreground/80 uppercase tracking-wider">
+              <span className="text-[9px] font-extrabold text-muted-foreground/60 uppercase tracking-wider mt-0.5">
                 Kayıtlar Kapalı
               </span>
             )}
-
-            {showPrice && (
-              <div className="flex items-center gap-1.5">
-                {isFree ? (
-                  <span className="text-xs font-black text-green-600">Ücretsiz</span>
-                ) : discountedPrice && Number(discountedPrice) > 0 ? (
-                  <>
-                    <span className="text-primary font-black text-xs">{Number(discountedPrice).toFixed(0)} TL</span>
-                    <span className="line-through text-muted-foreground/50 text-[9px] font-semibold">{Number(price).toFixed(0)} TL</span>
-                  </>
-                ) : (
-                  <span className="text-foreground font-black text-xs">{price ? `${Number(price).toFixed(0)} TL` : 'Ücretsiz'}</span>
-                )}
-              </div>
-            )}
           </div>
 
-          <span className="text-[10px] font-bold text-primary flex items-center gap-0.5 bg-primary/5 hover:bg-primary/10 border border-primary/20 px-2.5 py-1.5 rounded-lg transition-colors shrink-0">
-            İncele <ArrowUpRight className="size-3 shrink-0" />
-          </span>
+          <Button size="sm" className="font-extrabold gap-1.5 h-8 rounded-xl shrink-0 select-none">
+            İncele <ArrowUpRight className="size-3.5 shrink-0" />
+          </Button>
         </div>
       </div>
     </RootComponent>
