@@ -21,8 +21,6 @@ class PostRequest extends FormRequest
             'slug.tr' => 'required|string|max:191',
             'slug.en' => 'nullable|string|max:191',
             'content' => 'nullable|array',
-            'content.tr' => 'nullable|string',
-            'content.en' => 'nullable|string',
             'summary' => 'nullable|array',
             'summary.tr' => 'nullable|string|max:500',
             'summary.en' => 'nullable|string|max:500',
