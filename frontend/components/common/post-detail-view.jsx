@@ -5,6 +5,7 @@ import PostBlockRenderer from '@/components/blocks/post-block-renderer';
 import { PostCard } from '@/components/ui/post-card';
 import { CtaSection } from '@/components/common/cta-section';
 import { Facebook, Linkedin, Link as LinkIcon, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Helper to resolve localized values
 function getLocalizedValue(value, lang = 'tr') {
@@ -27,8 +28,32 @@ const XIcon = (props) => (
   </svg>
 );
 
-export default function PostDetailView({ entry, locale = 'tr', suggestedEntries = [], isCtaFullWidth = true }) {
+export default function PostDetailView({ 
+  entry, 
+  locale = 'tr', 
+  suggestedEntries = [], 
+  previewSize = 'desktop' 
+}) {
   if (!entry) return null;
+
+  const isMobile = previewSize === 'mobile';
+  const isTablet = previewSize === 'tablet';
+
+  const titleClass = cn(
+    "font-extrabold tracking-tight leading-tight text-foreground",
+    isMobile 
+      ? "text-xl" 
+      : isTablet 
+      ? "text-3xl" 
+      : "text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl"
+  );
+
+  const headerRowClass = cn(
+    "flex gap-3 border-b border-border pb-4",
+    isMobile 
+      ? "flex-col" 
+      : "flex-col sm:flex-row sm:items-center sm:justify-between"
+  );
 
   const [shareUrl, setShareUrl] = React.useState('');
   const [copied, setCopied] = React.useState(false);
@@ -109,10 +134,10 @@ export default function PostDetailView({ entry, locale = 'tr', suggestedEntries 
   return (
     <article className="space-y-6">
       <header className="space-y-4">
-        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-extrabold tracking-tight leading-tight text-foreground">
+        <h1 className={titleClass}>
           {title}
         </h1>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
+        <div className={headerRowClass}>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-muted-foreground font-medium">
             {publishDate && (
               <time dateTime={entry.published_at}>{publishDate}</time>
@@ -252,7 +277,7 @@ export default function PostDetailView({ entry, locale = 'tr', suggestedEntries 
 
       {/* CTA Action Banner */}
       <div className="pt-12 border-t border-border mt-16">
-        <CtaSection fullWidth={isCtaFullWidth} variant="primary" />
+        <CtaSection fullWidth={previewSize === 'desktop'} variant="primary" />
       </div>
 
       {/* Post Suggestions / Related Posts */}

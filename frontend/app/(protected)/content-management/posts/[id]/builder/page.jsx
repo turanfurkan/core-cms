@@ -664,7 +664,7 @@ export default function BuilderPage({ params }) {
                       }}
                       locale={activeLang}
                       suggestedEntries={previewSuggestedPosts}
-                      isCtaFullWidth={true}
+                      previewSize="desktop"
                     />
                   </Container>
                 ) : (
@@ -681,7 +681,7 @@ export default function BuilderPage({ params }) {
                     }}
                     locale={activeLang}
                     suggestedEntries={previewSuggestedPosts}
-                    isCtaFullWidth={false}
+                    previewSize={previewSize}
                   />
                 )}
               </div>
