@@ -312,7 +312,7 @@ const ShowcaseBlock = createReactBlockSpec(
           {selectedItems.length === 0 ? (
             /* Blank Slate Placeholder Box */
             <div
-              className="border-2 border-dashed border-border/80 hover:border-primary/50 hover:bg-muted/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all max-w-3xl w-full"
+              className="border-2 border-dashed border-border/80 hover:border-primary/50 hover:bg-muted/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all w-full"
               onClick={() => setIsDrawerOpen(true)}
             >
               <div className="p-4 rounded-full bg-muted/40 text-muted-foreground/60 mb-3">
@@ -333,7 +333,7 @@ const ShowcaseBlock = createReactBlockSpec(
             </div>
           ) : (
             /* Live Proportional Layout Previews */
-            <div className="border border-border/60 rounded-2xl p-4 bg-muted/5 max-w-3xl relative w-full group transition-all hover:border-primary/20">
+            <div className="border border-border/60 rounded-2xl p-4 bg-muted/5 relative w-full group transition-all hover:border-primary/20">
               {/* Header Action Bar */}
               <div className="flex items-center justify-between border-b border-border/40 pb-2.5 mb-4">
                 <div className="flex items-center gap-2">
@@ -361,7 +361,7 @@ const ShowcaseBlock = createReactBlockSpec(
 
               {/* Layout Content Renderer */}
               {block.props.display_style === 'grid' && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full animate-in fade-in-50 duration-200">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full animate-in fade-in-50 duration-200">
                   {selectedItems.map(item => (
                     <PreviewCard key={item.id} item={item} type={block.props.entity_type} showPrice={block.props.show_price} />
                   ))}
