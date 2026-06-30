@@ -116,9 +116,6 @@ export default function PostListSection({
       {/* Title & Filter Row */}
       <div className="flex flex-col gap-6 border-b border-border pb-8 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-primary">
-            {contentTypeSlug === 'blog' ? 'Blog' : 'Yazılar & Haberler'}
-          </span>
           <h1 className="text-4xl font-extrabold tracking-tight text-foreground">
             {getLocalized(settings['site.name'], locale) || 'Core CMS'} Paylaşımları
           </h1>

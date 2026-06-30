@@ -252,7 +252,7 @@ export default function PostDetailView({
       {suggestedEntries && suggestedEntries.length > 0 && (
         <div className="mt-12 sm:mt-16 space-y-6">
           <h3 className="text-2xl font-bold tracking-tight">Diğer Yazılar</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className={cn("grid gap-6", isMobile ? "grid-cols-1" : isTablet ? "grid-cols-2" : "grid-cols-1 md:grid-cols-3")}>
             {suggestedEntries.map(s => (
               <PostCard key={s.id} item={s} locale={locale} />
             ))}
