@@ -374,7 +374,7 @@ export default function BuilderPage({ params }) {
       <div className="flex-1 flex flex-col lg:flex-row items-stretch overflow-hidden">
         {/* Left Column: Notion-style Editor Sheet */}
         <main className="flex-1 overflow-y-auto px-6 sm:px-12 py-12 flex justify-center bg-card">
-          <div className="w-full max-w-6xl space-y-8 min-h-[500px]">
+          <div className="w-full max-w-6xl space-y-8 min-h-[500px] pb-80">
             {/* Localized Title & Inline Permalink Editor (Gutenberg-style) */}
             <div className="space-y-3 pb-6 border-b border-border/40">
               <input
