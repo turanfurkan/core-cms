@@ -50,7 +50,7 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
       )}
     >
       {/* Visual Area */}
-      <div className="relative aspect-video w-full overflow-hidden bg-muted/20 shrink-0">
+      <div className="relative aspect-square w-full overflow-hidden bg-muted/20 shrink-0">
         <img
           src={resolvedCoverUrl}
           alt={title}
@@ -59,42 +59,20 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
             e.target.src = '/media/previews/placeholder.png';
           }}
         />
-
-        {/* Distance Badge */}
-        {item.distance && (
-          <div className="absolute bottom-3 left-3 px-2.5 py-0.5 rounded-md text-[9px] font-extrabold bg-primary text-primary-foreground tracking-wider uppercase shadow-xs">
-            🏃 {item.distance}
-          </div>
-        )}
-
-        {/* Price Overlay */}
-        {showPrice && (
-          <div className="absolute top-3 right-3 flex flex-col gap-1 items-end z-10 select-none">
-            {isFree ? (
-              <div className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-green-600/90 text-white shadow-xs">
-                Ücretsiz
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-zinc-950/85 backdrop-blur-xs text-white shadow-md border border-white/5">
-                {discountedPrice && Number(discountedPrice) > 0 ? (
-                  <>
-                    <span className="line-through text-white/50 text-[10px] font-medium">{Number(price).toFixed(0)} TL</span>
-                    <span className="text-primary font-extrabold">{Number(discountedPrice).toFixed(0)} TL</span>
-                  </>
-                ) : (
-                  <span>{price ? `${Number(price).toFixed(0)} TL` : 'Ücretsiz'}</span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Content details */}
       <div className="p-4 flex-1 flex flex-col justify-between gap-4">
         <div className="space-y-2">
+          {/* Distance Tag */}
+          {item.distance && (
+            <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-muted text-muted-foreground uppercase tracking-wider max-w-max">
+              🏃 {item.distance}
+            </span>
+          )}
+
           {/* Title */}
-          <h4 className="font-extrabold text-sm text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors text-left">
+          <h4 className="font-extrabold text-sm text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors text-left pt-0.5">
             {title}
           </h4>
 
@@ -129,21 +107,38 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
 
         {/* Footer/Action Row */}
         <div className="border-t border-border/40 pt-3 flex items-center justify-between mt-auto">
-          {isSalesActive ? (
-            <span className="text-[9px] font-extrabold text-green-600 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+          <div className="flex flex-col gap-1 items-start text-left select-none">
+            {isSalesActive ? (
+              <span className="text-[9px] font-extrabold text-green-600 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                </span>
+                Kayıtlar Açık
               </span>
-              Kayıtlar Açık
-            </span>
-          ) : (
-            <span className="text-[9px] font-extrabold text-muted-foreground/80 uppercase tracking-wider">
-              Kayıtlar Kapalı
-            </span>
-          )}
-          
-          <span className="text-[10px] font-bold text-primary flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform duration-200">
+            ) : (
+              <span className="text-[9px] font-extrabold text-muted-foreground/80 uppercase tracking-wider">
+                Kayıtlar Kapalı
+              </span>
+            )}
+
+            {showPrice && (
+              <div className="flex items-center gap-1.5">
+                {isFree ? (
+                  <span className="text-xs font-black text-green-600">Ücretsiz</span>
+                ) : discountedPrice && Number(discountedPrice) > 0 ? (
+                  <>
+                    <span className="text-primary font-black text-xs">{Number(discountedPrice).toFixed(0)} TL</span>
+                    <span className="line-through text-muted-foreground/50 text-[9px] font-semibold">{Number(price).toFixed(0)} TL</span>
+                  </>
+                ) : (
+                  <span className="text-foreground font-black text-xs">{price ? `${Number(price).toFixed(0)} TL` : 'Ücretsiz'}</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <span className="text-[10px] font-bold text-primary flex items-center gap-0.5 bg-primary/5 hover:bg-primary/10 border border-primary/20 px-2.5 py-1.5 rounded-lg transition-colors shrink-0">
             İncele <ArrowUpRight className="size-3 shrink-0" />
           </span>
         </div>
