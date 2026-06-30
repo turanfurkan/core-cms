@@ -330,7 +330,7 @@ const ShowcaseBlock = createReactBlockSpec(
             </div>
           ) : (
             /* Live Proportional Layout Previews */
-            <div className="border border-border/60 rounded-2xl p-4 bg-muted/5 relative w-full group transition-all hover:border-primary/20">
+            <div className="border border-border/60 rounded-2xl p-4 bg-muted/5 relative w-full transition-all hover:border-primary/20">
               {/* Header Action Bar */}
               <div className="flex items-center justify-between border-b border-border/40 pb-2.5 mb-4">
                 <div className="flex items-center gap-2">

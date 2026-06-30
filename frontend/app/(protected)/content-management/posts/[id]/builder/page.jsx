@@ -401,11 +401,14 @@ export default function BuilderPage({ params }) {
 
             {/* Block Editor Panel (Borderless) */}
             <div className="space-y-2 pt-2">
-              <BlockEditor
-                value={content}
-                onChange={setContent}
-                activeLang={activeLang}
-              />
+              {isInitialized && (
+                <BlockEditor
+                  key={activeLang}
+                  value={content}
+                  onChange={setContent}
+                  activeLang={activeLang}
+                />
+              )}
             </div>
           </div>
         </main>
