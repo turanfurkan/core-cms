@@ -172,7 +172,7 @@ export default function PostBlockRenderer({ blocks = [], locale = 'tr', previewS
             return (
               <div key={key} className="my-8 not-prose space-y-4">
                 {displayStyle === 'carousel' ? (
-                  <div className="relative px-8">
+                  <div className={cn("relative", isMobile ? "px-0" : isTablet ? "px-6" : "px-8")}>
                     <Carousel className="w-full">
                       <CarouselContent className="-ml-4">
                         {resolved.map((item) => (
@@ -181,8 +181,12 @@ export default function PostBlockRenderer({ blocks = [], locale = 'tr', previewS
                           </CarouselItem>
                         ))}
                       </CarouselContent>
-                      <CarouselPrevious className="-left-4 bg-card/80 border-border" />
-                      <CarouselNext className="-right-4 bg-card/80 border-border" />
+                      {!isMobile && (
+                        <>
+                          <CarouselPrevious className={cn("bg-card/80 border-border", isTablet ? "-left-3" : "-left-4")} />
+                          <CarouselNext className={cn("bg-card/80 border-border", isTablet ? "-right-3" : "-right-4")} />
+                        </>
+                      )}
                     </Carousel>
                   </div>
                 ) : (
