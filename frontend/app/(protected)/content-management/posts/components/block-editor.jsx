@@ -329,32 +329,52 @@ const ShowcaseBlock = createReactBlockSpec(
               </Button>
             </div>
           ) : (
-            /* Compact Status Banner */
-            <div className="border border-border/60 rounded-xl p-3 bg-muted/5 relative w-full transition-all hover:border-primary/20 select-none">
-              {/* Header Action Bar */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-                    <Layers className="size-4" />
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-extrabold text-foreground uppercase tracking-wider block">
-                      Vitrin: {block.props.entity_type === 'race' ? 'Yarışlar' : 'Kategoriler'} ({selectedItems.length})
-                    </span>
-                  </div>
-                  <Badge variant="outline" className="text-[9px] font-semibold tracking-wide uppercase px-2 py-0 bg-card">
-                    {block.props.display_style === 'grid' ? 'Izgara' : block.props.display_style === 'carousel' ? 'Kaydırıcı' : 'Liste'}
-                  </Badge>
-                </div>
+            /* Live Proportional Layout Previews */
+            <div className="relative w-full my-6 group/showcase">
+              {/* Floating Edit Button (shows on hover or always visible, let's keep it visible on top right) */}
+              <div className="absolute -top-3 right-0 z-20">
                 <Button
                   size="xs"
                   variant="ghost"
-                  className="h-8 px-3 gap-1.5 font-bold text-[10px] text-muted-foreground hover:text-foreground border border-border bg-card rounded-lg shrink-0 shadow-xs hover:bg-muted/40 transition-all"
+                  className="h-7 px-2.5 gap-1 font-bold text-[10px] text-muted-foreground hover:text-foreground border border-border bg-card/90 backdrop-blur-xs rounded-lg shadow-xs hover:bg-muted/40 transition-all cursor-pointer"
                   onClick={() => setIsDrawerOpen(true)}
                 >
-                  <Settings className="size-3.5" /> Düzenle
+                  <Settings className="size-3 shrink-0" /> Düzenle
                 </Button>
               </div>
+
+              {/* Layout Content Renderer */}
+              {block.props.display_style === 'grid' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full pt-6 animate-in fade-in-50 duration-200">
+                  {selectedItems.map(item => (
+                    <PreviewCard key={item.id} item={item} type={block.props.entity_type} showPrice={block.props.show_price} />
+                  ))}
+                </div>
+              )}
+
+              {block.props.display_style === 'carousel' && (
+                <div className="relative px-8 w-full not-prose pt-6 animate-in fade-in-50 duration-200" contentEditable={false}>
+                  <Carousel className="w-full">
+                    <CarouselContent className="-ml-4">
+                      {selectedItems.map((item) => (
+                        <CarouselItem className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4" key={item.id}>
+                          <PreviewCard item={item} type={block.props.entity_type} showPrice={block.props.show_price} />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="-left-4 bg-card/80 border-border shadow-xs cursor-pointer z-10" />
+                    <CarouselNext className="-right-4 bg-card/80 border-border shadow-xs cursor-pointer z-10" />
+                  </Carousel>
+                </div>
+              )}
+
+              {block.props.display_style === 'list' && (
+                <div className="divide-y divide-border/60 w-full border border-border/60 rounded-xl bg-card overflow-hidden shadow-xs pt-6 animate-in fade-in-50 duration-200">
+                  {selectedItems.map(item => (
+                    <PreviewListRow key={item.id} item={item} type={block.props.entity_type} showPrice={block.props.show_price} />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
