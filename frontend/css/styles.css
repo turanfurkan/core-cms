@@ -32,7 +32,7 @@
 
 /* Premium Dynamic Block Animations */
 @theme {
-  --color-primary: #002254;
+  --color-primary: #03112b;
   --animate-pulse-slow: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-delayed: float 6s ease-in-out infinite 3s;
