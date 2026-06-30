@@ -22,23 +22,7 @@ function getLocalizedValue(value, lang = 'tr') {
   return String(value);
 }
 
-const XIcon = (props) => (
-  <svg viewBox="0 0 24 24" width="1em" height="1em" {...props}>
-    <path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
 
-const FacebookIcon = (props) => (
-  <svg viewBox="0 0 24 24" width="1em" height="1em" {...props}>
-    <path fill="currentColor" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-  </svg>
-);
-
-const LinkedinIcon = (props) => (
-  <svg viewBox="0 0 24 24" width="1em" height="1em" {...props}>
-    <path fill="currentColor" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z" />
-  </svg>
-);
 
 export default function PostDetailView({ 
   entry, 
@@ -165,43 +149,41 @@ export default function PostDetailView({
               href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted hover:border-foreground/20 transition-all duration-200"
+              className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-foreground/20 transition-all duration-200"
               title="X (Twitter) ile Paylaş"
             >
-              <XIcon className="size-3.5" />
+              <img src="/media/brand-logos/x.svg" alt="X" className="size-3.5 dark:hidden" />
+              <img src="/media/brand-logos/x-dark.svg" alt="X" className="size-3.5 hidden dark:block" />
             </a>
 
             <a
               href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-full border border-border bg-card text-muted-foreground hover:text-[#1877F2] hover:bg-[#1877F2]/5 hover:border-[#1877F2]/20 transition-all duration-200"
+              className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-[#1877F2]/20 transition-all duration-200"
               title="Facebook'ta Paylaş"
             >
-              <FacebookIcon className="size-3.5" />
+              <img src="/media/brand-logos/facebook.svg" alt="Facebook" className="size-3.5" />
             </a>
 
             <a
               href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-full border border-border bg-card text-muted-foreground hover:text-[#0A66C2] hover:bg-[#0A66C2]/5 hover:border-[#0A66C2]/20 transition-all duration-200"
+              className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-[#0A66C2]/20 transition-all duration-200"
               title="LinkedIn'de Paylaş"
             >
-              <LinkedinIcon className="size-3.5" />
+              <img src="/media/brand-logos/linkedin.svg" alt="LinkedIn" className="size-3.5" />
             </a>
 
             <a
               href={`https://api.whatsapp.com/send?text=${encodeURIComponent(title + ' ' + shareUrl)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-full border border-border bg-card text-muted-foreground hover:text-[#25D366] hover:bg-[#25D366]/5 hover:border-[#25D366]/20 transition-all duration-200"
+              className="p-2 rounded-full border border-border bg-card hover:bg-muted hover:border-[#25D366]/20 transition-all duration-200"
               title="WhatsApp ile Paylaş"
             >
-              <svg viewBox="0 0 24 24" width="1em" height="1em" className="size-3.5" fill="currentColor">
-                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.457L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.864-9.858.002-2.635-1.023-5.11-2.885-6.974C16.57 1.91 14.097.886 11.46.886c-5.438 0-9.863 4.42-9.867 9.859-.001 2.01.536 3.97 1.556 5.724L2.128 21.8l5.519-1.446z"/>
-                <path d="M17.387 14.18c-.3-.15-1.775-.875-2.05-.975-.275-.1-.475-.15-.675.15-.2.3-.775.975-.95 1.175-.175.2-.35.225-.65.075-.3-.15-1.267-.467-2.413-1.49-1.042-.93-1.745-2.08-1.95-2.43-.205-.35-.022-.54.128-.69.135-.135.3-.35.45-.525.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525-.075-.15-.675-1.625-.925-2.225-.244-.589-.48-.51-.66-.52-.18-.01-.38-.01-.58-.01-.2 0-.525.075-.8.375-.275.3-1.05 1.025-1.05 2.5 0 1.475 1.075 2.9 1.225 3.1.15.2 2.11 3.225 5.11 4.525.714.31 1.272.495 1.707.633.718.228 1.37.196 1.885.119.575-.085 1.775-.725 2.025-1.425.25-.7.25-1.3 0-1.425-.075-.15-.275-.25-.575-.4z" />
-              </svg>
+              <img src="/media/brand-logos/whatsapp.svg" alt="WhatsApp" className="size-3.5 dark:invert" />
             </a>
 
             <button
