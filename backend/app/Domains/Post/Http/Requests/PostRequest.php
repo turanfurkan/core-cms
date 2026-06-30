@@ -24,7 +24,7 @@ class PostRequest extends FormRequest
             'summary' => 'nullable|array',
             'summary.tr' => 'nullable|string|max:500',
             'summary.en' => 'nullable|string|max:500',
-            'cover_image_id' => 'nullable|integer|exists:media_items,id',
+            'cover_image_id' => 'nullable|integer|exists:media,id',
             'reading_time' => 'nullable|integer|min:0',
             'publish_date' => 'nullable|date',
             'status' => 'nullable|string|in:draft,published,archived',
