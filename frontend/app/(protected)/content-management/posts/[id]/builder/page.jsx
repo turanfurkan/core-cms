@@ -160,7 +160,7 @@ export default function BuilderPage({ params }) {
       const res = await apiFetch(`/api/admin/posts/${id}`);
       if (!res.ok) throw new Error('Failed to fetch post');
       const json = await res.json();
-      return json.data || null;
+      return json || null;
     },
     enabled: !isCreateMode,
   });
