@@ -41,6 +41,7 @@ import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 import dynamic from 'next/dynamic';
 const BlockEditor = dynamic(() => import('../../components/block-editor'), { ssr: false });
+import PostDetailView from '@/components/common/post-detail-view';
 
 function MultiSelectGrid({ items, selectedIds, onToggle, placeholder, searchPlaceholder }) {
   const [search, setSearch] = useState('');
@@ -141,6 +142,31 @@ export default function BuilderPage({ params }) {
   const [status, setStatus] = useState('published');
   const [categoryIds, setCategoryIds] = useState([]);
   const [isInitialized, setIsInitialized] = useState(isCreateMode);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // Fetch cover image details to get its URL for previewing
+  const { data: coverImage } = useQuery({
+    queryKey: ['admin-media-file', coverImageId],
+    queryFn: async () => {
+      if (!coverImageId) return null;
+      const res = await apiFetch(`/api/admin/media/files/${coverImageId}`);
+      if (!res.ok) throw new Error('Failed to fetch cover image');
+      const json = await res.json();
+      return json.data || null;
+    },
+    enabled: !!coverImageId
+  });
+
+  // Close preview on escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsPreviewOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Fetch categories of type 'blog'
   const { data: categories } = useQuery({
@@ -428,18 +454,29 @@ export default function BuilderPage({ params }) {
               <h3 className="text-[11px] font-bold text-foreground uppercase tracking-wider truncate">Yazı Ayarları</h3>
             </div>
             
-            <Button
-              onClick={handleSave}
-              disabled={saveMutation.isPending}
-              className="gap-1.5 h-8 px-3 rounded-lg font-bold text-xs shadow-xs shrink-0"
-            >
-              {saveMutation.isPending ? (
-                <LoaderCircleIcon className="size-3.5 animate-spin" />
-              ) : (
-                <Save className="size-3.5" />
-              )}
-              Kaydet
-            </Button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsPreviewOpen(true)}
+                className="gap-1.5 h-8 px-2.5 rounded-lg font-bold text-xs bg-card border-border hover:bg-muted text-muted-foreground hover:text-foreground"
+              >
+                <Eye className="size-3.5" />
+                Önizle
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={saveMutation.isPending}
+                className="gap-1.5 h-8 px-3 rounded-lg font-bold text-xs shadow-xs shrink-0"
+              >
+                {saveMutation.isPending ? (
+                  <LoaderCircleIcon className="size-3.5 animate-spin" />
+                ) : (
+                  <Save className="size-3.5" />
+                )}
+                Kaydet
+              </Button>
+            </div>
           </div>
 
           {/* Cover Image Widget */}
@@ -506,6 +543,44 @@ export default function BuilderPage({ params }) {
 
         </aside>
       </div>
+
+      {isPreviewOpen && (
+        <div className="fixed inset-0 z-[100] bg-background overflow-y-auto antialiased">
+          <div className="sticky top-0 z-[101] bg-card border-b border-border px-6 py-4 flex items-center justify-between shadow-xs">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-[10px] font-black uppercase tracking-wider bg-primary/5 text-primary border-primary/20">
+                Önizleme Modu
+              </Badge>
+              <span className="text-xs text-muted-foreground hidden sm:inline">• Kaydedilmemiş değişiklikler dahildir</span>
+            </div>
+            <Button
+              onClick={() => setIsPreviewOpen(false)}
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-lg font-bold text-xs"
+            >
+              Kapat (Esc)
+            </Button>
+          </div>
+          <div className="py-12">
+            <Container>
+              <PostDetailView
+                entry={{
+                  title: title,
+                  published_at: publishDate || new Date().toISOString(),
+                  data: {
+                    title: title,
+                    content: content,
+                    author: 'Siz',
+                    cover_image: coverImage ? { url: coverImage.url } : null
+                  }
+                }}
+                locale={activeLang}
+              />
+            </Container>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
