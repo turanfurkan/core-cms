@@ -117,6 +117,24 @@ function EntityPicker({ entityType, selectedIds, onChange }) {
     }
   };
 
+  const raceCategories = useMemo(() => {
+    if (entityType !== 'race' || !racesData) return [];
+    const categoriesMap = {};
+    racesData.forEach(race => {
+      (race.categories || []).forEach(cat => {
+        if (!categoriesMap[cat.id]) {
+          categoriesMap[cat.id] = {
+            id: cat.id,
+            name: cat.name,
+            raceIds: []
+          };
+        }
+        categoriesMap[cat.id].raceIds.push(race.id);
+      });
+    });
+    return Object.values(categoriesMap);
+  }, [entityType, racesData]);
+
   return (
     <div className="space-y-2 mt-2">
       <div className="relative">
@@ -129,6 +147,56 @@ function EntityPicker({ entityType, selectedIds, onChange }) {
           className="pl-8 h-8 text-xs"
         />
       </div>
+
+      {entityType === 'race' && raceCategories.length > 0 && (
+        <div className="space-y-1.5 pt-0.5 pb-1">
+          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Kategoriye Göre Toplu Seçim:</div>
+          <div className="flex flex-wrap gap-1">
+            {raceCategories.map(cat => {
+              const label = typeof cat.name === 'object' ? (cat.name.tr || cat.name.en || '') : (cat.name || '');
+              const totalInCat = cat.raceIds.length;
+              const selectedInCat = cat.raceIds.filter(id => selectedIds.includes(id)).length;
+              const allSelected = selectedInCat === totalInCat;
+              const someSelected = selectedInCat > 0 && !allSelected;
+
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    if (allSelected) {
+                      // Deselect all races of this category
+                      onChange(selectedIds.filter(id => !cat.raceIds.includes(id)));
+                    } else {
+                      // Select all races of this category
+                      const newSelected = [...selectedIds];
+                      cat.raceIds.forEach(id => {
+                        if (!newSelected.includes(id)) {
+                          newSelected.push(id);
+                        }
+                      });
+                      onChange(newSelected);
+                    }
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold transition-all border ${
+                    allSelected
+                      ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
+                      : someSelected
+                      ? "bg-primary/5 border-primary/20 text-primary hover:bg-primary/15"
+                      : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  }`}
+                >
+                  <span>{label}</span>
+                  <span className="text-[9px] font-extrabold px-1.5 py-0.25 rounded-full bg-zinc-900/5 dark:bg-zinc-100/5">
+                    {selectedInCat}/{totalInCat}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-1.5 max-h-[280px] overflow-y-auto p-1.5 border border-border/80 rounded-lg bg-muted/10">
         {filteredItems.map((item) => {
           const title = item.title || item.name;
