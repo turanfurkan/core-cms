@@ -39,7 +39,8 @@ import {
 import { toast } from 'sonner';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
-import BlockEditor from '../../components/block-editor';
+import dynamic from 'next/dynamic';
+const BlockEditor = dynamic(() => import('../../components/block-editor'), { ssr: false });
 
 function MultiSelectGrid({ items, selectedIds, onToggle, placeholder, searchPlaceholder }) {
   const [search, setSearch] = useState('');
@@ -368,81 +369,6 @@ export default function BuilderPage({ params }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/10">
-      {/* Sticky Header Bar */}
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-card/85 backdrop-blur-md px-6 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push('/content-management/posts')}
-            className="size-9 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground shrink-0 border border-border bg-card"
-          >
-            <ArrowLeft className="size-4" />
-          </Button>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5 uppercase tracking-wider">
-                <Sparkles className="size-3.5 text-primary" /> Gelişmiş Sayfa Oluşturucu
-              </span>
-              <ChevronRight className="size-3.5 text-muted-foreground/45" />
-              {status === 'published' && (
-                <Badge className="bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0 h-4.5 text-[9px] rounded">
-                  Yayınlandı
-                </Badge>
-              )}
-              {status === 'draft' && (
-                <Badge className="bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400 font-bold px-1.5 py-0 h-4.5 text-[9px] rounded">
-                  Taslak
-                </Badge>
-              )}
-              {status === 'archived' && (
-                <Badge className="bg-zinc-500/10 border-zinc-500/20 text-zinc-500 font-bold px-1.5 py-0 h-4.5 text-[9px] rounded">
-                  Arşivlendi
-                </Badge>
-              )}
-            </div>
-            <h1 className="font-extrabold text-sm text-foreground truncate mt-0.5" title={title.tr}>
-              {title.tr || 'Başlıksız Yazı'}
-            </h1>
-          </div>
-        </div>
-
-        {/* Header Actions */}
-        <div className="flex items-center gap-2.5">
-          {/* Active Lang Buttons */}
-          <div className="flex items-center border border-border rounded-lg p-0.5 bg-muted/20 shrink-0">
-            <button
-              onClick={() => setActiveLang('tr')}
-              className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all ${
-                activeLang === 'tr' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground/80 hover:text-foreground'
-              }`}
-            >
-              TR
-            </button>
-            <button
-              onClick={() => setActiveLang('en')}
-              className={`px-2.5 py-1 text-[10px] font-bold rounded-md transition-all ${
-                activeLang === 'en' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground/80 hover:text-foreground'
-              }`}
-            >
-              EN
-            </button>
-          </div>
-
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-            className="gap-1.5 h-9 rounded-lg font-bold text-xs shadow-xs"
-          >
-            {saveMutation.isPending ? (
-              <LoaderCircleIcon className="size-4 animate-spin" />
-            ) : (
-              <Save className="size-4" />
-            )}
-            Kaydet & Güncelle
-          </Button>
-        </div>
-      </header>
 
       {/* Main Builder Area: Split Columns */}
       <div className="flex-1 flex flex-col lg:flex-row items-stretch overflow-hidden">
@@ -486,33 +412,40 @@ export default function BuilderPage({ params }) {
 
         {/* Right Column: Settings Sidebar */}
         <aside className="w-full lg:w-[320px] bg-card border-t lg:border-t-0 lg:border-l border-border px-6 py-8 overflow-y-auto space-y-6 shrink-0 shadow-xs">
-          <div className="flex items-center gap-2 border-b border-border/40 pb-3">
-            <Settings className="size-4 text-muted-foreground" />
-            <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Yazı Parametreleri</h3>
+          <div className="flex items-center justify-between border-b border-border/40 pb-3 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push('/content-management/posts')}
+                className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground shrink-0 border border-border bg-card"
+              >
+                <ArrowLeft className="size-3.5" />
+              </Button>
+              <h3 className="text-[11px] font-bold text-foreground uppercase tracking-wider truncate">Yazı Ayarları</h3>
+            </div>
+            
+            <Button
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+              className="gap-1.5 h-8 px-3 rounded-lg font-bold text-xs shadow-xs shrink-0"
+            >
+              {saveMutation.isPending ? (
+                <LoaderCircleIcon className="size-3.5 animate-spin" />
+              ) : (
+                <Save className="size-3.5" />
+              )}
+              Kaydet
+            </Button>
           </div>
 
           {/* Cover Image Widget */}
           <div className="space-y-2">
-            <Label className="text-xs font-bold text-foreground">Makale Kapak Resmi</Label>
+            <Label className="text-xs font-bold text-foreground">Görsel</Label>
             <FileUpload
               value={coverImageId ? [coverImageId] : []}
               onChange={(val) => setCoverImageId(val && val.length > 0 ? val[0] : null)}
               isMultiple={false}
-            />
-          </div>
-
-          {/* Excerpt Summary */}
-          <div className="space-y-2">
-            <Label htmlFor="builder-summary" className="text-xs font-bold text-foreground">
-              Özet / Giriş Metni ({activeLang.toUpperCase()})
-            </Label>
-            <Textarea
-              id="builder-summary"
-              value={summary[activeLang] || ''}
-              onChange={(e) => setSummary((prev) => ({ ...prev, [activeLang]: e.target.value }))}
-              placeholder="Yazının giriş kısmında görünecek kısa metin..."
-              rows={4}
-              className="text-xs leading-relaxed"
             />
           </div>
 
@@ -567,17 +500,7 @@ export default function BuilderPage({ params }) {
             </div>
           </div>
 
-          {/* Convert Back to Classic Button */}
-          <div className="pt-4 border-t border-border/40">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleConvertToClassic}
-              className="w-full h-9 text-[11px] font-bold gap-1.5 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg justify-start"
-            >
-              <RefreshCw className="size-3.5" /> Klasik HTML Metnine Dönüştür
-            </Button>
-          </div>
+
         </aside>
       </div>
     </div>

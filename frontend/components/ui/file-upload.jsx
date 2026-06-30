@@ -23,11 +23,14 @@ export function FileUpload({
   const [uploading, setUploading] = useState(false);
   const [mediaCache, setMediaCache] = useState({}); // Stores loaded media details by ID
   const [loadingIds, setLoadingIds] = useState(new Set()); // Track IDs currently fetching metadata
+  const [lightboxUrl, setLightboxUrl] = useState(null);
 
   // Normalise values to arrays for consistent rendering logic
-  const valuesArray = isMultiple
-    ? Array.isArray(value) ? value : []
-    : value ? [value] : [];
+  const valuesArray = Array.isArray(value)
+    ? value.filter(val => val !== null && val !== undefined && val !== '')
+    : (value !== null && value !== undefined && value !== '')
+      ? [value]
+      : [];
 
   // Load metadata for items that are not in the cache yet
   useEffect(() => {
@@ -92,6 +95,19 @@ export function FileUpload({
     return true;
   };
 
+  const triggerChange = (newVal) => {
+    if (isMultiple) {
+      onChange(newVal);
+    } else {
+      const isArrayInput = Array.isArray(value);
+      if (isArrayInput) {
+        onChange(newVal);
+      } else {
+        onChange(newVal.length > 0 ? newVal[0] : '');
+      }
+    }
+  };
+
   const uploadFiles = async (files) => {
     const filesToUpload = isMultiple ? files : [files[0]];
     setUploading(true);
@@ -126,9 +142,9 @@ export function FileUpload({
 
         if (isMultiple) {
           currentUploadedIds = [...currentUploadedIds, mediaItem.id];
-          onChange(currentUploadedIds);
+          triggerChange(currentUploadedIds);
         } else {
-          onChange(mediaItem.id);
+          triggerChange([mediaItem.id]);
           break;
         }
 
@@ -181,9 +197,9 @@ export function FileUpload({
 
   const handleRemove = (idToRemove) => {
     if (isMultiple) {
-      onChange(valuesArray.filter((id) => id !== idToRemove));
+      triggerChange(valuesArray.filter((id) => id !== idToRemove));
     } else {
-      onChange('');
+      triggerChange([]);
     }
   };
 
@@ -268,7 +284,13 @@ export function FileUpload({
                 ) : item ? (
                   <div className="w-full flex flex-col items-center text-center grow">
                     {/* Thumbnail preview */}
-                    <div className="w-full h-16 rounded-md bg-muted/40 flex items-center justify-center overflow-hidden mb-2">
+                    <div
+                      onClick={() => imageUrl && setLightboxUrl({ url: imageUrl, type: isImage ? 'image' : isVideo ? 'video' : null })}
+                      className={cn(
+                        "w-full h-16 rounded-md bg-muted/40 flex items-center justify-center overflow-hidden mb-2 transition-all",
+                        imageUrl && (isImage || isVideo) ? "cursor-zoom-in hover:brightness-90 active:scale-95" : ""
+                      )}
+                    >
                       {isImage && imageUrl ? (
                         <img
                           src={imageUrl}
@@ -304,6 +326,38 @@ export function FileUpload({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxUrl && lightboxUrl.type && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <div className="relative max-w-[90vw] max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setLightboxUrl(null)}
+              className="absolute -top-12 right-0 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            >
+              <X className="size-6" />
+            </button>
+            {lightboxUrl.type === 'image' ? (
+              <img
+                src={lightboxUrl.url}
+                alt="Önizleme"
+                className="max-w-full max-h-[85vh] rounded-lg shadow-2xl object-contain border border-white/10"
+              />
+            ) : (
+              <video
+                src={lightboxUrl.url}
+                controls
+                autoPlay
+                className="max-w-full max-h-[85vh] rounded-lg shadow-2xl object-contain border border-white/10"
+              />
+            )}
+          </div>
         </div>
       )}
     </div>

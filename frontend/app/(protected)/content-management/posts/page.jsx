@@ -220,11 +220,6 @@ export default function PostsPage() {
     setDialogOpen(true);
   };
 
-  const handleCreateClick = () => {
-    setSelectedPost(null);
-    setDialogOpen(true);
-  };
-
   return (
     <Container className="space-y-6">
       {/* Breadcrumbs */}
@@ -254,37 +249,12 @@ export default function PostsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
             onClick={() => router.push('/content-management/posts/new/builder')}
-            className="gap-1.5 h-9 rounded-lg border-primary/20 hover:border-primary/45 text-primary bg-primary/5 hover:bg-primary/10 shadow-xs font-semibold text-xs transition-all duration-150"
+            className="gap-1.5 h-9 rounded-lg shadow-xs font-semibold text-xs transition-all duration-150"
           >
-            <Sparkles className="size-3.5 text-primary" /> Gelişmiş Yazı Ekle
-          </Button>
-          <Button onClick={handleCreateClick} className="gap-1.5 h-9 rounded-lg shadow-xs font-semibold text-xs transition-all duration-150">
             <Plus className="size-4" /> Yeni Yazı Ekle
           </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-9 w-9 p-0 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors duration-150 flex items-center justify-center">
-                <MoreVertical className="size-4 text-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-card border border-border shadow-md">
-              <DropdownMenuItem
-                onClick={() => router.push('/content-management/posts/new/builder')}
-                className="gap-2 cursor-pointer text-xs font-semibold text-primary"
-              >
-                <Sparkles className="size-3.5 text-primary" /> Gelişmiş Yazı Ekle
-              </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 cursor-pointer text-xs font-semibold">
-                <Upload className="size-3.5 text-muted-foreground" /> İçeri Aktar
-              </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 cursor-pointer text-xs font-semibold">
-                <Download className="size-3.5 text-muted-foreground" /> Dışarı Aktar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+
         </div>
       </div>
 
@@ -469,7 +439,7 @@ export default function PostsPage() {
           <p className="text-xs text-muted-foreground max-w-sm mb-4">
             Arama kriterlerinize uygun kayıtlı yazı bulunmuyor. Yeni bir yazı kaydı açarak başlayabilirsiniz.
           </p>
-          <Button onClick={handleCreateClick} className="h-9 gap-1.5 rounded-lg">
+          <Button onClick={() => router.push('/content-management/posts/new/builder')} className="h-9 gap-1.5 rounded-lg">
             <Plus className="size-4" /> Yeni Yazı Ekle
           </Button>
         </Card>

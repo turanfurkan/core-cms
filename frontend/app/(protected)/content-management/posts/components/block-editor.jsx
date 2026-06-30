@@ -3,6 +3,22 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
+  BlockNoteSchema,
+  defaultBlockSpecs,
+  filterSuggestionItems,
+  insertOrUpdateBlockForSlashMenu
+} from "@blocknote/core";
+import {
+  createReactBlockSpec,
+  useCreateBlockNote,
+  getDefaultReactSlashMenuItems,
+} from "@blocknote/react";
+import { BlockNoteView } from "@blocknote/mantine";
+import { SuggestionMenuController } from "@blocknote/react";
+
+import "@blocknote/core/fonts/inter.css";
+import "@blocknote/mantine/style.css";
+import {
   GripVertical,
   Plus,
   Trash2,
@@ -11,33 +27,11 @@ import {
   Image as ImageIcon,
   Quote,
   Layers,
-  ChevronDown,
-  ChevronUp,
   Search,
   Check
 } from 'lucide-react';
-import {
-  DndContext,
-  closestCenter,
-  useSensor,
-  useSensors,
-  PointerSensor,
-  KeyboardSensor
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/ui/file-upload';
-import RichTextEditor from '@/components/common/rich-text-editor';
 import {
   Select,
   SelectContent,
@@ -45,7 +39,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
 import { apiFetch } from '@/lib/api';
 
 // Block Selection Grid
@@ -149,483 +142,344 @@ function EntityPicker({ entityType, selectedIds, onChange }) {
 }
 
 // Sortable Item Wrapper
-function SortableBlock({ id, block, activeLang, onUpdate, onDelete }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  };
-
-  const [expanded, setExpanded] = useState(true);
-
-  const blockTypeLabels = {
-    heading: 'Başlık (Heading)',
-    text: 'Zengin Metin (Text)',
-    image: 'Görsel (Image)',
-    quote: 'Alıntı (Quote)',
-    entity_showcase: 'Vitrin / İlişkilendirme (Showcase)',
-  };
-
-  const blockTypeIcons = {
-    heading: <Heading2 className="size-4 text-blue-500" />,
-    text: <FileText className="size-4 text-emerald-500" />,
-    image: <ImageIcon className="size-4 text-purple-500" />,
-    quote: <Quote className="size-4 text-amber-500" />,
-    entity_showcase: <Layers className="size-4 text-indigo-500" />,
-  };
-
-  const handleDataChange = (field, value) => {
-    onUpdate(id, {
-      ...block.data,
-      [field]: value
-    });
-  };
-
-  const handleLocalizedChange = (field, lang, value) => {
-    const currentLocalized = block.data[field] || { tr: '', en: '' };
-    onUpdate(id, {
-      ...block.data,
-      [field]: {
-        ...currentLocalized,
-        [lang]: value
-      }
-    });
-  };
-
-  return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      className={`border border-border/80 bg-card overflow-hidden shadow-xs hover:shadow-sm transition-all ${
-        isDragging ? 'border-primary' : ''
-      }`}
-    >
-      {/* Block Header */}
-      <div className="flex items-center justify-between p-3.5 bg-muted/15 border-b border-border/50 select-none">
-        <div className="flex items-center gap-3 min-w-0">
-          <div
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing p-1 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/50"
-          >
-            <GripVertical className="size-4" />
+// Custom Block Note integration specs
+const ImageBlock = createReactBlockSpec(
+  {
+    type: "imageBlock",
+    propSchema: {
+      image_id: { default: null },
+      caption: { default: "" }
+    },
+    content: "none"
+  },
+  {
+    render: ({ block, editor }) => {
+      return (
+        <div className="space-y-2.5 max-w-xl border border-border/40 p-4 rounded-xl bg-muted/5 relative my-2 w-full" contentEditable={false}>
+          <div className="border border-border/80 rounded-xl overflow-hidden bg-muted/5">
+            <FileUpload
+              value={block.props.image_id ? [block.props.image_id] : []}
+              onChange={(val) => {
+                editor.updateBlock(block, {
+                  props: { ...block.props, image_id: val && val.length > 0 ? val[0] : null }
+                });
+              }}
+              isMultiple={false}
+              placeholder="Görsel seçin veya sürükleyin"
+            />
           </div>
-          <div className="flex items-center gap-2 min-w-0">
-            {blockTypeIcons[block.type]}
-            <span className="font-bold text-xs text-foreground truncate">
-              {blockTypeLabels[block.type] || 'Blok'}
-            </span>
-          </div>
+          <input
+            type="text"
+            value={block.props.caption || ''}
+            onChange={(e) => {
+              editor.updateBlock(block, {
+                props: { ...block.props, caption: e.target.value }
+              });
+            }}
+            placeholder="Görsel açıklaması yazın (isteğe bağlı)..."
+            className="w-full bg-transparent text-xs text-muted-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-0 border-0 p-0 italic mt-1"
+          />
         </div>
+      );
+    }
+  }
+);
 
-        <div className="flex items-center gap-1.5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => setExpanded(!expanded)}
-            className="size-7 rounded-lg text-muted-foreground hover:bg-muted"
-          >
-            {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete(id)}
-            className="size-7 rounded-lg text-destructive/80 hover:text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Block Content Inputs */}
-      {expanded && (
-        <div className="p-4 space-y-4 bg-card/30">
-          {/* HEADING BLOCK */}
-          {block.type === 'heading' && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-1.5 md:col-span-1">
-                <Label className="text-xs">Seviye (H Level)</Label>
-                <Select
-                  value={block.data.level || 'h2'}
-                  onValueChange={(val) => handleDataChange('level', val)}
-                >
-                  <SelectTrigger className="h-8.5 text-xs bg-card">
-                    <SelectValue placeholder="Seç" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="h2" className="text-xs">H2 (Büyük)</SelectItem>
-                    <SelectItem value="h3" className="text-xs">H3 (Orta)</SelectItem>
-                    <SelectItem value="h4" className="text-xs">H4 (Küçük)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5 md:col-span-3">
-                <Label className="text-xs flex items-center gap-1">
-                  Başlık Metni ({activeLang.toUpperCase()})
-                </Label>
-                <Input
-                  className="h-8.5 text-xs"
-                  value={block.data.text?.[activeLang] || ''}
-                  onChange={(e) => handleLocalizedChange('text', activeLang, e.target.value)}
-                  placeholder="Başlık metnini yazın..."
-                />
-              </div>
+const ShowcaseBlock = createReactBlockSpec(
+  {
+    type: "showcaseBlock",
+    propSchema: {
+      entity_type: { default: "race" },
+      entity_ids: { default: [] },
+      display_style: { default: "grid" },
+      show_price: { default: true }
+    },
+    content: "none"
+  },
+  {
+    render: ({ block, editor }) => {
+      return (
+        <div className="border border-border/60 rounded-xl p-4 bg-muted/5 space-y-3 max-w-2xl relative my-2 w-full" contentEditable={false}>
+          <div className="flex items-center gap-3">
+            <div className="w-32">
+              <Select
+                value={block.props.entity_type || 'race'}
+                onValueChange={(val) => {
+                  editor.updateBlock(block, {
+                    props: {
+                      ...block.props,
+                      entity_type: val,
+                      entity_ids: []
+                    }
+                  });
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs bg-card">
+                  <SelectValue placeholder="Veri Türü" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="race" className="text-xs">Yarışlar</SelectItem>
+                  <SelectItem value="category" className="text-xs">Kategoriler</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
 
-          {/* TEXT BLOCK */}
-          {block.type === 'text' && (
-            <div className="space-y-1.5">
-              <Label className="text-xs">Metin İçeriği ({activeLang.toUpperCase()})</Label>
-              <RichTextEditor
-                value={block.data.text?.[activeLang] || ''}
-                onChange={(val) => handleLocalizedChange('text', activeLang, val)}
-                placeholder="Metin veya paragraf yazın..."
+            <div className="w-32">
+              <Select
+                value={block.props.display_style || 'grid'}
+                onValueChange={(val) => {
+                  editor.updateBlock(block, {
+                    props: { ...block.props, display_style: val }
+                  });
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs bg-card">
+                  <SelectValue placeholder="Tasarım" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="grid" className="text-xs">Kutu Izgarası</SelectItem>
+                  <SelectItem value="carousel" className="text-xs">Kaydırıcı (Carousel)</SelectItem>
+                  <SelectItem value="list" className="text-xs">Liste</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2 select-none ml-auto text-xs font-semibold text-muted-foreground">
+              <span>Fiyat Gösterilsin</span>
+              <input
+                type="checkbox"
+                checked={block.props.show_price !== false}
+                onChange={(e) => {
+                  editor.updateBlock(block, {
+                    props: { ...block.props, show_price: e.target.checked }
+                  });
+                }}
+                className="size-4 text-primary bg-card border-border rounded"
               />
             </div>
-          )}
+          </div>
 
-          {/* IMAGE BLOCK */}
-          {block.type === 'image' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-1.5 md:col-span-1">
-                <Label className="text-xs">Görsel Seç</Label>
-                <FileUpload
-                  value={block.data.image_id ? [block.data.image_id] : []}
-                  onChange={(val) => handleDataChange('image_id', val && val.length > 0 ? val[0] : null)}
-                  isMultiple={false}
-                />
-              </div>
-              <div className="space-y-1.5 md:col-span-2">
-                <Label className="text-xs">Görsel Alt Yazısı / Caption ({activeLang.toUpperCase()})</Label>
-                <Textarea
-                  rows={2}
-                  className="text-xs"
-                  value={block.data.caption?.[activeLang] || ''}
-                  onChange={(e) => handleLocalizedChange('caption', activeLang, e.target.value)}
-                  placeholder="Görsel altına gelecek açıklama metni..."
-                />
-              </div>
-            </div>
-          )}
-
-          {/* QUOTE BLOCK */}
-          {block.type === 'quote' && (
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Alıntı Söz ({activeLang.toUpperCase()})</Label>
-                <Textarea
-                  rows={2}
-                  className="text-xs"
-                  value={block.data.text?.[activeLang] || ''}
-                  onChange={(e) => handleLocalizedChange('text', activeLang, e.target.value)}
-                  placeholder="Eklemek istediğiniz alıntı cümlesi..."
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Söyleyen (Yazar/Kaynak)</Label>
-                <Input
-                  className="h-8.5 text-xs"
-                  value={block.data.author || ''}
-                  onChange={(e) => handleDataChange('author', e.target.value)}
-                  placeholder="Örn: Mustafa Kemal Atatürk"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ENTITY SHOWCASE BLOCK */}
-          {block.type === 'entity_showcase' && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Veri Türü</Label>
-                  <Select
-                    value={block.data.entity_type || 'race'}
-                    onValueChange={(val) => {
-                      onUpdate(id, {
-                        ...block.data,
-                        entity_type: val,
-                        entity_ids: [] // reset chosen items
-                      });
-                    }}
-                  >
-                    <SelectTrigger className="h-8.5 text-xs bg-card">
-                      <SelectValue placeholder="Seçiniz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="race" className="text-xs">Yarışlar (Races)</SelectItem>
-                      <SelectItem value="category" className="text-xs">Kategoriler (Categories)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Tasarım Tipi</Label>
-                  <Select
-                    value={block.data.display_style || 'grid'}
-                    onValueChange={(val) => handleDataChange('display_style', val)}
-                  >
-                    <SelectTrigger className="h-8.5 text-xs bg-card">
-                      <SelectValue placeholder="Seçiniz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="grid" className="text-xs">Grid (Kutular)</SelectItem>
-                      <SelectItem value="carousel" className="text-xs">Carousel (Sürgülü)</SelectItem>
-                      <SelectItem value="list" className="text-xs">List (Liste)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5 flex items-center justify-between p-3 rounded-lg border border-border bg-card/50 mt-4.5">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] font-bold text-foreground block">Fiyat Gösterilsin mi?</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={block.data.settings?.show_price !== false}
-                    onChange={(e) => {
-                      const settings = block.data.settings || {};
-                      handleDataChange('settings', { ...settings, show_price: e.target.checked });
-                    }}
-                    className="size-4 text-primary bg-card border-border rounded"
-                  />
-                </div>
-              </div>
-
-              {/* Picker Component */}
-              <div className="space-y-1">
-                <Label className="text-xs">İlişkili Kayıtları Seçin</Label>
-                <EntityPicker
-                  entityType={block.data.entity_type || 'race'}
-                  selectedIds={block.data.entity_ids || []}
-                  onChange={(newIds) => handleDataChange('entity_ids', newIds)}
-                />
-              </div>
-            </div>
-          )}
+          <EntityPicker
+            entityType={block.props.entity_type || 'race'}
+            selectedIds={block.props.entity_ids || []}
+            onChange={(newIds) => {
+              editor.updateBlock(block, {
+                props: { ...block.props, entity_ids: newIds }
+              });
+            }}
+          />
         </div>
-      )}
-    </Card>
-  );
-}
+      );
+    }
+  }
+);
+
+const schema = BlockNoteSchema.create({
+  blockSpecs: {
+    ...defaultBlockSpecs,
+    imageBlock: ImageBlock(),
+    showcaseBlock: ShowcaseBlock()
+  }
+});
 
 // Main Component
 export default function BlockEditor({ value = [], onChange, activeLang = 'tr' }) {
-  const [showBlockMenu, setShowBlockMenu] = useState(false);
-  const [blockFilter, setBlockFilter] = useState('');
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const blockOptions = [
-    { type: 'text', label: 'Yazı (Metin)', icon: <FileText className="size-4 text-emerald-500" />, desc: 'Zengin metin paragrafları ve içerik ekleyin.' },
-    { type: 'heading', label: 'Başlık', icon: <Heading2 className="size-4 text-blue-500" />, desc: 'Büyük, orta veya küçük başlıklar ekleyin.' },
-    { type: 'image', label: 'Resim (Görsel)', icon: <ImageIcon className="size-4 text-purple-500" />, desc: 'Medya kütüphanesinden görsel yerleştirin.' },
-    { type: 'quote', label: 'Alıntı', icon: <Quote className="size-4 text-amber-500" />, desc: 'Önemli alıntılar ve söyleyen bilgisi.' },
-    { type: 'entity_showcase', label: 'Vitrin (Yarış/Kategori)', icon: <Layers className="size-4 text-indigo-500" />, desc: 'Dinamik yarış veya kategori listeleri ekleyin.' },
-  ];
+  const editor = useCreateBlockNote({
+    schema
+  });
 
-  const filteredOptions = blockOptions.filter(opt => 
-    opt.label.toLowerCase().includes(blockFilter.toLowerCase())
-  );
+  // 1. Convert DB custom blocks -> BlockNote blocks on mount
+  useEffect(() => {
+    if (!editor || isLoaded) return;
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+    const loadBlocks = async () => {
+      const documentBlocks = [];
+      for (const b of value) {
+        if (b.type === 'text') {
+          const html = b.data.text?.[activeLang] || '';
+          const parsed = editor.tryParseHTMLToBlocks(html);
+          documentBlocks.push(...parsed);
+        } else if (b.type === 'heading') {
+          const levelMap = { h2: 1, h3: 2, h4: 3 };
+          documentBlocks.push({
+            type: 'heading',
+            props: { level: levelMap[b.data.level] || 1 },
+            content: [{ type: 'text', text: b.data.text?.[activeLang] || '', styles: {} }]
+          });
+        } else if (b.type === 'quote') {
+          documentBlocks.push({
+            type: 'quote',
+            content: [{ type: 'text', text: b.data.text?.[activeLang] || '', styles: {} }]
+          });
+        } else if (b.type === 'image') {
+          documentBlocks.push({
+            type: 'imageBlock',
+            props: {
+              image_id: b.data.image_id,
+              caption: b.data.caption?.[activeLang] || ''
+            }
+          });
+        } else if (b.type === 'entity_showcase') {
+          documentBlocks.push({
+            type: 'showcaseBlock',
+            props: {
+              entity_type: b.data.entity_type || 'race',
+              entity_ids: b.data.entity_ids || [],
+              display_style: b.data.display_style || 'grid',
+              show_price: b.data.settings?.show_price !== false
+            }
+          });
+        }
+      }
 
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
+      if (documentBlocks.length === 0) {
+        documentBlocks.push({ type: 'paragraph', content: [] });
+      }
 
-    const oldIndex = value.findIndex((b) => b.id === active.id);
-    const newIndex = value.findIndex((b) => b.id === over.id);
-
-    const reordered = arrayMove(value, oldIndex, newIndex);
-    onChange(reordered);
-  };
-
-  const handleAddBlock = (type) => {
-    const newBlock = {
-      id: `block_${type}_${Date.now()}`,
-      type,
-      data: type === 'entity_showcase'
-        ? { entity_type: 'race', entity_ids: [], display_style: 'grid', settings: { show_price: true } }
-        : type === 'image'
-        ? { image_id: null, caption: { tr: '', en: '' } }
-        : type === 'heading'
-        ? { level: 'h2', text: { tr: '', en: '' } }
-        : type === 'quote'
-        ? { text: { tr: '', en: '' }, author: '' }
-        : { text: { tr: '', en: '' } }
+      editor.replaceBlocks(editor.document, documentBlocks);
+      setIsLoaded(true);
     };
 
-    onChange([...value, newBlock]);
+    loadBlocks();
+  }, [editor, value, isLoaded, activeLang]);
+
+  // 2. Convert BlockNote blocks -> DB custom blocks on editor changes
+  const handleEditorChange = async () => {
+    if (!editor || !isLoaded) return;
+
+    const docBlocks = editor.document;
+    const customBlocks = [];
+
+    for (const block of docBlocks) {
+      if (block.type === 'paragraph' || block.type === 'bulletListItem' || block.type === 'numberedListItem') {
+        const html = editor.blocksToHTMLLossy([block]);
+        customBlocks.push({
+          id: block.id,
+          type: 'text',
+          data: {
+            text: {
+              [activeLang]: html,
+              en: ''
+            }
+          }
+        });
+      } else if (block.type === 'heading') {
+        const levelMap = { 1: 'h2', 2: 'h3', 3: 'h4' };
+        const textContent = block.content.map(c => c.text).join('');
+        customBlocks.push({
+          id: block.id,
+          type: 'heading',
+          data: {
+            level: levelMap[block.props.level] || 'h2',
+            text: {
+              [activeLang]: textContent,
+              en: ''
+            }
+          }
+        });
+      } else if (block.type === 'quote') {
+        const textContent = block.content.map(c => c.text).join('');
+        customBlocks.push({
+          id: block.id,
+          type: 'quote',
+          data: {
+            text: {
+              [activeLang]: textContent,
+              en: ''
+            },
+            author: ''
+          }
+        });
+      } else if (block.type === 'imageBlock') {
+        customBlocks.push({
+          id: block.id,
+          type: 'image',
+          data: {
+            image_id: block.props.image_id,
+            caption: {
+              [activeLang]: block.props.caption || '',
+              en: ''
+            }
+          }
+        });
+      } else if (block.type === 'showcaseBlock') {
+        customBlocks.push({
+          id: block.id,
+          type: 'entity_showcase',
+          data: {
+            entity_type: block.props.entity_type,
+            entity_ids: block.props.entity_ids,
+            display_style: block.props.display_style,
+            settings: {
+              show_price: block.props.show_price !== false
+            }
+          }
+        });
+      }
+    }
+
+    const hasChanged = JSON.stringify(customBlocks) !== JSON.stringify(value);
+    if (hasChanged) {
+      onChange(customBlocks);
+    }
   };
 
-  const handleUpdateBlock = (id, updatedData) => {
-    const updated = value.map((block) => {
-      if (block.id !== id) return block;
-      return {
-        ...block,
-        data: updatedData
-      };
-    });
-    onChange(updated);
-  };
+  const getSlashMenuItems = (editorInstance) => [
+    ...getDefaultReactSlashMenuItems(editorInstance),
+    {
+      title: "Resim (Görsel)",
+      onItemClick: () => {
+        insertOrUpdateBlockForSlashMenu(editorInstance, {
+          type: "imageBlock",
+          props: { image_id: null, caption: "" }
+        });
+      },
+      aliases: ["image", "görsel", "resim", "photo"],
+      group: "Medya",
+      icon: <ImageIcon className="size-4 text-purple-500" />,
+      subtext: "Dosya kütüphanesinden görsel yerleştirin"
+    },
+    {
+      title: "Vitrin (Liste)",
+      onItemClick: () => {
+        insertOrUpdateBlockForSlashMenu(editorInstance, {
+          type: "showcaseBlock",
+          props: { entity_type: "race", entity_ids: [], display_style: "grid", show_price: true }
+        });
+      },
+      aliases: ["vitrin", "showcase", "yarış", "kategori", "liste"],
+      group: "Özel",
+      icon: <Layers className="size-4 text-indigo-500" />,
+      subtext: "Yarış veya kategori listesi ekleyin"
+    }
+  ];
 
-  const handleDeleteBlock = (id) => {
-    onChange(value.filter((b) => b.id !== id));
-  };
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center py-12 text-sm text-muted-foreground select-none">
+        Editör yükleniyor...
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 relative">
-      {/* Block List Sorting Context */}
-      {value.length === 0 ? (
-        <div className="relative py-4 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setShowBlockMenu(!showBlockMenu)}
-            className="size-8 rounded-full border border-border/80 bg-background hover:bg-muted flex items-center justify-center text-foreground shadow-xs transition-colors cursor-pointer shrink-0"
-          >
-            <Plus className="size-4" />
-          </button>
-          <span
-            onClick={() => setShowBlockMenu(!showBlockMenu)}
-            className="text-sm text-muted-foreground/60 select-none cursor-pointer hover:text-muted-foreground/80 transition-colors"
-          >
-            Başlamak için + tuşuna basarak yeni bir blok ekleyin veya TAB tuşuna basın.
-          </span>
-
-          {/* Popover Block Picker Overlay */}
-          {showBlockMenu && (
-            <div className="absolute z-50 left-0 top-12 w-72 bg-card border border-border shadow-md rounded-xl overflow-hidden py-1">
-              <div className="p-2 border-b border-border/40">
-                <Input
-                  placeholder="Filter"
-                  value={blockFilter}
-                  onChange={(e) => setBlockFilter(e.target.value)}
-                  className="h-8 text-xs bg-muted/10 border-border"
-                  autoFocus
-                />
-              </div>
-              <div className="max-h-64 overflow-y-auto divide-y divide-border/30">
-                {filteredOptions.map((opt) => (
-                  <button
-                    key={opt.type}
-                    type="button"
-                    onClick={() => {
-                      handleAddBlock(opt.type);
-                      setShowBlockMenu(false);
-                      setBlockFilter('');
-                    }}
-                    className="w-full flex items-start gap-3 px-3.5 py-2.5 hover:bg-muted text-left transition-colors cursor-pointer"
-                  >
-                    <span className="mt-0.5 p-1.5 bg-muted/50 rounded-md border border-border/40 shrink-0">{opt.icon}</span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-foreground">{opt.label}</p>
-                      <p className="text-[10px] text-muted-foreground/80 leading-normal line-clamp-2 mt-0.5">{opt.desc}</p>
-                    </div>
-                  </button>
-                ))}
-                {filteredOptions.length === 0 && (
-                  <div className="p-4 text-center text-xs text-muted-foreground">
-                    Blok bulunamadı.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext items={value.map(b => b.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-3">
-                {value.map((block) => (
-                  <SortableBlock
-                    key={block.id}
-                    id={block.id}
-                    block={block}
-                    activeLang={activeLang}
-                    onUpdate={handleUpdateBlock}
-                    onDelete={handleDeleteBlock}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-
-          {/* Add block inline button at the bottom of the list */}
-          <div className="relative pt-4 flex justify-start">
-            <button
-              type="button"
-              onClick={() => setShowBlockMenu(!showBlockMenu)}
-              className="size-8 rounded-full border border-border/80 bg-background hover:bg-muted flex items-center justify-center text-foreground shadow-xs transition-colors cursor-pointer shrink-0"
-            >
-              <Plus className="size-4" />
-            </button>
-
-            {/* Popover Block Picker Overlay */}
-            {showBlockMenu && (
-              <div className="absolute z-50 left-0 top-12 w-72 bg-card border border-border shadow-md rounded-xl overflow-hidden py-1">
-                <div className="p-2 border-b border-border/40">
-                  <Input
-                    placeholder="Filter"
-                    value={blockFilter}
-                    onChange={(e) => setBlockFilter(e.target.value)}
-                    className="h-8 text-xs bg-muted/10 border-border"
-                    autoFocus
-                  />
-                </div>
-                <div className="max-h-64 overflow-y-auto divide-y divide-border/30">
-                  {filteredOptions.map((opt) => (
-                    <button
-                      key={opt.type}
-                      type="button"
-                      onClick={() => {
-                        handleAddBlock(opt.type);
-                        setShowBlockMenu(false);
-                        setBlockFilter('');
-                      }}
-                      className="w-full flex items-start gap-3 px-3.5 py-2.5 hover:bg-muted text-left transition-colors cursor-pointer"
-                    >
-                      <span className="mt-0.5 p-1.5 bg-muted/50 rounded-md border border-border/40 shrink-0">{opt.icon}</span>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-foreground">{opt.label}</p>
-                        <p className="text-[10px] text-muted-foreground/80 leading-normal line-clamp-2 mt-0.5">{opt.desc}</p>
-                      </div>
-                    </button>
-                  ))}
-                  {filteredOptions.length === 0 && (
-                    <div className="p-4 text-center text-xs text-muted-foreground">
-                      Blok bulunamadı.
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+    <div className="space-y-4 relative w-full blocknote-editor-wrapper">
+      <BlockNoteView
+        editor={editor}
+        onChange={handleEditorChange}
+        slashMenu={false}
+        theme="light"
+        className="min-h-[300px] text-foreground bg-transparent"
+      >
+        <SuggestionMenuController
+          triggerCharacter="/"
+          getItems={async (query) =>
+            filterSuggestionItems(getSlashMenuItems(editor), query)
+          }
+        />
+      </BlockNoteView>
     </div>
   );
 }
