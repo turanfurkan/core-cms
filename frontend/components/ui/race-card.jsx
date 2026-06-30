@@ -112,13 +112,18 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
                 {isFree ? (
                   <span className="text-sm font-black text-green-600">Ücretsiz</span>
                 ) : discountedPrice && Number(discountedPrice) > 0 ? (
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-primary font-black text-[15px]">{Number(discountedPrice).toFixed(0)} TL</span>
-                    <span className="line-through text-muted-foreground/40 text-xs font-semibold">{Number(price).toFixed(0)} TL</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-red-600 dark:text-red-500 font-black text-base tracking-tight">{Number(discountedPrice).toLocaleString('tr-TR')} TL</span>
+                    <span className="line-through text-muted-foreground/45 text-xs font-bold">{Number(price).toLocaleString('tr-TR')} TL</span>
+                    {price && Number(price) > Number(discountedPrice) && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-red-600/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 text-[10px] font-black tracking-wide select-none">
+                        -%{Math.round(((Number(price) - Number(discountedPrice)) / Number(price)) * 100)}
+                      </span>
+                    )}
                   </div>
                 ) : (
-                  <span className="text-zinc-900 dark:text-zinc-50 font-black text-[15px]">
-                    {price ? `${Number(price).toFixed(0)} TL` : 'Ücretsiz'}
+                  <span className="text-zinc-900 dark:text-zinc-50 font-black text-base tracking-tight">
+                    {price ? `${Number(price).toLocaleString('tr-TR')} TL` : 'Ücretsiz'}
                   </span>
                 )}
               </div>
