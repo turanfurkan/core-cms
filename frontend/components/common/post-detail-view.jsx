@@ -245,7 +245,7 @@ export default function PostDetailView({
 
       {/* CTA Action Banner */}
       <div className="pt-12 border-t border-border mt-16">
-        <CtaSection fullWidth={previewSize === 'desktop'} variant="primary" />
+        <CtaSection fullWidth={previewSize === 'desktop'} variant="primary" previewSize={previewSize} />
       </div>
 
       {/* Post Suggestions / Related Posts */}

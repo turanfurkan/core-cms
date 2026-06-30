@@ -18,12 +18,56 @@ export function CtaSection({
   noContainer = false,
   fullWidth = false,
   variant = "default", // "default" or "primary"
+  previewSize = "desktop",
   className
 }) {
   const isPrimary = variant === 'primary';
+  const isMobileSimulated = previewSize === 'mobile';
+  const isTabletSimulated = previewSize === 'tablet';
+
+  const titleClass = cn(
+    "font-black tracking-tight leading-tight mx-auto",
+    isMobileSimulated 
+      ? "text-2xl max-w-[280px]" 
+      : isTabletSimulated 
+      ? "text-3xl max-w-[480px]" 
+      : "text-3xl sm:text-4xl md:text-5xl max-w-3xl",
+    isPrimary ? "text-white" : "text-zinc-900 dark:text-zinc-50"
+  );
+
+  const descClass = cn(
+    "leading-relaxed max-w-2xl mx-auto",
+    isMobileSimulated 
+      ? "text-xs" 
+      : isTabletSimulated 
+      ? "text-sm" 
+      : "text-sm sm:text-base md:text-lg",
+    isPrimary ? "text-white/85" : "text-muted-foreground"
+  );
+
+  const containerPadding = cn(
+    "relative w-full text-center space-y-6 md:space-y-8",
+    isMobileSimulated 
+      ? "py-8 px-4" 
+      : isTabletSimulated 
+      ? "py-10 px-6" 
+      : "py-8 md:py-16 lg:py-20 px-4 md:px-6"
+  );
+
+  const buttonRowClass = cn(
+    "items-center justify-center pt-4",
+    isMobileSimulated 
+      ? "flex flex-col gap-3 w-full" 
+      : "flex flex-col sm:flex-row gap-4"
+  );
+
+  const buttonClass = cn(
+    "font-bold",
+    isMobileSimulated ? "w-full" : "w-full sm:w-auto"
+  );
 
   const innerContent = (
-    <div className="relative w-full text-center space-y-6 md:space-y-8 py-8 md:py-16 lg:py-20 px-4 md:px-6">
+    <div className={containerPadding}>
       {/* Decorative Top Sparkle */}
       <div 
         className={cn(
@@ -38,33 +82,23 @@ export function CtaSection({
       </div>
 
       {/* Headline & Description */}
-      <div className="max-w-3xl mx-auto space-y-4">
-        <h2 
-          className={cn(
-            "text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-none",
-            isPrimary ? "text-white" : "text-zinc-900 dark:text-zinc-50"
-          )}
-        >
+      <div className="mx-auto space-y-4">
+        <h2 className={titleClass}>
           {title}
         </h2>
-        <p 
-          className={cn(
-            "text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl mx-auto",
-            isPrimary ? "text-white/85" : "text-muted-foreground"
-          )}
-        >
+        <p className={descClass}>
           {description}
         </p>
       </div>
 
       {/* Buttons Row */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+      <div className={buttonRowClass}>
         {primaryBtnText && (
           <Button
             asChild
             size="lg"
             variant={isPrimary ? "secondary" : "default"}
-            className="w-full sm:w-auto font-bold"
+            className={buttonClass}
           >
             <Link href={primaryBtnLink}>
               {primaryBtnText}
@@ -78,7 +112,7 @@ export function CtaSection({
             asChild
             size="lg"
             variant="outline"
-            className="w-full sm:w-auto font-bold"
+            className={buttonClass}
           >
             <Link href={secondaryBtnLink}>
               {secondaryBtnText}
