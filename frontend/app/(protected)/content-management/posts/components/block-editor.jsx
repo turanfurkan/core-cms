@@ -60,6 +60,7 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from '@/components/ui/carousel';
+import { RaceCard } from '@/components/ui/race-card';
 import { apiFetch } from '@/lib/api';
 
 // Block Selection Grid
@@ -207,57 +208,12 @@ const ImageBlock = createReactBlockSpec(
 );
 
 function PreviewCard({ item, type, showPrice = true }) {
+  if (type === 'race') {
+    return <RaceCard item={item} showPrice={showPrice} previewOnly={true} />;
+  }
+
   const title = item.title || item.name;
   const label = typeof title === 'object' ? (title.tr || title.en || '') : (title || '');
-  
-  // Try resolving cover image URL
-  let coverUrl = '/media/previews/placeholder.png';
-  if (item.cover_image && typeof item.cover_image === 'object') {
-    coverUrl = item.cover_image.url || coverUrl;
-  } else if (item.image && typeof item.image === 'object') {
-    coverUrl = item.image.url || coverUrl;
-  }
-  const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8000';
-  const fullCoverUrl = coverUrl.startsWith('http') || coverUrl.startsWith('/') ? coverUrl : `${backendUrl}${coverUrl}`;
-  const resolvedCoverUrl = fullCoverUrl.startsWith('/') && !fullCoverUrl.startsWith('//') ? `${backendUrl}${fullCoverUrl}` : fullCoverUrl;
-
-  if (type === 'race') {
-    const date = item.start_date
-      ? new Date(item.start_date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
-      : null;
-    const isFree = item.is_free;
-    const price = item.price;
-
-    return (
-      <div className="group block border border-border bg-card rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-border/60 transition-all duration-200 w-full select-none">
-        <div className="aspect-video w-full relative overflow-hidden bg-muted/20">
-          <img
-            src={resolvedCoverUrl}
-            alt={label}
-            className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-200"
-            onError={(e) => {
-              e.target.src = '/media/previews/placeholder.png';
-            }}
-          />
-          {showPrice && (
-            <div className="absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-zinc-950/85 backdrop-blur-xs text-white">
-              {isFree ? 'Ücretsiz' : `${price} TL`}
-            </div>
-          )}
-        </div>
-        <div className="p-4 space-y-1.5 text-left">
-          <h4 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-            {label}
-          </h4>
-          {date && (
-            <p className="text-[10px] text-muted-foreground font-bold flex items-center gap-1.5">
-              <span>📅</span> {date}
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   // category card
   return (

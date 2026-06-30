@@ -8,6 +8,7 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from '@/components/ui/carousel';
+import { RaceCard } from '@/components/ui/race-card';
 
 // Localized helper
 function getLocalized(val, locale = 'tr') {
@@ -18,53 +19,11 @@ function getLocalized(val, locale = 'tr') {
 }
 
 function EntityCard({ item, type, showPrice = true, locale = 'tr' }) {
-  const title = getLocalized(item.title || item.name || '', locale);
-  
-  // Try resolving cover image URL
-  let coverUrl = '/media/previews/placeholder.png';
-  if (item.cover_image && typeof item.cover_image === 'object') {
-    coverUrl = item.cover_image.url || coverUrl;
-  }
-
   if (type === 'race') {
-    const date = item.start_date
-      ? new Date(item.start_date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
-      : null;
-    const isFree = item.is_free;
-    const price = item.price;
-    const detailUrl = `/races/${getLocalized(item.slug, locale)}`;
-
-    return (
-      <Link href={detailUrl} className="group block border border-border bg-card rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-border/60 transition-all duration-200">
-        <div className="aspect-video w-full relative overflow-hidden bg-muted/20">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={coverUrl}
-            alt={title}
-            className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-200"
-            onError={(e) => {
-              e.target.src = '/media/previews/placeholder.png';
-            }}
-          />
-          {showPrice && (
-            <div className="absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-zinc-950/85 backdrop-blur-xs text-white">
-              {isFree ? 'Ücretsiz' : `${price} TL`}
-            </div>
-          )}
-        </div>
-        <div className="p-4 space-y-1.5">
-          <h4 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-            {title}
-          </h4>
-          {date && (
-            <p className="text-[10px] text-muted-foreground font-bold flex items-center gap-1.5">
-              <span>📅</span> {date}
-            </p>
-          )}
-        </div>
-      </Link>
-    );
+    return <RaceCard item={item} showPrice={showPrice} previewOnly={false} locale={locale} />;
   }
+
+  const title = getLocalized(item.title || item.name || '', locale);
 
   // category card
   const detailUrl = `/blog?category_id=${item.id}`;
