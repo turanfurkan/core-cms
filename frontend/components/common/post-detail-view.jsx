@@ -128,12 +128,12 @@ export default function PostDetailView({
   const attachments = mediaFields.filter(m => m !== featuredImage && m.key !== 'cover_image');
 
   return (
-    <article className="space-y-6">
+    <article className="space-y-4">
       <header className="space-y-3">
         <h1 className={titleClass}>
           {title}
         </h1>
-        <div className="border-b border-border pb-4 text-xs sm:text-sm text-muted-foreground font-medium">
+        <div className="border-b border-border pb-2 text-xs sm:text-sm text-muted-foreground font-medium">
           {publishDate && (
             <time dateTime={entry.published_at}>{publishDate}</time>
           )}
@@ -141,7 +141,7 @@ export default function PostDetailView({
       </header>
 
       {/* Content body with HTML/Rich-Text compatibility or Blocks */}
-      <div className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-base md:text-lg pt-4">
+      <div className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-base md:text-lg !mt-2 pt-0 [&_p:first-of-type]:mt-0">
         {content ? (
           Array.isArray(content) ? (
             <PostBlockRenderer blocks={content} locale={locale} previewSize={previewSize} />
