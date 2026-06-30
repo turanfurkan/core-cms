@@ -286,8 +286,23 @@ const schema = BlockNoteSchema.create({
 export default function BlockEditor({ value = [], onChange, activeLang = 'tr' }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiFetch('/api/admin/media/files', {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      throw new Error('Dosya yüklenemedi');
+    }
+    const json = await res.json();
+    return json.data.url;
+  };
+
   const editor = useCreateBlockNote({
-    schema
+    schema,
+    uploadFile
   });
 
   // 1. Convert DB custom blocks -> BlockNote blocks on mount
@@ -353,7 +368,15 @@ export default function BlockEditor({ value = [], onChange, activeLang = 'tr' })
     const customBlocks = [];
 
     for (const block of docBlocks) {
-      if (block.type === 'paragraph' || block.type === 'bulletListItem' || block.type === 'numberedListItem') {
+      if (
+        block.type === 'paragraph' ||
+        block.type === 'bulletListItem' ||
+        block.type === 'numberedListItem' ||
+        block.type === 'image' ||
+        block.type === 'video' ||
+        block.type === 'file' ||
+        block.type === 'audio'
+      ) {
         const html = editor.blocksToHTMLLossy([block]);
         customBlocks.push({
           id: block.id,
