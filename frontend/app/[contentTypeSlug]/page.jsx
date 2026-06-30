@@ -7,6 +7,7 @@ import { CardPost, CardProject, CardWork } from '@/partials/cards';
 import PublicHeader from '@/components/common/public-header';
 import PublicFooter from '@/components/common/public-footer';
 import MaintenanceScreen from '@/components/common/maintenance-screen';
+import PostListSection from '@/components/common/post-list-section';
 
 export const dynamic = 'force-dynamic';
 
@@ -216,6 +217,38 @@ export default async function Page({ params, searchParams }) {
               </Container>
             </main>
           )}
+        </div>
+
+        {/* Dynamic Footer */}
+        <PublicFooter settings={settings} menuItems={footerMenuItems} />
+      </div>
+    );
+  }
+
+  // --- RENDER HIGH-END POST LISTING SECTION FOR BLOG/POSTS/NEWS ---
+  const isPostListing = ['posts', 'blog', 'news'].includes(contentTypeSlug);
+  if (isPostListing) {
+    return (
+      <div className="w-full min-h-screen bg-background text-foreground flex flex-col justify-between">
+        <div>
+          {/* Dynamic Header */}
+          <PublicHeader settings={settings} menuItems={headerMenuItems} />
+
+          {/* Content Section */}
+          <main className="py-12">
+            <Container>
+              <PostListSection
+                initialEntries={entries}
+                contentTypeSlug={contentTypeSlug}
+                locale="tr"
+                settings={settings}
+                meta={meta}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                hasPages={hasPages}
+              />
+            </Container>
+          </main>
         </div>
 
         {/* Dynamic Footer */}
