@@ -444,7 +444,7 @@ export default function PublicHeader({ settings, menuItems = null, locale: passe
       `}} />
       {/* Advanced Top Bar */}
       {showTopBar && (
-        <div className="bg-[#002254] dark:bg-slate-950 border-b border-white/10 dark:border-border/60 py-3 text-sm select-none shadow-sm transition-colors duration-200">
+        <div className="bg-[#03112b] dark:bg-slate-950 border-b border-white/10 dark:border-border/60 py-3 text-sm select-none shadow-sm transition-colors duration-200">
           <Container className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center w-full">
             {/* Left: Contact info */}
             <div className="flex items-center justify-center md:justify-start gap-5 text-white dark:text-slate-300">
