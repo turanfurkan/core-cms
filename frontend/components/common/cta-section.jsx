@@ -111,8 +111,13 @@ export function CtaSection({
           <Button
             asChild
             size="lg"
-            variant="outline"
-            className={buttonClass}
+            variant={isPrimary ? "ghost" : "outline"}
+            className={cn(
+              buttonClass,
+              isPrimary 
+                ? "border border-white/30 text-white hover:bg-white/10 hover:border-white/50 hover:text-white transition-all duration-200" 
+                : ""
+            )}
           >
             <Link href={secondaryBtnLink}>
               {secondaryBtnText}

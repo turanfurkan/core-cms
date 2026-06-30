@@ -244,13 +244,13 @@ export default function PostDetailView({
       )}
 
       {/* CTA Action Banner */}
-      <div className="pt-12 border-t border-border mt-16">
+      <div className="pt-6 sm:pt-10 border-t border-border mt-8 sm:mt-12">
         <CtaSection fullWidth={true} variant="primary" previewSize={previewSize} />
       </div>
 
       {/* Post Suggestions / Related Posts */}
       {suggestedEntries && suggestedEntries.length > 0 && (
-        <div className="pt-12 border-t border-border mt-16 space-y-6">
+        <div className="pt-6 sm:pt-10 border-t border-border mt-8 sm:mt-12 space-y-6">
           <h3 className="text-2xl font-bold tracking-tight">Diğer Yazılar</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {suggestedEntries.map(s => (
