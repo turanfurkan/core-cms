@@ -179,6 +179,25 @@ export default function BuilderPage({ params }) {
     },
   });
 
+  // Fetch real posts list for related posts suggestions preview
+  const { data: previewPostsList } = useQuery({
+    queryKey: ['admin-posts-list-preview'],
+    queryFn: async () => {
+      const res = await apiFetch('/api/admin/posts');
+      if (!res.ok) throw new Error('Failed to fetch posts');
+      const json = await res.json();
+      return json.data || [];
+    }
+  });
+
+  // Exclude current post and select up to 3 posts
+  const previewSuggestedPosts = useMemo(() => {
+    if (!previewPostsList) return [];
+    return previewPostsList
+      .filter(p => String(p.id) !== String(id))
+      .slice(0, 3);
+  }, [previewPostsList, id]);
+
   // Fetch specific post details (disabled in create mode)
   const { data: postPayload, isLoading: isLoadingPost, isError } = useQuery({
     queryKey: ['admin-post', id],
@@ -576,44 +595,7 @@ export default function BuilderPage({ params }) {
                   }
                 }}
                 locale={activeLang}
-                suggestedEntries={[
-                  {
-                    id: 'mock-1',
-                    title: { tr: 'Sürdürülebilir Spor Etkinlikleri ve Doğa Dostu Organizasyonlar', en: 'Sustainable Sports Events' },
-                    slug: '#',
-                    published_at: new Date().toISOString(),
-                    content_type: { slug: 'post' },
-                    data: {
-                      title: { tr: 'Sürdürülebilir Spor Etkinlikleri ve Doğa Dostu Organizasyonlar', en: 'Sustainable Sports Events' },
-                      summary: { tr: 'Gelecek nesiller için çevre dostu, atıksız ve karbon nötr yarış organizasyonları düzenlemenin püf noktalarını inceliyoruz.', en: 'Exploring eco-friendly practices in races.' },
-                      cover_image: { url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80' }
-                    }
-                  },
-                  {
-                    id: 'mock-2',
-                    title: { tr: 'Sporcularda Beslenme: Yarış Öncesi ve Sonrası Karbonhidrat Yükleme', en: 'Nutrition in Athletes' },
-                    slug: '#',
-                    published_at: new Date().toISOString(),
-                    content_type: { slug: 'post' },
-                    data: {
-                      title: { tr: 'Sporcularda Beslenme: Yarış Öncesi ve Sonrası Karbonhidrat Yükleme', en: 'Nutrition in Athletes' },
-                      summary: { tr: 'Uzun mesafe koşu ve yüzme yarışlarından önce performansınızı maksimize edecek beslenme stratejileri ve zamanlama rehberi.', en: 'Nutrition timing guide for performance.' },
-                      cover_image: { url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80' }
-                    }
-                  },
-                  {
-                    id: 'mock-3',
-                    title: { tr: 'Açık Su Yüzücülerinin Bilmesi Gereken 5 Güvenlik Kuralı', en: '5 Open Water Safety Rules' },
-                    slug: '#',
-                    published_at: new Date().toISOString(),
-                    content_type: { slug: 'post' },
-                    data: {
-                      title: { tr: 'Açık Su Yüzücülerinin Bilmesi Gereken 5 Güvenlik Kuralı', en: '5 Open Water Safety Rules' },
-                      summary: { tr: 'Akıntılar, hipotermi riskleri ve güvenlik ekipmanları hakkında açık su antrenmanlarında hayat kurtaracak temel bilgiler.', en: 'Essential safety guidelines for open water.' },
-                      cover_image: { url: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80' }
-                    }
-                  }
-                ]}
+                suggestedEntries={previewSuggestedPosts}
               />
             </Container>
           </div>

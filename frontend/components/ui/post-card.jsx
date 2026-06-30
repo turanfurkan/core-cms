@@ -56,7 +56,8 @@ export function PostCard({ item, previewOnly = false, locale = 'tr' }) {
   // Categories resolution
   const categoriesList = item.categories || data.categories || [];
 
-  const detailUrl = `/${item.content_type?.slug || 'post'}/${item.slug}`;
+  const resolvedSlug = getLocalized(data.slug || item.slug || '', locale);
+  const detailUrl = `/${item.content_type?.slug || 'posts'}/${resolvedSlug}`;
   const RootComponent = previewOnly ? 'div' : Link;
 
   return (
