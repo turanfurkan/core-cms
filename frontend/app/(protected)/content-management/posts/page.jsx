@@ -216,8 +216,7 @@ export default function PostsPage() {
   };
 
   const handleEditClick = (post) => {
-    setSelectedPost(post);
-    setDialogOpen(true);
+    router.push(`/content-management/posts/${post.id}/builder`);
   };
 
   return (
@@ -560,19 +559,6 @@ export default function PostsPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => router.push(`/content-management/posts/${item.id}/builder`)}
-                              className="size-8 rounded-lg hover:bg-muted text-primary hover:text-primary-active inline-flex items-center justify-center transition-colors duration-150"
-                            >
-                              <Sparkles className="size-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Gelişmiş Blok Editörü</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
                               onClick={() => handleEditClick(item)}
                               className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground inline-flex items-center justify-center transition-colors duration-150"
                             >
@@ -592,13 +578,6 @@ export default function PostsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-40 bg-card border border-border shadow-md">
-                            <DropdownMenuItem
-                              onClick={() => router.push(`/content-management/posts/${item.id}/builder`)}
-                              className="font-semibold text-xs gap-2 cursor-pointer text-primary"
-                            >
-                              <Sparkles className="size-3.5" />
-                              Gelişmiş Editör
-                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleDeleteClick(item.id)}
                               className="text-destructive font-semibold text-xs gap-2 cursor-pointer"
