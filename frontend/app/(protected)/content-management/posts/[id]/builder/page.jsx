@@ -261,11 +261,7 @@ export default function BuilderPage({ params }) {
         { position: 'top-center' }
       );
 
-      if (isCreateMode && newPost?.id) {
-        router.replace(`/content-management/posts/${newPost.id}/builder`);
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['admin-post', id] });
-      }
+      router.push('/content-management/posts');
     },
     onError: (err) => {
       toast.error(err.message || 'Kaydedilirken bir hata oluştu.');
