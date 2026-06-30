@@ -109,7 +109,7 @@ export default function PostDetailView({ entry, locale = 'tr', suggestedEntries 
   return (
     <article className="space-y-6">
       <header className="space-y-4">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-foreground">
+        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-extrabold tracking-tight leading-tight text-foreground">
           {title}
         </h1>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
