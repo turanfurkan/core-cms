@@ -62,6 +62,7 @@ import {
 } from '@/components/ui/carousel';
 import { RaceCard } from '@/components/ui/race-card';
 import { apiFetch } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 // Block Selection Grid
 function EntityPicker({ entityType, selectedIds, onChange }) {
