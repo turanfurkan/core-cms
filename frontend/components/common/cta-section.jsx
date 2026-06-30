@@ -132,9 +132,13 @@ export function CtaSection({
 
   // Outer block styles
   const outerStyles = cn(
-    "relative overflow-hidden w-full",
+    "relative overflow-hidden",
     isPrimary ? "bg-primary text-primary-foreground" : "border border-border/80 bg-gradient-to-br from-card/90 to-card/40 rounded-3xl",
-    fullWidth ? "w-screen left-1/2 right-1/2 -translate-x-1/2 rounded-none border-x-0" : "",
+    fullWidth 
+      ? (isMobileSimulated || isTabletSimulated)
+        ? "-mx-4 sm:-mx-6 rounded-none border-x-0 w-auto"
+        : "w-screen left-1/2 right-1/2 -translate-x-1/2 rounded-none border-x-0"
+      : "w-full",
     backgroundImage ? "before:absolute before:inset-0 before:bg-zinc-950/80 before:-z-10" : "",
     className
   );
