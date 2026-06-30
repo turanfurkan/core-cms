@@ -254,7 +254,7 @@ export function FileUpload({
 
       {/* Grid of uploaded / loaded file previews */}
       {valuesArray.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div className={cn("grid gap-3", isMultiple ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4" : "grid-cols-1 w-full")}>
           {valuesArray.map((id) => {
             const item = mediaCache[id];
             const isLoading = loadingIds.has(id);
@@ -266,7 +266,10 @@ export function FileUpload({
             return (
               <div
                 key={id}
-                className="relative border border-border rounded-lg p-2 flex flex-col items-center justify-between bg-muted/5 group min-h-[120px]"
+                className={cn(
+                  "relative border border-border rounded-lg p-2 flex flex-col items-center justify-between bg-muted/5 group",
+                  isMultiple ? "min-h-[120px]" : "w-full"
+                )}
               >
                 {/* Remove button */}
                 <button
@@ -287,7 +290,8 @@ export function FileUpload({
                     <div
                       onClick={() => imageUrl && setLightboxUrl({ url: imageUrl, type: isImage ? 'image' : isVideo ? 'video' : null })}
                       className={cn(
-                        "w-full h-16 rounded-md bg-muted/40 flex items-center justify-center overflow-hidden mb-2 transition-all",
+                        "w-full rounded-md bg-muted/40 flex items-center justify-center overflow-hidden mb-2 transition-all",
+                        isMultiple ? "h-16" : "h-auto max-h-[220px] aspect-video",
                         imageUrl && (isImage || isVideo) ? "cursor-zoom-in hover:brightness-90 active:scale-95" : ""
                       )}
                     >
@@ -295,12 +299,12 @@ export function FileUpload({
                         <img
                           src={imageUrl}
                           alt={item.name || 'Görsel'}
-                          className="w-full h-full object-cover"
+                          className={cn("w-full h-full", isMultiple ? "object-cover" : "object-contain max-h-[200px]")}
                         />
                       ) : isVideo && imageUrl ? (
                         <video
                           src={imageUrl}
-                          className="w-full h-full object-cover"
+                          className={cn("w-full h-full", isMultiple ? "object-cover" : "object-contain max-h-[200px]")}
                           muted
                           playsInline
                         />
