@@ -9,6 +9,7 @@ import {
   CarouselNext,
 } from '@/components/ui/carousel';
 import { RaceCard } from '@/components/ui/race-card';
+import { cn } from '@/lib/utils';
 
 // Localized helper
 function getLocalized(val, locale = 'tr') {
@@ -129,9 +130,29 @@ export default function PostBlockRenderer({ blocks = [], locale = 'tr' }) {
             const resolved = block.resolved_data || [];
             const entityType = block.data.entity_type || 'race';
             const displayStyle = block.data.display_style || 'grid';
+            const cols = block.data.columns || 4;
             const showPrice = block.data.settings?.show_price !== false;
 
             if (resolved.length === 0) return null;
+
+            const gridColMap = {
+              1: "grid-cols-1",
+              2: "grid-cols-1 sm:grid-cols-2",
+              3: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3",
+              4: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+              5: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+              6: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+            };
+            const basisMap = {
+              1: "basis-full",
+              2: "basis-full sm:basis-1/2",
+              3: "basis-full sm:basis-1/2 md:basis-1/3",
+              4: "basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4",
+              5: "basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5",
+              6: "basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6"
+            };
+            const gridClass = gridColMap[cols] || gridColMap[4];
+            const basisClass = basisMap[cols] || basisMap[4];
 
             return (
               <div key={key} className="my-8 not-prose space-y-4">
@@ -140,7 +161,7 @@ export default function PostBlockRenderer({ blocks = [], locale = 'tr' }) {
                     <Carousel className="w-full">
                       <CarouselContent className="-ml-4">
                         {resolved.map((item) => (
-                          <CarouselItem className="pl-4 basis-full sm:basis-1/2 md:basis-1/3" key={item.id}>
+                          <CarouselItem className={cn("pl-4", basisClass)} key={item.id}>
                             <EntityCard item={item} type={entityType} showPrice={showPrice} locale={locale} />
                           </CarouselItem>
                         ))}
@@ -150,7 +171,7 @@ export default function PostBlockRenderer({ blocks = [], locale = 'tr' }) {
                     </Carousel>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  <div className={cn("grid gap-6", gridClass)}>
                     {resolved.map((item) => (
                       <EntityCard key={item.id} item={item} type={entityType} showPrice={showPrice} locale={locale} />
                     ))}

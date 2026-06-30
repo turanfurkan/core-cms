@@ -272,6 +272,7 @@ const ShowcaseBlock = createReactBlockSpec(
       entity_type: { default: "race" },
       entity_ids: { default: [] },
       display_style: { default: "grid" },
+      columns: { default: 4 },
       show_price: { default: true }
     },
     content: "none"
@@ -344,29 +345,55 @@ const ShowcaseBlock = createReactBlockSpec(
               </div>
 
               {/* Layout Content Renderer */}
-              {block.props.display_style === 'grid' && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full pt-6 animate-in fade-in-50 duration-200">
-                  {selectedItems.map(item => (
-                    <PreviewCard key={item.id} item={item} type={block.props.entity_type} showPrice={block.props.show_price} />
-                  ))}
-                </div>
-              )}
+              {(() => {
+                const cols = block.props.columns || 4;
+                const gridColMap = {
+                  1: "grid-cols-1",
+                  2: "grid-cols-1 sm:grid-cols-2",
+                  3: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3",
+                  4: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4",
+                  5: "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+                  6: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+                };
+                const basisMap = {
+                  1: "basis-full",
+                  2: "basis-full sm:basis-1/2",
+                  3: "basis-full sm:basis-1/2 md:basis-1/3",
+                  4: "basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4",
+                  5: "basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5",
+                  6: "basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6"
+                };
+                const gridClass = gridColMap[cols] || gridColMap[4];
+                const basisClass = basisMap[cols] || basisMap[4];
 
-              {block.props.display_style === 'carousel' && (
-                <div className="relative px-8 w-full not-prose pt-6 animate-in fade-in-50 duration-200" contentEditable={false}>
-                  <Carousel className="w-full">
-                    <CarouselContent className="-ml-4">
-                      {selectedItems.map((item) => (
-                        <CarouselItem className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4" key={item.id}>
-                          <PreviewCard item={item} type={block.props.entity_type} showPrice={block.props.show_price} />
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="-left-4 bg-card/80 border-border shadow-xs cursor-pointer z-10" />
-                    <CarouselNext className="-right-4 bg-card/80 border-border shadow-xs cursor-pointer z-10" />
-                  </Carousel>
-                </div>
-              )}
+                return (
+                  <>
+                    {block.props.display_style === 'grid' && (
+                      <div className={cn("grid gap-3 w-full pt-6 animate-in fade-in-50 duration-200", gridClass)}>
+                        {selectedItems.map(item => (
+                          <PreviewCard key={item.id} item={item} type={block.props.entity_type} showPrice={block.props.show_price} />
+                        ))}
+                      </div>
+                    )}
+
+                    {block.props.display_style === 'carousel' && (
+                      <div className="relative px-8 w-full not-prose pt-6 animate-in fade-in-50 duration-200" contentEditable={false}>
+                        <Carousel className="w-full">
+                          <CarouselContent className="-ml-4">
+                            {selectedItems.map((item) => (
+                              <CarouselItem className={cn("pl-4", basisClass)} key={item.id}>
+                                <PreviewCard item={item} type={block.props.entity_type} showPrice={block.props.show_price} />
+                              </CarouselItem>
+                            ))}
+                          </CarouselContent>
+                          <CarouselPrevious className="-left-4 bg-card/80 border-border shadow-xs cursor-pointer z-10" />
+                          <CarouselNext className="-right-4 bg-card/80 border-border shadow-xs cursor-pointer z-10" />
+                        </Carousel>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
               {block.props.display_style === 'list' && (
                 <div className="divide-y divide-border/60 w-full border border-border/60 rounded-xl bg-card overflow-hidden shadow-xs pt-6 animate-in fade-in-50 duration-200">
@@ -439,6 +466,35 @@ const ShowcaseBlock = createReactBlockSpec(
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Columns Selection */}
+                {block.props.display_style !== 'list' && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold text-foreground uppercase tracking-wider text-muted-foreground/80">
+                      Yan Yana Görünecek Kart Sayısı
+                    </Label>
+                    <Select
+                      value={String(block.props.columns || 4)}
+                      onValueChange={(val) => {
+                        editor.updateBlock(block, {
+                          props: { ...block.props, columns: Number(val) }
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="h-9 bg-card text-xs font-semibold">
+                        <SelectValue placeholder="Seçiniz" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1" className="text-xs font-medium">1 Kart</SelectItem>
+                        <SelectItem value="2" className="text-xs font-medium">2 Kart</SelectItem>
+                        <SelectItem value="3" className="text-xs font-medium">3 Kart</SelectItem>
+                        <SelectItem value="4" className="text-xs font-medium">4 Kart (Varsayılan)</SelectItem>
+                        <SelectItem value="5" className="text-xs font-medium">5 Kart</SelectItem>
+                        <SelectItem value="6" className="text-xs font-medium">6 Kart</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* 3. Show Price Option (Conditional) */}
                 {block.props.entity_type === 'race' && (
@@ -564,6 +620,7 @@ export default function BlockEditor({ value = [], onChange, activeLang = 'tr' })
               entity_type: b.data.entity_type || 'race',
               entity_ids: b.data.entity_ids || [],
               display_style: b.data.display_style || 'grid',
+              columns: b.data.columns || 4,
               show_price: b.data.settings?.show_price !== false
             }
           });
@@ -656,6 +713,7 @@ export default function BlockEditor({ value = [], onChange, activeLang = 'tr' })
             entity_type: block.props.entity_type,
             entity_ids: block.props.entity_ids,
             display_style: block.props.display_style,
+            columns: Number(block.props.columns) || 4,
             settings: {
               show_price: block.props.show_price !== false
             }
