@@ -841,6 +841,16 @@ export default function BlockEditor({ value = [], onChange, activeLang = 'tr' })
         .blocknote-editor-wrapper .bn-editor {
           padding-inline: 0px !important;
         }
+        /* Make placeholders permanently visible on empty blocks even when blurred */
+        .blocknote-editor-wrapper [data-placeholder]::before,
+        .blocknote-editor-wrapper .bn-inline-content.is-empty::before,
+        .blocknote-editor-wrapper .bn-block-content[data-placeholder]::before {
+          content: attr(data-placeholder) !important;
+          display: inline-block !important;
+          opacity: 0.35 !important;
+          font-style: italic !important;
+          pointer-events: none !important;
+        }
       `}</style>
       <BlockNoteView
         editor={editor}
