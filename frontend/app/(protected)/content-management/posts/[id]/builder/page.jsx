@@ -261,7 +261,9 @@ export default function BuilderPage({ params }) {
         { position: 'top-center' }
       );
 
-      router.push('/content-management/posts');
+      setTimeout(() => {
+        router.push('/content-management/posts');
+      }, 1500);
     },
     onError: (err) => {
       toast.error(err.message || 'Kaydedilirken bir hata oluştu.');
