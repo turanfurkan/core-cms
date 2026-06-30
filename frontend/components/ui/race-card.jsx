@@ -65,12 +65,6 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
       <div className="p-4 flex-1 flex flex-col justify-between gap-4">
         <div className="space-y-2">
           {/* Distance Tag */}
-          {item.distance && (
-            <span className="inline-flex px-2 py-0.5 rounded-md text-[9px] font-extrabold bg-muted text-muted-foreground uppercase tracking-wider max-w-max">
-              🏃 {item.distance}
-            </span>
-          )}
-
           {/* Title */}
           <h4 className="font-extrabold text-sm text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors text-left pt-0.5">
             {title}
