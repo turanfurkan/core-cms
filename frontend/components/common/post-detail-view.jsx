@@ -108,12 +108,12 @@ export default function PostDetailView({ entry, locale = 'tr', suggestedEntries 
 
   return (
     <article className="space-y-6">
-      <header className="space-y-3">
-        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
+      <header className="space-y-4">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-foreground">
           {title}
         </h1>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-muted-foreground font-medium">
             {publishDate && (
               <time dateTime={entry.published_at}>{publishDate}</time>
             )}
@@ -121,7 +121,7 @@ export default function PostDetailView({ entry, locale = 'tr', suggestedEntries 
             <span>Yazar: {author}</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground font-bold mr-1">Paylaş:</span>
             
             <a
@@ -207,7 +207,7 @@ export default function PostDetailView({ entry, locale = 'tr', suggestedEntries 
       )}
 
       {/* Content body with HTML/Rich-Text compatibility or Blocks */}
-      <div className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-lg pt-4">
+      <div className="prose prose-zinc dark:prose-invert max-w-none leading-relaxed text-base md:text-lg pt-4">
         {content ? (
           Array.isArray(content) ? (
             <PostBlockRenderer blocks={content} locale={locale} />
