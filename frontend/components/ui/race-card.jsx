@@ -45,7 +45,7 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
   // Deterministic registration stats for CRO & Urgency
   const fillPercent = React.useMemo(() => {
     if (!item.id) return 85;
-    const code = item.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const code = String(item.id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return 78 + (code % 15); // 78% to 92%
   }, [item.id]);
 
@@ -59,7 +59,7 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
     if (!isSalesActive) return null;
     if (fillPercent > 88) return 'Son Biletler';
     if (discountedPrice && Number(discountedPrice) > 0) return 'Erken Kayıt';
-    const code = item.id ? item.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
+    const code = item.id ? String(item.id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 0;
     const badgeType = code % 3;
     if (badgeType === 0) return 'En Popüler';
     if (badgeType === 1) return 'Tavsiye Edilen';
