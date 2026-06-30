@@ -43,7 +43,7 @@ function EntityCard({ item, type, showPrice = true, locale = 'tr' }) {
   );
 }
 
-export default function PostBlockRenderer({ blocks = [], locale = 'tr' }) {
+export default function PostBlockRenderer({ blocks = [], locale = 'tr', previewSize = 'desktop' }) {
   if (!blocks || !Array.isArray(blocks)) return null;
 
   return (
@@ -151,8 +151,23 @@ export default function PostBlockRenderer({ blocks = [], locale = 'tr' }) {
               5: "basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5",
               6: "basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6"
             };
-            const gridClass = gridColMap[cols] || gridColMap[4];
-            const basisClass = basisMap[cols] || basisMap[4];
+
+            const isMobile = previewSize === 'mobile';
+            const isTablet = previewSize === 'tablet';
+
+            let gridClass = "";
+            let basisClass = "";
+
+            if (isMobile) {
+              gridClass = cols === 6 ? "grid-cols-2" : "grid-cols-1";
+              basisClass = cols === 6 ? "basis-1/2" : "basis-full";
+            } else if (isTablet) {
+              gridClass = cols === 1 ? "grid-cols-1" : cols === 6 ? "grid-cols-3" : "grid-cols-2";
+              basisClass = cols === 1 ? "basis-full" : cols === 6 ? "basis-1/3" : "basis-1/2";
+            } else {
+              gridClass = gridColMap[cols] || gridColMap[4];
+              basisClass = basisMap[cols] || basisMap[4];
+            }
 
             return (
               <div key={key} className="my-8 not-prose space-y-4">

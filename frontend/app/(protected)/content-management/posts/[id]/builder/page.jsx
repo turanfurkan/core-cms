@@ -648,7 +648,7 @@ export default function BuilderPage({ params }) {
                   : "w-full max-w-full"
               }`}
             >
-              <div className={`py-12 ${previewSize === 'desktop' ? '' : 'px-6 sm:px-8'}`}>
+              <div className={`py-12 ${previewSize === 'desktop' ? '' : previewSize === 'mobile' ? 'px-4' : 'px-6 sm:px-8'}`}>
                 {previewSize === 'desktop' ? (
                   <Container>
                     <PostDetailView
