@@ -56,6 +56,11 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
     >
       {/* Visual Area */}
       <div className="relative aspect-square w-full overflow-hidden bg-muted/20 shrink-0">
+        {showPrice && price && discountedPrice && Number(price) > Number(discountedPrice) && (
+          <div className="absolute top-3 left-3 z-10 bg-red-600 dark:bg-red-500 text-white text-[10px] font-black uppercase px-2.5 py-1.25 rounded-lg shadow-sm tracking-wide select-none">
+            %{Math.round(((Number(price) - Number(discountedPrice)) / Number(price)) * 100)} İndirim
+          </div>
+        )}
         <img
           src={resolvedCoverUrl}
           alt={title}
@@ -113,13 +118,8 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
                   <span className="text-sm font-black text-green-600">Ücretsiz</span>
                 ) : discountedPrice && Number(discountedPrice) > 0 ? (
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-red-600 dark:text-red-500 font-black text-base tracking-tight">{Number(discountedPrice).toLocaleString('tr-TR')} TL</span>
+                    <span className="text-primary font-black text-base tracking-tight">{Number(discountedPrice).toLocaleString('tr-TR')} TL</span>
                     <span className="line-through text-muted-foreground/45 text-xs font-bold">{Number(price).toLocaleString('tr-TR')} TL</span>
-                    {price && Number(price) > Number(discountedPrice) && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-red-600/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 text-[10px] font-black tracking-wide select-none">
-                        -%{Math.round(((Number(price) - Number(discountedPrice)) / Number(price)) * 100)}
-                      </span>
-                    )}
                   </div>
                 ) : (
                   <span className="text-zinc-900 dark:text-zinc-50 font-black text-base tracking-tight">
