@@ -18,7 +18,10 @@ import {
   ChevronRight,
   RefreshCw,
   Search,
-  Check
+  Check,
+  Monitor,
+  Tablet,
+  Smartphone
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { Container } from '@/components/common/container';
@@ -143,6 +146,7 @@ export default function BuilderPage({ params }) {
   const [categoryIds, setCategoryIds] = useState([]);
   const [isInitialized, setIsInitialized] = useState(isCreateMode);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewSize, setPreviewSize] = useState('desktop'); // 'desktop', 'tablet', 'mobile'
 
   // Fetch cover image details to get its URL for previewing
   const { data: coverImage } = useQuery({
@@ -388,6 +392,15 @@ export default function BuilderPage({ params }) {
     });
   };
 
+  const handleEmptyClick = (e) => {
+    if (e.target.tagName === 'MAIN' || e.target.classList.contains('editor-sheet-wrapper')) {
+      const editorEl = document.querySelector('.bn-editor');
+      if (editorEl) {
+        editorEl.focus();
+      }
+    }
+  };
+
   if (isLoading || !isInitialized) {
     return (
       <div className="w-full min-h-[70vh] flex flex-col items-center justify-center gap-3 py-12">
@@ -418,8 +431,11 @@ export default function BuilderPage({ params }) {
       {/* Main Builder Area: Split Columns */}
       <div className="flex-1 flex flex-col lg:flex-row items-stretch overflow-hidden">
         {/* Left Column: Notion-style Editor Sheet */}
-        <main className="flex-1 overflow-y-auto px-6 sm:px-12 py-12 flex justify-center bg-card">
-          <div className="w-full max-w-6xl space-y-8 min-h-[500px] pb-80">
+        <main 
+          onClick={handleEmptyClick}
+          className="flex-1 overflow-y-auto px-6 sm:px-12 py-12 flex justify-center bg-card cursor-text"
+        >
+          <div className="w-full max-w-6xl space-y-8 min-h-[500px] pb-80 editor-sheet-wrapper">
             {/* Localized Title & Inline Permalink Editor (Gutenberg-style) */}
             <div className="space-y-3 pb-6 border-b border-border/40">
               <input
@@ -570,8 +586,49 @@ export default function BuilderPage({ params }) {
               <Badge variant="outline" className="text-[10px] font-black uppercase tracking-wider bg-primary/5 text-primary border-primary/20">
                 Önizleme Modu
               </Badge>
-              <span className="text-xs text-muted-foreground hidden sm:inline">• Kaydedilmemiş değişiklikler dahildir</span>
+              <span className="text-xs text-muted-foreground hidden lg:inline">• Kaydedilmemiş değişiklikler dahildir</span>
             </div>
+
+            {/* Viewport Resizing Controllers */}
+            <div className="flex items-center gap-1 bg-muted p-1 rounded-xl">
+              <button
+                onClick={() => setPreviewSize('desktop')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
+                  previewSize === 'desktop'
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Masaüstü Önizleme"
+              >
+                <Monitor className="size-3.5" />
+                <span className="hidden sm:inline">Masaüstü</span>
+              </button>
+              <button
+                onClick={() => setPreviewSize('tablet')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
+                  previewSize === 'tablet'
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Tablet Önizleme"
+              >
+                <Tablet className="size-3.5" />
+                <span className="hidden sm:inline">Tablet</span>
+              </button>
+              <button
+                onClick={() => setPreviewSize('mobile')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
+                  previewSize === 'mobile'
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Mobil Önizleme"
+              >
+                <Smartphone className="size-3.5" />
+                <span className="hidden sm:inline">Mobil</span>
+              </button>
+            </div>
+
             <Button
               onClick={() => setIsPreviewOpen(false)}
               variant="outline"
@@ -581,23 +638,54 @@ export default function BuilderPage({ params }) {
               Kapat (Esc)
             </Button>
           </div>
-          <div className="py-12">
-            <Container>
-              <PostDetailView
-                entry={{
-                  title: title,
-                  published_at: publishDate || new Date().toISOString(),
-                  data: {
-                    title: title,
-                    content: content,
-                    author: 'Siz',
-                    cover_image: coverImage ? { url: coverImage.url } : null
-                  }
-                }}
-                locale={activeLang}
-                suggestedEntries={previewSuggestedPosts}
-              />
-            </Container>
+          <div className="bg-muted/30 py-8 min-h-[calc(100vh-65px)] overflow-x-hidden">
+            <div
+              className={`mx-auto bg-background transition-all duration-300 overflow-hidden ${
+                previewSize === 'tablet'
+                  ? "w-full max-w-[768px] border border-border rounded-2xl shadow-xl min-h-[85vh]"
+                  : previewSize === 'mobile'
+                  ? "w-full max-w-[375px] border border-border rounded-3xl shadow-xl min-h-[80vh]"
+                  : "w-full max-w-full"
+              }`}
+            >
+              <div className={`py-12 ${previewSize === 'desktop' ? '' : 'px-6 sm:px-8'}`}>
+                {previewSize === 'desktop' ? (
+                  <Container>
+                    <PostDetailView
+                      entry={{
+                        title: title,
+                        published_at: publishDate || new Date().toISOString(),
+                        data: {
+                          title: title,
+                          content: content,
+                          author: 'Siz',
+                          cover_image: coverImage ? { url: coverImage.url } : null
+                        }
+                      }}
+                      locale={activeLang}
+                      suggestedEntries={previewSuggestedPosts}
+                      isCtaFullWidth={true}
+                    />
+                  </Container>
+                ) : (
+                  <PostDetailView
+                    entry={{
+                      title: title,
+                      published_at: publishDate || new Date().toISOString(),
+                      data: {
+                        title: title,
+                        content: content,
+                        author: 'Siz',
+                        cover_image: coverImage ? { url: coverImage.url } : null
+                      }
+                    }}
+                    locale={activeLang}
+                    suggestedEntries={previewSuggestedPosts}
+                    isCtaFullWidth={false}
+                  />
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

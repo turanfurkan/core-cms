@@ -27,7 +27,7 @@ const XIcon = (props) => (
   </svg>
 );
 
-export default function PostDetailView({ entry, locale = 'tr', suggestedEntries = [] }) {
+export default function PostDetailView({ entry, locale = 'tr', suggestedEntries = [], isCtaFullWidth = true }) {
   if (!entry) return null;
 
   const [shareUrl, setShareUrl] = React.useState('');
@@ -252,7 +252,7 @@ export default function PostDetailView({ entry, locale = 'tr', suggestedEntries 
 
       {/* CTA Action Banner */}
       <div className="pt-12 border-t border-border mt-16">
-        <CtaSection fullWidth variant="primary" />
+        <CtaSection fullWidth={isCtaFullWidth} variant="primary" />
       </div>
 
       {/* Post Suggestions / Related Posts */}
