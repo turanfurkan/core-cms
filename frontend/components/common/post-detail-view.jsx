@@ -18,7 +18,7 @@ function getLocalizedValue(value, lang = 'tr') {
   return String(value);
 }
 
-export default function PostDetailView({ entry, locale = 'tr' }) {
+export default function PostDetailView({ entry, locale = 'tr', suggestedEntries = [] }) {
   if (!entry) return null;
 
   // Get field values from the resolved JSON entry data
@@ -109,7 +109,7 @@ export default function PostDetailView({ entry, locale = 'tr' }) {
 
       {/* Featured Image */}
       {featuredImage && (
-        <div className="aspect-video w-full rounded-2xl overflow-hidden bg-muted border border-border relative">
+        <div className="relative w-full h-[240px] sm:h-[320px] md:h-[400px] lg:h-[450px] rounded-2xl overflow-hidden bg-muted border border-border">
           <img
             src={featuredImage.url}
             alt={title}
@@ -159,6 +159,75 @@ export default function PostDetailView({ entry, locale = 'tr' }) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Post Suggestions / Related Posts */}
+      {suggestedEntries && suggestedEntries.length > 0 && (
+        <div className="pt-12 border-t border-border mt-16 space-y-6">
+          <h3 className="text-2xl font-bold tracking-tight">Diğer Yazılar</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {suggestedEntries.map(s => {
+              const sData = s.data || {};
+              const sTitle = getLocalizedValue(sData.title || s.title || '', locale) || 'Başlıksız';
+              const sSummary = getLocalizedValue(sData.summary || sData.description || '', locale);
+              
+              // Find cover image of the suggestion
+              const sMediaFields = [];
+              Object.entries(sData).forEach(([k, v]) => {
+                if (v && typeof v === 'object' && v.url) {
+                  sMediaFields.push(v);
+                } else if (Array.isArray(v) && v.length > 0 && v[0] && typeof v[0] === 'object' && v[0].url) {
+                  sMediaFields.push(...v);
+                }
+              });
+              const sCover = sData.cover_image?.url || sMediaFields.find(m => m.mime_type?.startsWith('image/'))?.url;
+              
+              const sLink = `/${s.content_type?.slug || 'post'}/${s.slug}`;
+              const sDate = s.published_at 
+                ? new Date(s.published_at).toLocaleDateString('tr-TR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })
+                : null;
+
+              return (
+                <a
+                  key={s.id}
+                  href={sLink}
+                  className="group flex flex-col space-y-3 bg-card border border-border rounded-2xl overflow-hidden p-4 hover:shadow-md transition-all duration-300 hover:border-primary/20"
+                >
+                  {sCover && (
+                    <div className="aspect-video w-full rounded-xl overflow-hidden bg-muted relative">
+                      <img
+                        src={sCover}
+                        alt={sTitle}
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 flex flex-col justify-between space-y-2">
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-base leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                        {sTitle}
+                      </h4>
+                      {sSummary && (
+                        <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed">
+                          {sSummary}
+                        </p>
+                      )}
+                    </div>
+                    {sDate && (
+                      <time className="text-[10px] text-muted-foreground font-semibold block pt-1">
+                        {sDate}
+                      </time>
+                    )}
+                  </div>
+                </a>
+              );
+            })}
+          </div>
         </div>
       )}
     </article>

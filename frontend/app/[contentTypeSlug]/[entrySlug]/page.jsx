@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { backendFetch, getSeoMetadata, getPublicSettings, getPublicNavigation } from '@/lib/api-server';
+import { backendFetch, getSeoMetadata, getPublicSettings, getPublicNavigation, getContentEntries } from '@/lib/api-server';
 import { Container } from '@/components/common/container';
 import PublicHeader from '@/components/common/public-header';
 import PublicFooter from '@/components/common/public-footer';
@@ -110,6 +110,17 @@ export default async function Page({ params }) {
     notFound();
   }
 
+  // Fetch related/suggested posts of the same content type
+  let suggestedEntries = [];
+  try {
+    const relatedRes = await getContentEntries(contentTypeSlug, { page: 1, limit: 4 });
+    if (relatedRes && Array.isArray(relatedRes.data)) {
+      suggestedEntries = relatedRes.data.filter(e => e.id !== entry.id).slice(0, 3);
+    }
+  } catch (err) {
+    console.error('Error fetching suggested entries:', err);
+  }
+
   return (
     <div className="w-full min-h-screen bg-background text-foreground flex flex-col justify-between">
       <div>
@@ -119,7 +130,7 @@ export default async function Page({ params }) {
         {/* Main Content Area */}
         <main className="py-12">
           <Container>
-            <PostDetailView entry={entry} locale="tr" />
+            <PostDetailView entry={entry} locale="tr" suggestedEntries={suggestedEntries} />
           </Container>
         </main>
       </div>
