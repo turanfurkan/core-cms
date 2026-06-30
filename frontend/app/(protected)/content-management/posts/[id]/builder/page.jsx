@@ -140,6 +140,7 @@ export default function BuilderPage({ params }) {
   const [publishDate, setPublishDate] = useState('');
   const [status, setStatus] = useState('published');
   const [categoryIds, setCategoryIds] = useState([]);
+  const [isInitialized, setIsInitialized] = useState(isCreateMode);
 
   // Fetch categories of type 'blog'
   const { data: categories } = useQuery({
@@ -206,6 +207,7 @@ export default function BuilderPage({ params }) {
         ];
       }
       setContent(contentVal);
+      setIsInitialized(true);
     }
   }, [postPayload, isCreateMode]);
 
@@ -341,7 +343,7 @@ export default function BuilderPage({ params }) {
     });
   };
 
-  if (isLoading) {
+  if (isLoading || !isInitialized) {
     return (
       <div className="w-full min-h-[70vh] flex flex-col items-center justify-center gap-3 py-12">
         <LoaderCircleIcon className="size-8 text-primary animate-spin" />
