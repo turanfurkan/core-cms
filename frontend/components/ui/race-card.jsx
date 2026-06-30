@@ -113,16 +113,16 @@ export function RaceCard({ item, showPrice = true, previewOnly = false, locale =
           <div className="flex flex-col gap-0.5 text-left select-none">
             {/* Price */}
             {showPrice && (
-              <div>
+              <div className="min-h-[42px] flex flex-col justify-end">
                 {isFree ? (
                   <span className="text-sm font-black text-green-600">Ücretsiz</span>
                 ) : discountedPrice && Number(discountedPrice) > 0 ? (
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-primary font-black text-base tracking-tight">{Number(discountedPrice).toLocaleString('tr-TR')} TL</span>
-                    <span className="line-through text-muted-foreground/45 text-xs font-bold">{Number(price).toLocaleString('tr-TR')} TL</span>
+                  <div className="flex flex-col text-left">
+                    <span className="line-through text-muted-foreground/45 text-[10px] sm:text-[11px] font-bold leading-none mb-1">{Number(price).toLocaleString('tr-TR')} TL</span>
+                    <span className="text-primary font-black text-base tracking-tight leading-none">{Number(discountedPrice).toLocaleString('tr-TR')} TL</span>
                   </div>
                 ) : (
-                  <span className="text-zinc-900 dark:text-zinc-50 font-black text-base tracking-tight">
+                  <span className="text-zinc-900 dark:text-zinc-50 font-black text-base tracking-tight leading-none">
                     {price ? `${Number(price).toLocaleString('tr-TR')} TL` : 'Ücretsiz'}
                   </span>
                 )}
