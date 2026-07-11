@@ -17,6 +17,7 @@ class RaceResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'name' => is_array($this->title) ? ($this->title['tr'] ?? $this->title['en'] ?? '') : $this->title,
             'slug' => $this->slug,
             'content' => $this->content,
             'start_date' => $this->start_date,
@@ -38,6 +39,7 @@ class RaceResource extends JsonResource
             'gallery_ids' => $this->gallery_ids,
             'min_age' => $this->min_age,
             'max_age' => $this->max_age,
+            'whats_included' => $this->whats_included,
             
             // Loaded relations
             'categories' => $this->relationLoaded('categories') && $this->categories

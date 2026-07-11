@@ -53,6 +53,21 @@ class Category extends Model
         return $this->morphedByMany(Race::class, 'categorizable');
     }
 
+    public function posts(): MorphToMany
+    {
+        return $this->morphedByMany(\App\Domains\Post\Models\Post::class, 'categorizable');
+    }
+
+    public function partners(): MorphToMany
+    {
+        return $this->morphedByMany(\App\Domains\Partner\Models\Partner::class, 'categorizable')->orderBy('order', 'asc');
+    }
+
+    public function coverImage(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Media\Models\MediaItem::class, 'image_id');
+    }
+
     public function getLocalizedName(string $locale = 'tr'): string
     {
         return $this->name[$locale] ?? $this->name['tr'] ?? '';

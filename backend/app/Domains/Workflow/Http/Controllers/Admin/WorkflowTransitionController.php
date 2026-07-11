@@ -17,7 +17,8 @@ class WorkflowTransitionController extends Controller
     protected function resolveModel(string $type, int $id)
     {
         $map = [
-            'content_entry' => \App\Domains\Content\Models\ContentEntry::class,
+            'post' => \App\Domains\Post\Models\Post::class,
+            'page' => \App\Domains\Page\Models\Page::class,
         ];
 
         $class = $map[$type] ?? null;

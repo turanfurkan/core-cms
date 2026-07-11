@@ -19,7 +19,7 @@ function getLocalizedValue(value, lang = 'tr') {
   return String(value);
 }
 
-export default function PublicFooter({ settings, menuItems = null, locale = 'tr' }) {
+export default function PublicFooter({ settings, menuItems = null, locale = 'tr', previewDevice = 'desktop' }) {
   // Resolve localized site name
   const rawSiteName = settings['site.name'];
   const siteName = getLocalizedValue(rawSiteName, locale) || 'Core CMS';
@@ -73,11 +73,15 @@ export default function PublicFooter({ settings, menuItems = null, locale = 'tr'
   if (showContact && (phone || email || address)) colsCount++;
   if (isNewsletterActive) colsCount++;
 
-  const gridClass = colsCount === 4 
-    ? 'grid-cols-1 md:grid-cols-4' 
-    : colsCount === 3 
-      ? 'grid-cols-1 md:grid-cols-3' 
-      : 'grid-cols-1 md:grid-cols-2';
+  const forceMobile = previewDevice === 'mobile' || previewDevice === 'tablet';
+
+  const gridClass = forceMobile
+    ? 'grid-cols-1 gap-8'
+    : (colsCount === 4 
+      ? 'grid-cols-1 md:grid-cols-4' 
+      : colsCount === 3 
+        ? 'grid-cols-1 md:grid-cols-3' 
+        : 'grid-cols-1 md:grid-cols-2');
 
   return (
     <footer className="bg-[#03112b] dark:bg-slate-950 text-slate-300 border-t border-[#102d59] dark:border-border/60 pt-16 pb-12 text-sm select-none transition-colors duration-200">
@@ -174,7 +178,7 @@ export default function PublicFooter({ settings, menuItems = null, locale = 'tr'
       </Container>
 
       {/* Bottom Bar */}
-      <Container className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-8 text-sm text-slate-400">
+      <Container className={`${forceMobile ? 'flex flex-col justify-center items-center text-center' : 'flex flex-col sm:flex-row justify-between items-center'} gap-6 pt-8 text-sm text-slate-400`}>
         <div>
           © {new Date().getFullYear()} {siteName}. Tüm Hakları Saklıdır.
         </div>

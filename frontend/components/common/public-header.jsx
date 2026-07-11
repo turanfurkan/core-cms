@@ -22,7 +22,7 @@ function getLocalizedValue(value, lang = 'tr') {
   return String(value);
 }
 
-export default function PublicHeader({ settings, menuItems = null, locale: passedLocale = 'tr' }) {
+export default function PublicHeader({ settings, menuItems = null, locale: passedLocale = 'tr', previewDevice = 'desktop' }) {
   const { data: session, status } = useSession();
   const isAuthenticated = status === 'authenticated';
   const { languageCode, changeLanguage } = useLanguage();
@@ -33,6 +33,7 @@ export default function PublicHeader({ settings, menuItems = null, locale: passe
   }, []);
 
   const locale = mounted ? (languageCode || passedLocale || 'tr') : (passedLocale || 'tr');
+  const forceMobile = previewDevice === 'mobile' || previewDevice === 'tablet';
 
   const logoUrl = settings['site.logo'];
   
@@ -101,6 +102,8 @@ export default function PublicHeader({ settings, menuItems = null, locale: passe
   }, [countdownActive, targetDateStr]);
 
   const showTopBar = topBarContactShow || announcementActive || (countdownActive && !timeLeft.expired) || topBarLangShow || topBarThemeShow;
+  const shouldShowTopBar = forceMobile ? ((countdownActive && !timeLeft.expired) || (announcementActive && announcementText)) : showTopBar;
+  const hasActiveBanner = (countdownActive && !timeLeft.expired) || (announcementActive && !!announcementText);
 
   // Auth Dropdown state & ref
   const [authDropdownOpen, setAuthDropdownOpen] = useState(false);
@@ -443,11 +446,11 @@ export default function PublicHeader({ settings, menuItems = null, locale: passe
         }
       `}} />
       {/* Advanced Top Bar */}
-      {showTopBar && (
-        <div className="bg-[#03112b] dark:bg-slate-950 border-b border-white/10 dark:border-border/60 py-3 text-sm select-none shadow-sm transition-colors duration-200">
-          <Container className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center w-full">
+      {shouldShowTopBar && (
+        <div className={`bg-[#03112b] dark:bg-slate-950 border-b border-white/10 dark:border-border/60 py-3 text-sm select-none shadow-sm transition-colors duration-200 ${hasActiveBanner ? '' : 'hidden md:block'} ${forceMobile && !hasActiveBanner ? 'hidden' : ''}`}>
+          <Container className={`grid grid-cols-1 ${forceMobile ? '' : 'md:grid-cols-3'} gap-3 items-center w-full`}>
             {/* Left: Contact info */}
-            <div className="flex items-center justify-center md:justify-start gap-5 text-white dark:text-slate-300">
+            <div className={`${forceMobile ? 'hidden' : 'hidden md:flex'} items-center justify-center md:justify-start gap-5 text-white dark:text-slate-300`}>
               {topBarContactShow && phone && (
                 <a href={`tel:${phone}`} className="flex items-center gap-2 hover:text-cyan-200 dark:hover:text-white transition-colors font-semibold text-sm tracking-tight">
                   <Phone className="size-4 text-cyan-300 dark:text-primary shrink-0" />
@@ -470,9 +473,13 @@ export default function PublicHeader({ settings, menuItems = null, locale: passe
               {countdownActive && !timeLeft.expired ? (
                 <div className="flex items-center justify-center gap-3.5 select-none">
                   <span className="text-sm font-bold text-white mr-0.5 tracking-tight">
-                    {locale === 'en'
-                      ? (frontSettings.countdownLabelEn || frontSettings.countdownLabelTr || 'Time Left:')
-                      : (frontSettings.countdownLabelTr || frontSettings.countdownLabelEn || 'Büyük Kampanyanın Bitmesine Kalan Süre:')}
+                    {forceMobile ? (
+                      <span className="flex items-center gap-1 text-xs"><Clock className="size-3.5 text-cyan-300" /> Fırsat:</span>
+                    ) : (
+                      locale === 'en'
+                        ? (frontSettings.countdownLabelEn || frontSettings.countdownLabelTr || 'Time Left:')
+                        : (frontSettings.countdownLabelTr || frontSettings.countdownLabelEn || 'Büyük Kampanyanın Bitmesine Kalan Süre:')
+                    )}
                   </span>
                   <div className="flex items-center gap-1.5 text-white dark:text-slate-200">
                     <div className="flex items-center gap-0.5 bg-white/12 dark:bg-slate-900 border border-white/25 dark:border-slate-800 px-2.5 py-1 rounded-md shadow-sm text-sm font-mono font-bold min-w-[34px] justify-center">
@@ -530,48 +537,47 @@ export default function PublicHeader({ settings, menuItems = null, locale: passe
             </div>
 
             {/* Right: Lang & Theme switcher */}
-            <div className="flex items-center justify-center md:justify-end gap-4">
+            <div className={`${forceMobile ? 'hidden' : 'hidden md:flex'} items-center justify-center md:justify-end gap-4`}>
               {topBarLangShow && (
-                <div className="relative group">
-                  <button className="flex items-center gap-2 px-2.5 py-1.5 rounded hover:bg-white/10 dark:hover:bg-muted text-white hover:text-cyan-100 dark:text-slate-300 dark:hover:text-white text-sm font-semibold cursor-pointer transition-colors">
-                    <img
-                      src={locale === 'en' ? '/media/flags/united-states.svg' : '/media/flags/turkey.svg'}
-                      className="w-4.5 h-4.5 rounded-full object-cover shadow-sm"
-                      alt={locale === 'en' ? 'EN' : 'TR'}
-                    />
-                    <span className="uppercase text-xs tracking-wider font-bold">{locale}</span>
-                    <ChevronDown className="size-3.5 transition-transform group-hover:rotate-180 opacity-80" />
-                  </button>
-                  <div className="absolute right-0 mt-1 min-w-[120px] bg-background text-foreground border border-border rounded-xl shadow-lg p-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                    <button
-                      onClick={() => changeLanguage('tr')}
-                      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-xs font-bold hover:bg-muted transition-colors ${locale === 'tr' ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}
-                    >
-                      <img src="/media/flags/turkey.svg" className="w-4 h-4 rounded-full object-cover" alt="TR" />
-                      Türkçe
+                  <div className="relative group">
+                    <button className="flex items-center gap-2 px-2.5 py-1.5 rounded hover:bg-white/10 dark:hover:bg-muted text-white hover:text-cyan-100 dark:text-slate-300 dark:hover:text-white text-sm font-semibold cursor-pointer transition-colors">
+                      <img
+                        src={locale === 'en' ? '/media/flags/united-states.svg' : '/media/flags/turkey.svg'}
+                        className="w-4.5 h-4.5 rounded-full object-cover shadow-sm"
+                        alt={locale === 'en' ? 'EN' : 'TR'}
+                      />
+                      <span className="uppercase text-xs tracking-wider font-bold">{locale}</span>
+                      <ChevronDown className="size-3.5 transition-transform group-hover:rotate-180 opacity-80" />
                     </button>
-                    <button
-                      onClick={() => changeLanguage('en')}
-                      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-xs font-bold hover:bg-muted transition-colors ${locale === 'en' ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}
-                    >
-                      <img src="/media/flags/united-states.svg" className="w-4 h-4 rounded-full object-cover" alt="EN" />
-                      English
-                    </button>
+                    <div className="absolute right-0 mt-1 min-w-[120px] bg-background text-foreground border border-border rounded-xl shadow-lg p-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <button
+                        onClick={() => changeLanguage('tr')}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-xs font-bold hover:bg-muted transition-colors ${locale === 'tr' ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}
+                      >
+                        <img src="/media/flags/turkey.svg" className="w-4 h-4 rounded-full object-cover" alt="TR" />
+                        Türkçe
+                      </button>
+                      <button
+                        onClick={() => changeLanguage('en')}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-xs font-bold hover:bg-muted transition-colors ${locale === 'en' ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}
+                      >
+                        <img src="/media/flags/united-states.svg" className="w-4 h-4 rounded-full object-cover" alt="EN" />
+                        English
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
-
-            </div>
+                )}
+              </div>
           </Container>
         </div>
       )}
 
       {/* Main Header Bar */}
       <header className="border-b border-border/70 py-4 bg-background/95 backdrop-blur-md">
-        <Container className="flex justify-between items-center md:grid md:grid-cols-3 gap-4 w-full">
+        <Container className="flex justify-between items-center gap-4 w-full">
           
           {/* Column 1: Left Logo */}
-          <div className="flex justify-start items-center">
+          <div className="flex justify-start items-center shrink-0">
             <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity shrink-0">
               {logoUrl ? (
                 <img 
@@ -595,7 +601,7 @@ export default function PublicHeader({ settings, menuItems = null, locale: passe
           </div>
  
           {/* Column 2: Center Navigation Menu */}
-          <div className="hidden md:flex justify-center items-center">
+          <div className={`hidden ${forceMobile ? '' : 'md:flex'} flex-grow justify-center items-center px-4 overflow-hidden`}>
             <nav className="flex gap-7 lg:gap-9 text-[15px] lg:text-[16px] font-semibold items-center whitespace-nowrap">
               {renderNavLinks()}
               
@@ -613,15 +619,27 @@ export default function PublicHeader({ settings, menuItems = null, locale: passe
           </div>
 
           {/* Column 3: Right Actions & Hamburger */}
-          <div className="flex justify-end items-center gap-3">
-            <div className="hidden md:block">
+          <div className="flex justify-end items-center gap-2 shrink-0">
+            {/* Mobile Quick Language Toggle */}
+            {topBarLangShow && (
+              <button
+                onClick={() => changeLanguage(locale === 'tr' ? 'en' : 'tr')}
+                className={`${forceMobile ? 'flex' : 'flex md:hidden'} items-center gap-1.25 px-2.5 py-1 border border-border/80 dark:border-border/30 rounded-full hover:bg-muted/50 text-[10px] font-black text-foreground transition-all cursor-pointer select-none mr-1 shrink-0 bg-card`}
+                title={locale === 'tr' ? 'Switch to English' : 'Türkçe\'ye Geç'}
+              >
+                <Globe className="size-3.5 text-muted-foreground" />
+                <span className="uppercase">{locale}</span>
+              </button>
+            )}
+
+            <div className={`hidden ${forceMobile ? '' : 'md:block'}`}>
               {renderAuthSection()}
             </div>
 
             {/* Hamburger Menu (Mobile Only) */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+              className={`${forceMobile ? '' : 'md:hidden'} p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer`}
             >
               {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
@@ -631,7 +649,7 @@ export default function PublicHeader({ settings, menuItems = null, locale: passe
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-border bg-background py-4 px-6 animate-slide-down">
+        <div className={`${forceMobile ? '' : 'md:hidden'} border-b border-border bg-background py-4 px-6 animate-slide-down`}>
           <nav className="flex flex-col gap-4 text-sm font-semibold pb-4">
             {renderMobileNavLinks()}
             
@@ -649,6 +667,48 @@ export default function PublicHeader({ settings, menuItems = null, locale: passe
 
           <div className="border-t border-border/60 pt-4 flex flex-col gap-3">
             {renderMobileAuthSection()}
+
+            {/* Mobile Lang Selection */}
+            {topBarLangShow && (
+              <div className="flex items-center justify-between border-t border-border/60 pt-4 mt-2">
+                <span className="text-xs font-bold text-muted-foreground">{locale === 'en' ? 'Language' : 'Dil Seçimi'}</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { changeLanguage('tr'); setMobileMenuOpen(false); }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition ${locale === 'tr' ? 'bg-primary/5 border-primary/30 text-primary' : 'bg-muted/10 border-transparent text-muted-foreground'}`}
+                  >
+                    <img src="/media/flags/turkey.svg" className="w-3.5 h-3.5 rounded-full object-cover" alt="TR" />
+                    TR
+                  </button>
+                  <button
+                    onClick={() => { changeLanguage('en'); setMobileMenuOpen(false); }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition ${locale === 'en' ? 'bg-primary/5 border-primary/30 text-primary' : 'bg-muted/10 border-transparent text-muted-foreground'}`}
+                  >
+                    <img src="/media/flags/united-states.svg" className="w-3.5 h-3.5 rounded-full object-cover" alt="EN" />
+                    EN
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Contact Info */}
+            {topBarContactShow && (phone || email) && (
+              <div className="flex flex-col gap-2 border-t border-border/60 pt-4 mt-2">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{locale === 'en' ? 'Contact' : 'İletişim'}</span>
+                {phone && (
+                  <a href={`tel:${phone}`} className="flex items-center gap-2 text-xs font-semibold text-foreground/80 hover:text-primary transition">
+                    <Phone className="size-3.5 text-primary shrink-0" />
+                    <span>{phone}</span>
+                  </a>
+                )}
+                {email && (
+                  <a href={`mailto:${email}`} className="flex items-center gap-2 text-xs font-semibold text-foreground/80 hover:text-primary transition">
+                    <Mail className="size-3.5 text-primary shrink-0" />
+                    <span>{email}</span>
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

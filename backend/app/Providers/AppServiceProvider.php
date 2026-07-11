@@ -109,7 +109,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(UserLoggedOut::class, LogLogoutActivity::class);
         Event::listen(
             \App\Domains\Workflow\Events\WorkflowTransitioned::class,
-            \App\Domains\Workflow\Listeners\AutoPublishContentListener::class
+            \App\Domains\Workflow\Listeners\AutoPublishWorkflowListener::class
         );
         Event::listen(
             \App\Domains\Workflow\Events\WorkflowTransitioned::class,

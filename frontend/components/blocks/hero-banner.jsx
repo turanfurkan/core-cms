@@ -4,8 +4,71 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Play, X, Search, MapPin, Calendar, Compass, Star, Code, Palette, BarChart, Shield, Cloud, Terminal, Cpu, Check, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import PremiumButton from '@/components/ui/premium-button';
 
-export default function HeroBanner({ data, locale = 'tr' }) {
+export const blockConfig = {
+  type: 'hero_banner',
+  name: 'Hero Banner',
+  description: 'Statik görsel veya slider olarak kullanılabilen tanıtım alanı.',
+  contentFields: [
+    {
+      key: 'heading',
+      label: 'Giriş Başlığı',
+      type: 'text',
+      default: 'Yeni Global Banner Başlığı'
+    },
+    {
+      key: 'subtitle',
+      label: 'Giriş Alt Açıklaması',
+      type: 'textarea',
+      default: 'Global alt başlık metni.'
+    },
+    {
+      key: 'ctaText',
+      label: 'Buton Metni',
+      type: 'text',
+      default: 'Detayları İncele'
+    },
+    {
+      key: 'ctaUrl',
+      label: 'Buton Linki (URL)',
+      type: 'link',
+      default: { type: 'custom', url: '#', target: '_self' }
+    },
+    {
+      key: 'bgImage',
+      label: 'Arka Plan Görseli',
+      type: 'media',
+      mediaType: 'image',
+      default: null
+    },
+    {
+      key: 'videoUrl',
+      label: 'Arka Plan Videosu (Seçimlik)',
+      type: 'media',
+      mediaType: 'video',
+      default: null
+    }
+  ],
+  styleFields: [
+    {
+      key: 'bgGradient',
+      label: 'Arka Plan Gradyan Sınıfı (Tailwind)',
+      type: 'text',
+      default: 'from-blue-600 to-indigo-900'
+    },
+    {
+      key: 'textColor',
+      label: 'Yazı Rengi (Hex)',
+      type: 'color',
+      default: '#ffffff'
+    }
+  ]
+};
+
+export default function HeroBanner({ data, locale = 'tr', previewDevice = 'desktop' }) {
+  const forceMobile = previewDevice === 'mobile' || previewDevice === 'tablet';
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -22,54 +85,69 @@ export default function HeroBanner({ data, locale = 'tr' }) {
   // Tabbed Interactive Layout State
   const [activeAudience, setActiveAudience] = useState('dev');
 
-  const fields = data?.data || {};
+  const fields = data?.content || data?.data || {};
   const variant = data?.variant || 'minimal_centered';
 
   // State to store resolved media URLs when passed as raw IDs in local preview
   const [resolvedMedia, setResolvedMedia] = useState({});
 
   useEffect(() => {
+    if (!fields) return;
     const mediaFieldKeys = ['background_image', 'video_file', 'slide_2_background_image', 'slide_3_background_image'];
     
     mediaFieldKeys.forEach(async (key) => {
       const val = fields[key];
       if (val && (typeof val === 'number' || (typeof val === 'string' && /^\d+$/.test(val)))) {
         try {
-          const res = await apiFetch(`/api/admin/media/files/${val}`);
+          const res = await apiFetch(`/api/public/media/${val}`);
           if (res.ok) {
             const json = await res.json();
             const mediaObj = json.data;
             if (mediaObj && mediaObj.url) {
               const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8000';
               const fullUrl = mediaObj.url.startsWith('http') ? mediaObj.url : `${backendUrl}${mediaObj.url}`;
-              setResolvedMedia(prev => ({
-                ...prev,
-                [key]: fullUrl
-              }));
+              setResolvedMedia(prev => {
+                if (prev[key] === fullUrl) return prev;
+                return { ...prev, [key]: fullUrl };
+              });
             }
           }
         } catch (err) {
           console.error(`Error resolving media for ${key}:`, err);
         }
       } else if (val && typeof val === 'object' && val.url) {
-        setResolvedMedia(prev => ({
-          ...prev,
-          [key]: val.url
-        }));
+        setResolvedMedia(prev => {
+          if (prev[key] === val.url) return prev;
+          return { ...prev, [key]: val.url };
+        });
       } else {
-        setResolvedMedia(prev => ({
-          ...prev,
-          [key]: null
-        }));
+        setResolvedMedia(prev => {
+          if (prev[key] === null) return prev;
+          return { ...prev, [key]: null };
+        });
       }
     });
-  }, [fields]);
+  }, [
+    fields?.background_image,
+    fields?.video_file,
+    fields?.slide_2_background_image,
+    fields?.slide_3_background_image
+  ]);
+
+  const resolveLink = (link) => {
+    if (!link) return { url: '#', target: '_self' };
+    if (typeof link === 'object') {
+      return { url: link.url || '#', target: link.target || '_self' };
+    }
+    return { url: link, target: '_self' };
+  };
 
   // Extract fields
-  const heading = getLocalized(fields.heading, locale);
-  const subtitle = getLocalized(fields.subtitle, locale);
-  const ctaText = getLocalized(fields.cta_text || fields.button_text, locale);
-  const ctaUrl = fields.cta_url || fields.cta_link || fields.button_url || '#';
+  const heading = fields.heading || fields.title || '';
+  const subtitle = fields.subtitle || '';
+  const ctaText = fields.ctaText || fields.button_text || '';
+  const rawCtaUrl = fields.ctaUrl || fields.button_link || '#';
+  const ctaUrlObj = resolveLink(rawCtaUrl);
   
   const bgImage = resolvedMedia.background_image || fields.background_image?.url || fields.background?.url || null;
   const videoFileUrl = resolvedMedia.video_file || fields.video_file?.url || null;
@@ -84,21 +162,21 @@ export default function HeroBanner({ data, locale = 'tr' }) {
       subtitle: subtitle,
       bgImage: bgImage,
       ctaText: ctaText,
-      ctaUrl: ctaUrl,
+      ctaUrlObj: ctaUrlObj,
     },
     {
-      heading: getLocalized(fields.slide_2_heading, locale) || (locale === 'tr' ? 'Geleceğin Teknolojisiyle Tanışın' : 'Meet the Technology of the Future'),
-      subtitle: getLocalized(fields.slide_2_subtitle, locale) || (locale === 'tr' ? 'Yapay zeka entegrasyonu ve üstün altyapı performansı tek bir platformda.' : 'AI integration and superior infrastructure performance in a single platform.'),
+      heading: fields.slide_2_heading || 'Geleceğin Teknolojisiyle Tanışın',
+      subtitle: fields.slide_2_subtitle || 'Yapay zeka entegrasyonu ve üstün altyapı performansı tek bir platformda.',
       bgImage: resolvedMedia.slide_2_background_image || fields.slide_2_background_image?.url || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80',
-      ctaText: getLocalized(fields.slide_2_cta_text, locale) || (locale === 'tr' ? 'Daha Fazla Bilgi' : 'Learn More'),
-      ctaUrl: fields.slide_2_cta_url || '#',
+      ctaText: fields.slide_2_cta_text || 'Daha Fazla Bilgi',
+      ctaUrlObj: resolveLink(fields.slide_2_cta_url || '#'),
     },
     {
-      heading: getLocalized(fields.slide_3_heading, locale) || (locale === 'tr' ? 'İş Akışlarınızı Otomatize Edin' : 'Automate Your Workflows'),
-      subtitle: getLocalized(fields.slide_3_subtitle, locale) || (locale === 'tr' ? 'Yinelenen görevleri ortadan kaldırın ve üretkenliğinizi iki katına çıkarın.' : 'Eliminate repetitive tasks and double your productivity.'),
+      heading: fields.slide_3_heading || 'İş Akışlarınızı Otomatize Edin',
+      subtitle: fields.slide_3_subtitle || 'Yinelenen görevleri ortadan kaldırın ve üretkenliğinizi iki katına çıkarın.',
       bgImage: resolvedMedia.slide_3_background_image || fields.slide_3_background_image?.url || 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
-      ctaText: getLocalized(fields.slide_3_cta_text, locale) || (locale === 'tr' ? 'Ücretsiz Başlayın' : 'Start Free'),
-      ctaUrl: fields.slide_3_cta_url || '#',
+      ctaText: fields.slide_3_cta_text || 'Ücretsiz Başlayın',
+      ctaUrlObj: resolveLink(fields.slide_3_cta_url || '#'),
     }
   ];
 
@@ -130,7 +208,7 @@ export default function HeroBanner({ data, locale = 'tr' }) {
   };
 
   return (
-    <section className="relative min-h-[70vh] flex items-center justify-center py-20 overflow-hidden bg-zinc-950 text-white">
+    <section className={`relative min-h-[70vh] flex items-center justify-center ${forceMobile ? 'py-12' : 'py-12 sm:py-20'} overflow-hidden bg-zinc-950 text-white`}>
       {/* Background Image with Gradient Overlay */}
       {variant === 'slider_carousel' ? (
         <div className="absolute inset-0 z-0">
@@ -143,23 +221,36 @@ export default function HeroBanner({ data, locale = 'tr' }) {
                 <img
                   src={slide.bgImage}
                   alt={slide.heading}
-                  className="w-full h-full object-cover opacity-25 scale-105"
+                  className="w-full h-full object-cover opacity-65 scale-105"
                 />
               ) : (
                 <div className="w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-950/40 via-zinc-950 to-zinc-950" />
               )}
             </div>
           ))}
-          <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/70 via-zinc-950/90 to-zinc-950" />
+          <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/30 via-zinc-950/50 to-zinc-950/80" />
+        </div>
+      ) : videoUrl ? (
+        <div className="absolute inset-0 z-0 select-none">
+          <video
+            key={videoUrl}
+            src={videoUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover pointer-events-none opacity-85"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/30 via-zinc-950/50 to-zinc-950/80" />
         </div>
       ) : bgImage ? (
         <div className="absolute inset-0 z-0">
           <img
             src={bgImage}
             alt={heading}
-            className="w-full h-full object-cover opacity-20 scale-105 animate-pulse-slow"
+            className="w-full h-full object-cover opacity-60 scale-105 animate-pulse-slow"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/70 via-zinc-950/90 to-zinc-950" />
+          <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/30 via-zinc-950/50 to-zinc-950/80" />
         </div>
       ) : (
         <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-950/40 via-zinc-950 to-zinc-950" />
@@ -172,27 +263,29 @@ export default function HeroBanner({ data, locale = 'tr' }) {
       {variant === 'image_supported' && (
         <div className="container relative z-10 mx-auto px-6 max-w-6xl">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center text-left">
-            <div className="md:col-span-7 space-y-6 animate-fade-in">
+            <div className={`md:col-span-7 ${forceMobile ? 'space-y-4' : 'space-y-4 sm:space-y-6'} animate-fade-in`}>
               {heading && (
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
+                <h1 className={`${forceMobile ? 'text-[28px]' : 'text-[28px] sm:text-5xl'} font-extrabold tracking-tight text-white leading-tight drop-shadow-md`}>
                   {heading}
                 </h1>
               )}
               {subtitle && (
                 <div 
-                  className="text-lg text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl [&>p]:m-0"
+                  className={`${forceMobile ? 'text-base' : 'text-base sm:text-lg'} text-zinc-300 leading-relaxed drop-shadow-xs max-w-xl [&>p]:m-0`}
                   dangerouslySetInnerHTML={{ __html: subtitle }}
                 />
               )}
               {ctaText && (
                 <div className="pt-2">
-                  <Link
-                    href={ctaUrl}
-                    className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary/90 hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group"
+                  <PremiumButton
+                    asChild
+                    className="w-full sm:w-auto"
                   >
-                    {ctaText}
-                    <span className="group-hover:translate-x-1 transition-transform">→</span>
-                  </Link>
+                    <Link href={ctaUrlObj.url} target={ctaUrlObj.target}>
+                      {ctaText}
+                      <span className="group-hover/prem:translate-x-1 transition-transform">→</span>
+                    </Link>
+                  </PremiumButton>
                 </div>
               )}
             </div>
@@ -293,13 +386,16 @@ export default function HeroBanner({ data, locale = 'tr' }) {
               )}
               {ctaText && (
                 <div className="pt-2">
-                  <Link
-                    href={ctaUrl}
-                    className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary/90 hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group"
+                  <Button
+                    asChild
+                    variant="primary"
+                    className="rounded-xl px-8 py-4 h-auto text-base font-semibold hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group cursor-pointer"
                   >
-                    {ctaText}
-                    <span className="group-hover:translate-x-1 transition-transform">→</span>
-                  </Link>
+                    <Link href={ctaUrlObj.url} target={ctaUrlObj.target}>
+                      {ctaText}
+                      <span className="group-hover:translate-x-1 transition-transform">→</span>
+                    </Link>
+                  </Button>
                 </div>
               )}
             </div>
@@ -433,13 +529,16 @@ export default function HeroBanner({ data, locale = 'tr' }) {
             )}
             {ctaText && (
               <div className="pt-4">
-                <Link
-                  href={ctaUrl}
-                  className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary/90 hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group"
+                <Button
+                  asChild
+                  variant="primary"
+                  className="rounded-xl px-8 py-4 h-auto text-base font-semibold hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group cursor-pointer"
                 >
-                  {ctaText}
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </Link>
+                  <Link href={ctaUrlObj.url} target={ctaUrlObj.target}>
+                    {ctaText}
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  </Link>
+                </Button>
               </div>
             )}
           </div>
@@ -520,13 +619,16 @@ export default function HeroBanner({ data, locale = 'tr' }) {
               )}
               {ctaText && (
                 <div className="pt-2 flex items-center gap-4">
-                  <Link
-                    href={ctaUrl}
-                    className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary/90 hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group"
+                  <Button
+                    asChild
+                    variant="primary"
+                    className="rounded-xl px-8 py-4 h-auto text-base font-semibold hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group cursor-pointer"
                   >
-                    {ctaText}
-                    <span className="group-hover:translate-x-1 transition-transform">→</span>
-                  </Link>
+                    <Link href={ctaUrlObj.url} target={ctaUrlObj.target}>
+                      {ctaText}
+                      <span className="group-hover:translate-x-1 transition-transform">→</span>
+                    </Link>
+                  </Button>
                   <span className="text-xs text-zinc-400 font-mono">14 Gün Ücretsiz Deneme</span>
                 </div>
               )}
@@ -574,13 +676,16 @@ export default function HeroBanner({ data, locale = 'tr' }) {
               )}
               {ctaText && (
                 <div className="pt-2">
-                  <Link
-                    href={ctaUrl}
-                    className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary/90 hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group"
+                  <Button
+                    asChild
+                    variant="primary"
+                    className="rounded-xl px-8 py-4 h-auto text-base font-semibold hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group cursor-pointer"
                   >
-                    {ctaText}
-                    <span className="group-hover:translate-x-1 transition-transform">→</span>
-                  </Link>
+                    <Link href={ctaUrlObj.url} target={ctaUrlObj.target}>
+                      {ctaText}
+                      <span className="group-hover:translate-x-1 transition-transform">→</span>
+                    </Link>
+                  </Button>
                 </div>
               )}
             </div>
@@ -629,27 +734,29 @@ export default function HeroBanner({ data, locale = 'tr' }) {
 
       {variant === 'background_video' && (
         <div className="container relative z-10 mx-auto px-6 max-w-4xl text-center animate-fade-in">
-          <div className="space-y-6">
+          <div className={`${forceMobile ? 'space-y-4' : 'space-y-4 sm:space-y-6'}`}>
             {heading && (
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+              <h1 className={`${forceMobile ? 'text-[28px]' : 'text-[28px] sm:text-5xl md:text-6xl'} font-extrabold tracking-tight text-white leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]`}>
                 {heading}
               </h1>
             )}
             {subtitle && (
               <div 
-                className="text-lg sm:text-xl text-zinc-100 leading-relaxed max-w-2xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] [&>p]:m-0"
+                className={`${forceMobile ? 'text-base' : 'text-base sm:text-xl'} text-zinc-100 leading-relaxed max-w-2xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] [&>p]:m-0`}
                 dangerouslySetInnerHTML={{ __html: subtitle }}
               />
             )}
             {ctaText && (
-              <div className="pt-4">
-                <Link
-                  href={ctaUrl}
-                  className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary/90 hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group"
+              <div className="pt-4 flex justify-center">
+                <PremiumButton
+                  asChild
+                  className={`${forceMobile ? 'w-full' : 'w-full sm:w-auto'}`}
                 >
-                  {ctaText}
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </Link>
+                  <Link href={ctaUrlObj.url} target={ctaUrlObj.target}>
+                    {ctaText}
+                    <span className="group-hover/prem:translate-x-1 transition-transform">→</span>
+                  </Link>
+                </PremiumButton>
               </div>
             )}
           </div>
@@ -672,13 +779,16 @@ export default function HeroBanner({ data, locale = 'tr' }) {
             )}
             {ctaText && (
               <div className="pt-2">
-                <Link
-                  href={ctaUrl}
-                  className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary/90 hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group"
+                <Button
+                  asChild
+                  variant="primary"
+                  className="rounded-xl px-8 py-4 h-auto text-base font-semibold hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group cursor-pointer"
                 >
-                  {ctaText}
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </Link>
+                  <Link href={ctaUrlObj.url} target={ctaUrlObj.target}>
+                    {ctaText}
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  </Link>
+                </Button>
               </div>
             )}
           </div>
@@ -759,13 +869,16 @@ export default function HeroBanner({ data, locale = 'tr' }) {
               )}
               {ctaText && (
                 <div className="pt-2">
-                  <Link
-                    href={ctaUrl}
-                    className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary/90 hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group"
+                  <Button
+                    asChild
+                    variant="primary"
+                    className="rounded-xl px-8 py-4 h-auto text-base font-semibold hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group cursor-pointer"
                   >
-                    {ctaText}
-                    <span className="group-hover:translate-x-1 transition-transform">→</span>
-                  </Link>
+                    <Link href={ctaUrlObj.url} target={ctaUrlObj.target}>
+                      {ctaText}
+                      <span className="group-hover:translate-x-1 transition-transform">→</span>
+                    </Link>
+                  </Button>
                 </div>
               )}
             </div>
@@ -864,13 +977,16 @@ export default function HeroBanner({ data, locale = 'tr' }) {
                 )}
                 {slide.ctaText && (
                   <div className="pt-4">
-                    <Link
-                      href={slide.ctaUrl}
-                      className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary/90 hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group"
+                    <Button
+                      asChild
+                      variant="primary"
+                      className="rounded-xl px-8 py-4 h-auto text-base font-semibold hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group cursor-pointer"
                     >
-                      {slide.ctaText}
-                      <span className="group-hover:translate-x-1 transition-transform">→</span>
-                    </Link>
+                      <Link href={slide.ctaUrlObj.url} target={slide.ctaUrlObj.target}>
+                        {slide.ctaText}
+                        <span className="group-hover:translate-x-1 transition-transform">→</span>
+                      </Link>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -915,28 +1031,30 @@ export default function HeroBanner({ data, locale = 'tr' }) {
 
       {/* default: minimal_centered */}
       {variant !== 'image_supported' && variant !== 'form_input' && variant !== 'video_popup' && variant !== 'search_focused' && variant !== 'dashboard_mockup' && variant !== 'social_proof' && variant !== 'split_screen' && variant !== 'background_video' && variant !== 'metric_cards' && variant !== 'tabbed_interactive' && variant !== 'slider_carousel' && (
-        <div className="container relative z-10 mx-auto px-6 text-center space-y-8 max-w-4xl animate-fade-in">
+        <div className={`container relative z-10 mx-auto px-6 text-center ${forceMobile ? 'space-y-5' : 'space-y-5 sm:space-y-8'} max-w-4xl animate-fade-in`}>
           {heading && (
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
+            <h1 className={`${forceMobile ? 'text-[28px]' : 'text-[28px] sm:text-5xl md:text-6xl'} font-extrabold tracking-tight text-white leading-tight drop-shadow-md`}>
               {heading}
             </h1>
           )}
           {subtitle && (
             <div 
-              className="text-lg sm:text-xl text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs [&>p]:m-0"
+              className={`${forceMobile ? 'text-base' : 'text-base sm:text-xl'} text-zinc-300 max-w-2xl mx-auto leading-relaxed drop-shadow-xs [&>p]:m-0`}
               dangerouslySetInnerHTML={{ __html: subtitle }}
             />
           )}
           
           {ctaText && (
-            <div className="pt-4 animate-fade-in-delayed">
-              <Link
-                href={ctaUrl}
-                className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary/90 hover:scale-105 shadow-lg shadow-primary/25 transition-all duration-300 gap-2 group"
+            <div className="pt-4 animate-fade-in-delayed flex justify-center">
+              <PremiumButton
+                asChild
+                className={`${forceMobile ? 'w-full' : 'w-full sm:w-auto'}`}
               >
-                {ctaText}
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </Link>
+                <Link href={ctaUrlObj.url} target={ctaUrlObj.target}>
+                  {ctaText}
+                  <span className="group-hover/prem:translate-x-1 transition-transform">→</span>
+                </Link>
+              </PremiumButton>
             </div>
           )}
         </div>

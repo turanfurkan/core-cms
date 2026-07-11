@@ -21,6 +21,7 @@ export function FileUpload({
   const fileInputRef = useRef(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [mediaCache, setMediaCache] = useState({}); // Stores loaded media details by ID
   const [loadingIds, setLoadingIds] = useState(new Set()); // Track IDs currently fetching metadata
   const [lightboxUrl, setLightboxUrl] = useState(null);
@@ -123,18 +124,54 @@ export function FileUpload({
         formData.append('folder_id', folderId);
       }
 
+      setUploadProgress(0);
+
       try {
-        const res = await apiFetch('/api/admin/media/files', {
-          method: 'POST',
-          body: formData,
-        });
+        const uploadUrl = (input) => {
+          let u = input;
+          if (typeof input === 'string' && input.startsWith('/api/')) {
+            u = (process.env.NEXT_PUBLIC_BASE_PATH || '') + (input.startsWith('/') ? input : '/' + input);
+          }
+          return u;
+        };
 
-        if (!res.ok) {
-          const errJson = await res.json().catch(() => ({}));
-          throw new Error(errJson.message || 'Dosya yüklenemedi');
-        }
+        const xhrUpload = () => {
+          return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', uploadUrl('/api/admin/media/files'));
+            xhr.withCredentials = true;
 
-        const json = await res.json();
+            xhr.upload.onprogress = (event) => {
+              if (event.lengthComputable) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                setUploadProgress(percent);
+              }
+            };
+
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                  const json = JSON.parse(xhr.responseText);
+                  resolve(json);
+                } catch (e) {
+                  reject(new Error('Yanıt çözümlenemedi.'));
+                }
+              } else {
+                try {
+                  const json = JSON.parse(xhr.responseText);
+                  reject(new Error(json.message || 'Dosya yüklenemedi'));
+                } catch (e) {
+                  reject(new Error(`Yükleme hatası: ${xhr.statusText}`));
+                }
+              }
+            };
+
+            xhr.onerror = () => reject(new Error('Ağ hatası oluştu.'));
+            xhr.send(formData);
+          });
+        };
+
+        const json = await xhrUpload();
         const mediaItem = json.data;
 
         // Add to local cache
@@ -238,8 +275,15 @@ export function FileUpload({
 
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
-            <LoaderCircleIcon className="size-8 text-primary animate-spin" />
-            <span className="text-xs text-muted-foreground font-semibold">Dosya yükleniyor...</span>
+            <div className="relative flex items-center justify-center">
+              <LoaderCircleIcon className="size-12 text-primary animate-spin" />
+              <span className="absolute text-[10px] font-bold text-foreground">
+                {uploadProgress < 100 ? `${uploadProgress}%` : '99%'}
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground font-semibold">
+              {uploadProgress < 100 ? 'Dosya yükleniyor...' : 'Buluta kaydediliyor...'}
+            </span>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 select-none">

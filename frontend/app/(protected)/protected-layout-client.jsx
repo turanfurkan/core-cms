@@ -28,7 +28,13 @@ export function ProtectedLayoutClient({ demo, children }) {
     return <ScreenLoader />;
   }
 
+  const isBuilder = pathname?.includes('/builder');
+
   return session ? (
-    <DemoLayoutById demo={demo}>{children}</DemoLayoutById>
+    isBuilder ? (
+      <div className="w-full flex-1 flex flex-col">{children}</div>
+    ) : (
+      <DemoLayoutById demo={demo}>{children}</DemoLayoutById>
+    )
   ) : null;
 }

@@ -21,6 +21,14 @@ class CategoryController extends Controller
             $query->where('type', $request->query('type'));
         }
 
+        if ($request->has('slug')) {
+            $slug = $request->query('slug');
+            $query->where(function ($q) use ($slug) {
+                $q->where('slug->tr', $slug)
+                  ->orWhere('slug->en', $slug);
+            });
+        }
+
         if ($request->boolean('tree')) {
             $query->whereNull('parent_id')
                 ->with(['children' => function ($q) {
@@ -29,6 +37,16 @@ class CategoryController extends Controller
         }
 
         $categories = $query->withCount('races')
+            ->with([
+                'coverImage',
+                'races.coverImage',
+                'races.graphicImage',
+                'races.gpxFile',
+                'races.stravaFile',
+                'races' => function ($q) {
+                    $q->where('status', 'published')->orderBy('start_date', 'asc');
+                }
+            ])
             ->orderBy('order', 'asc')
             ->orderBy('id', 'asc')
             ->get();

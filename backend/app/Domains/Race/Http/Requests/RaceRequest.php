@@ -57,6 +57,7 @@ class RaceRequest extends FormRequest
             'tabs' => 'nullable|array',
             'min_age' => 'nullable|integer|min:0',
             'max_age' => 'nullable|integer|min:0',
+            'whats_included' => 'nullable|array',
         ];
     }
 }

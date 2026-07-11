@@ -32,7 +32,7 @@ return new class extends Migration
             // Constraints
             $table->foreign('cover_image_id')
                 ->references('id')
-                ->on('media_items')
+                ->on('media')
                 ->onDelete('set null');
 
             $table->foreign('created_by')

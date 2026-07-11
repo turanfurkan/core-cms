@@ -10,6 +10,8 @@ class UploadMediaAction
 {
     public function execute(UploadMediaData $dto): MediaItem
     {
+        @ini_set('memory_limit', '512M');
+
         $placeholder = MediaLibraryPlaceholder::firstOrCreate([
             'name' => 'global_library',
         ]);

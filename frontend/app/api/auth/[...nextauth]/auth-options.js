@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
+import FacebookProvider from 'next-auth/providers/facebook';
 
 const authOptions = {
   providers: [
@@ -89,6 +90,22 @@ const authOptions = {
         };
       },
     }),
+    FacebookProvider({
+      clientId: process.env.FACEBOOK_CLIENT_ID,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true,
+      profile(profile) {
+        return {
+          id: profile.id,
+          email: profile.email,
+          name: profile.name || 'Anonymous',
+          status: 'ACTIVE',
+          roleId: '',
+          roleName: 'user',
+          avatar: profile.picture?.data?.url || null,
+        };
+      },
+    }),
   ],
 
   session: {
@@ -96,6 +113,45 @@ const authOptions = {
     maxAge: 24 * 60 * 60,
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account.provider === 'google' || account.provider === 'facebook') {
+        const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8000';
+        try {
+          const res = await fetch(`${backendUrl}/api/auth/social`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+              provider: account.provider,
+              provider_id: account.providerAccountId || user.id,
+              email: user.email,
+              name: user.name || 'Anonymous User',
+            }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok && data.token) {
+            user.accessToken = data.token;
+            user.id = data.user.id;
+            user.status = data.user.status;
+            user.roleId = data.user.role?.id || '';
+            user.roleName = data.user.role?.name || 'user';
+            user.avatar = data.user.avatar_url || data.user.avatar || null;
+            return true;
+          }
+
+          console.error("Backend social auth failed:", data.message);
+          return false;
+        } catch (error) {
+          console.error("Error exchanging social token with backend:", error);
+          return false;
+        }
+      }
+      return true;
+    },
     async jwt({ token, user, session, trigger }) {
       if (trigger === 'update' && session?.user) {
         token = session.user;

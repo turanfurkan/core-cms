@@ -6,7 +6,7 @@ use App\Domains\Identity\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
@@ -14,8 +14,6 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
-        'orderable_type',
-        'orderable_id',
         'amount',
         'currency',
         'status',
@@ -23,27 +21,29 @@ class Order extends Model
         'transaction_id',
     ];
 
-    protected static function booted()
-    {
-        static::saved(function ($order) {
-            if ($order->isDirty('status') && $order->status === 'paid') {
-                if ($order->orderable && method_exists($order->orderable, 'contentType')) {
-                    $contentType = $order->orderable->contentType;
-                    if ($contentType) {
-                        \App\Domains\Content\Support\ContentCacheHelper::invalidate($contentType->slug);
-                    }
-                }
-            }
-        });
-    }
+    protected $casts = [
+        'user_id' => 'integer',
+        'amount' => 'decimal:2',
+    ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function orderable(): MorphTo
+    /**
+     * Get all items in this order.
+     */
+    public function items(): HasMany
     {
-        return $this->morphTo();
+        return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Get all transaction attempts for this order.
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(PaymentTransaction::class);
     }
 }

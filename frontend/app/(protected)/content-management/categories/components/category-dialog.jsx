@@ -27,9 +27,10 @@ import { RiCheckboxCircleFill, RiErrorWarningFill } from '@remixicon/react';
 
 const CATEGORY_TYPES = [
   { value: 'race', label: 'Yarışlar (Races)' },
-  { value: 'blog', label: 'Blog / Haberler (Blog)' },
+  { value: 'blog', label: 'Yazılar (Blog)' },
   { value: 'portfolio', label: 'Projeler / Portfolyo' },
   { value: 'service', label: 'Hizmetler / Ürünler' },
+  { value: 'partner', label: 'Sponsorlar (Sponsors)' },
   { value: 'general', label: 'Genel (General)' },
 ];
 

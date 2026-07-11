@@ -4,8 +4,7 @@ namespace Tests\Feature\SeoDomain;
 
 use App\Domains\SEO\Models\SeoPath;
 use App\Domains\SEO\Models\SeoRedirect;
-use App\Domains\Content\Models\ContentType;
-use App\Domains\Content\Models\ContentEntry;
+use App\Domains\Post\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -62,21 +61,17 @@ class PublicSeoApiTest extends TestCase
     }
 
     #[Test]
-    public function public_visitor_can_resolve_seo_via_dynamic_content_entry(): void
+    public function public_visitor_can_resolve_seo_via_post(): void
     {
-        $contentType = ContentType::create([
-            'name' => 'Blog Post',
-            'slug' => 'blog',
-            'is_collection' => true,
+        $post = Post::create([
+            'title' => ['tr' => 'Hello World', 'en' => 'Hello World'],
+            'slug' => ['tr' => 'hello-world', 'en' => 'hello-world'],
+            'content' => ['tr' => 'Lorem ipsum', 'en' => 'Lorem ipsum'],
+            'summary' => ['tr' => 'Summary', 'en' => 'Summary'],
+            'status' => 'published',
         ]);
 
-        $entry = ContentEntry::create([
-            'content_type_id' => $contentType->id,
-            'status' => ContentEntry::STATUS_PUBLISHED,
-            'data' => ['slug' => 'hello-world', 'title' => 'Hello World'],
-        ]);
-
-        $entry->seo()->create([
+        $post->seo()->create([
             'meta_title' => ['tr' => 'Blog Yazısı'],
             'meta_description' => ['tr' => 'Blog Detayları'],
         ]);
@@ -104,17 +99,13 @@ class PublicSeoApiTest extends TestCase
             'meta_title' => ['tr' => 'İletişim'],
         ]);
 
-        // 2. Add a published content entry
-        $contentType = ContentType::create([
-            'name' => 'Product Page',
-            'slug' => 'products',
-            'is_collection' => true,
-        ]);
-
-        ContentEntry::create([
-            'content_type_id' => $contentType->id,
-            'status' => ContentEntry::STATUS_PUBLISHED,
-            'data' => ['slug' => 'cool-gadget'],
+        // 2. Add a published post
+        Post::create([
+            'title' => ['tr' => 'Hello World', 'en' => 'Hello World'],
+            'slug' => ['tr' => 'cool-gadget', 'en' => 'cool-gadget'],
+            'content' => ['tr' => 'Lorem ipsum', 'en' => 'Lorem ipsum'],
+            'summary' => ['tr' => 'Summary', 'en' => 'Summary'],
+            'status' => 'published',
         ]);
 
         $response = $this->getJson('/api/seo/sitemap');
@@ -122,6 +113,6 @@ class PublicSeoApiTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonCount(2, 'routes');
         $response->assertJsonPath('routes.0.path', '/contact');
-        $response->assertJsonPath('routes.1.path', '/products/cool-gadget');
+        $response->assertJsonPath('routes.1.path', '/blog/cool-gadget');
     }
 }

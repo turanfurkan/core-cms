@@ -217,4 +217,29 @@ export async function getPublicNavigation(key) {
   }
 }
 
+/**
+ * getPublicPage - fetches a single published page payload by slug using API Key
+ */
+export async function getPublicPage(slug) {
+  try {
+    if (!slug) return null;
+    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:8000';
+    const apiKey = process.env.BACKEND_API_KEY;
+    const url = `${backendUrl}/api/pages/${encodeURIComponent(slug)}`;
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'X-API-Key': apiKey || '',
+      },
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data;
+  } catch (error) {
+    console.error(`Error fetching public page for slug ${slug}:`, error);
+    return null;
+  }
+}
+
 

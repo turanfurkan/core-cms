@@ -11,12 +11,12 @@ use App\Domains\Identity\Http\Controllers\Auth\ResetPasswordController;
 use App\Domains\Identity\Http\Controllers\Auth\SendOtpController;
 use App\Domains\Identity\Http\Controllers\Auth\VerifyOtpController;
 use App\Domains\Identity\Http\Controllers\Auth\FrontendVerificationController;
+use App\Domains\Identity\Http\Controllers\Auth\SocialLoginController;
 use App\Domains\Identity\Http\Controllers\Profile\ProfileController;
-use App\Domains\Content\Http\Controllers\Admin\ContentTypeController;
-use App\Domains\Content\Http\Controllers\Admin\ContentEntryController;
-use App\Domains\Content\Http\Controllers\Public\ContentDeliveryController;
 use App\Domains\Category\Http\Controllers\Admin\CategoryController;
 use App\Domains\Race\Http\Controllers\Admin\RaceController;
+use App\Domains\Race\Http\Controllers\Admin\ParticipantController;
+use App\Domains\Race\Http\Controllers\Admin\RegistrationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +27,11 @@ Route::get('/health', function (): array {
         'version' => config('app.version'),
     ];
 });
+
+// PayTR Webhook Callback (Public)
+Route::post('/payments/paytr/callback', [\App\Domains\Billing\Http\Controllers\PaytrCallbackController::class, 'handle']);
+
+Route::get('/public/statistics/counts', [\App\Http\Controllers\PublicStatisticsController::class, 'counts']);
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/user', [ProfileController::class, 'show']);
@@ -58,6 +63,7 @@ Route::middleware('throttle:otp-send')->group(function (): void {
 });
 
 Route::post('/auth/otp/verify', VerifyOtpController::class);
+Route::post('/auth/social', SocialLoginController::class);
 Route::post('/auth/password/forgot', ForgotPasswordController::class);
 
 // Bu route Laravel'in mail içindeki linki oluşturabilmesi için zorunludur.
@@ -113,9 +119,6 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::delete('/admin/permissions/{id}', [PermissionController::class, 'destroy']);
     Route::post('/admin/permissions/delete', [PermissionController::class, 'bulkDestroy']);
 
-    // Admin Content Type Schemas Management
-    Route::post('/admin/content-types/reorder', [ContentTypeController::class, 'reorder']);
-    Route::apiResource('/admin/content-types', ContentTypeController::class);
 
     // Admin Categories Management
     Route::post('/admin/categories/reorder', [CategoryController::class, 'reorder']);
@@ -125,18 +128,20 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/races/reorder', [RaceController::class, 'reorder']);
     Route::apiResource('/admin/races', RaceController::class);
 
+    // Admin Race Participants & Registrations Management
+    Route::apiResource('/admin/race-participants', ParticipantController::class);
+    Route::apiResource('/admin/race-registrations', RegistrationController::class);
+    Route::apiResource('/admin/orders', \App\Domains\Billing\Http\Controllers\Admin\OrderController::class);
+
     // Admin Posts Management
     Route::apiResource('/admin/posts', \App\Domains\Post\Http\Controllers\Admin\PostController::class);
 
-    // Admin Content Entries Management
-    Route::get('/admin/content-types/{content_type}/entries', [ContentEntryController::class, 'index']);
-    Route::post('/admin/content-types/{content_type}/entries', [ContentEntryController::class, 'store']);
-    Route::get('/admin/content-types/{content_type}/entries/{content_entry}', [ContentEntryController::class, 'show']);
-    Route::put('/admin/content-types/{content_type}/entries/{content_entry}', [ContentEntryController::class, 'update']);
-    Route::delete('/admin/content-types/{content_type}/entries/{content_entry}', [ContentEntryController::class, 'destroy']);
-    Route::post('/admin/content-types/{content_type}/entries/{content_entry}/publish', [ContentEntryController::class, 'publish']);
-    Route::get('/admin/content-types/{content_type}/entries/{content_entry}/revisions', [ContentEntryController::class, 'revisions']);
-    Route::post('/admin/content-types/{content_type}/entries/{content_entry}/revisions/{content_revision}/rollback', [ContentEntryController::class, 'rollback']);
+    // Admin Pages Management
+    Route::apiResource('/admin/pages', \App\Domains\Page\Http\Controllers\Admin\PageController::class);
+
+    // Admin Global Blocks Management
+    Route::apiResource('/admin/global-blocks', \App\Domains\GlobalBlock\Http\Controllers\Admin\GlobalBlockController::class);
+
 
     // Media Folders Management
     Route::get('/admin/media/folders', [\App\Domains\Media\Http\Controllers\Admin\FolderController::class, 'index']);
@@ -273,16 +278,33 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/admin/marketing/widgets/{widget}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminWidgetController::class, 'show']);
     Route::put('/admin/marketing/widgets/{widget}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminWidgetController::class, 'update']);
     Route::delete('/admin/marketing/widgets/{widget}', [\App\Domains\Marketing\Http\Controllers\Admin\AdminWidgetController::class, 'destroy']);
+
+    // Partner & Sponsor Management
+    Route::get('/admin/partners', [\App\Domains\Partner\Http\Controllers\Admin\PartnerController::class, 'index']);
+    Route::post('/admin/partners', [\App\Domains\Partner\Http\Controllers\Admin\PartnerController::class, 'store']);
+    Route::get('/admin/partners/{partner}', [\App\Domains\Partner\Http\Controllers\Admin\PartnerController::class, 'show']);
+    Route::put('/admin/partners/{partner}', [\App\Domains\Partner\Http\Controllers\Admin\PartnerController::class, 'update']);
+    Route::delete('/admin/partners/{partner}', [\App\Domains\Partner\Http\Controllers\Admin\PartnerController::class, 'destroy']);
 });
 
 // Public Content Delivery API (Read-only)
 Route::middleware('api_key:content:read')->group(function (): void {
+    // Public Categories delivery
+    Route::get('/categories', [\App\Domains\Category\Http\Controllers\Admin\CategoryController::class, 'index']);
+
+    // Public Media File delivery
+    Route::get('/media/files/{media}', [\App\Domains\Media\Http\Controllers\Admin\MediaController::class, 'show']);
+
+    // Public Partner delivery
+    Route::get('/content/delivery/partners', [\App\Domains\Partner\Http\Controllers\Public\PartnerController::class, 'index']);
+
     // Intercept blog delivery to route to Post domain
     Route::get('/content/delivery/blog', [\App\Domains\Post\Http\Controllers\Public\PostController::class, 'index']);
     Route::get('/content/delivery/blog/{slug}', [\App\Domains\Post\Http\Controllers\Public\PostController::class, 'show']);
 
-    Route::get('/content/delivery/{contentTypeSlug}', [ContentDeliveryController::class, 'index']);
-    Route::get('/content/delivery/{contentTypeSlug}/{entrySlug}', [ContentDeliveryController::class, 'show']);
+    // Public Page delivery
+    Route::get('/pages/{slug}', [\App\Domains\Page\Http\Controllers\Public\PageController::class, 'show']);
+
 });
 
 // Public Form Delivery & Submission API

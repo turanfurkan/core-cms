@@ -39,6 +39,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         'phone',
         'password',
         'status',
+        'facebook_id',
+        'google_id',
     ];
 
     public const STATUS_ACTIVE = 'active';

@@ -10,8 +10,7 @@ use App\Domains\Forms\Models\FormSubmission;
 use App\Domains\Workflow\Events\WorkflowTransitioned;
 use App\Domains\Workflow\Models\WorkflowLog;
 use App\Domains\Workflow\Models\WorkflowState;
-use App\Domains\Content\Models\ContentEntry;
-use App\Domains\Content\Models\ContentType;
+use App\Domains\Post\Models\Post;
 use App\Domains\Integration\Models\Webhook;
 use App\Domains\Integration\Models\WebhookLog;
 use App\Domains\Integration\Jobs\DispatchWebhookJob;
@@ -92,31 +91,24 @@ class WebhookDispatchTest extends TestCase
     }
 
     #[Test]
-    public function workflow_transitioned_event_dispatches_content_published_webhook_job(): void
+    public function workflow_transitioned_event_dispatches_post_published_webhook_job(): void
     {
         Queue::fake();
 
         $webhook = Webhook::create([
             'name' => 'Publish Webhook',
-            'url' => 'https://example.com/content-published',
-            'events' => ['content.published'],
+            'url' => 'https://example.com/post-published',
+            'events' => ['post.published'],
             'is_active' => true,
         ]);
 
-        $contentType = new ContentType([
-            'name' => 'Blog Post',
-            'slug' => 'blog-post',
+        $post = new Post([
+            'title' => ['tr' => 'Hello World', 'en' => 'Hello World'],
+            'slug' => ['tr' => 'hello-world', 'en' => 'hello-world'],
+            'content' => ['tr' => 'Lorem ipsum', 'en' => 'Lorem ipsum'],
+            'summary' => ['tr' => 'Summary', 'en' => 'Summary'],
         ]);
-        $contentType->id = 2;
-
-        $entry = new ContentEntry([
-            'content_type_id' => 2,
-            'data' => [],
-        ]);
-        $entry->id = 10;
-        $entry->setRelation('contentType', $contentType);
-        $entry->setAttribute('slug', 'hello-world');
-        $entry->setAttribute('values', ['title' => 'Hello World', 'content' => 'Lorem ipsum']);
+        $post->id = 10;
 
         $state = new WorkflowState([
             'code' => 'approved',
@@ -125,17 +117,16 @@ class WebhookDispatchTest extends TestCase
         $state->id = 3;
 
         $log = new WorkflowLog();
-        $log->setRelation('workflowable', $entry);
+        $log->setRelation('workflowable', $post);
         $log->setRelation('toState', $state);
 
         event(new WorkflowTransitioned($log));
 
         Queue::assertPushed(DispatchWebhookJob::class, function ($job) use ($webhook) {
             return $job->webhook->id === $webhook->id
-                && $job->event === 'content.published'
+                && $job->event === 'post.published'
                 && $job->payload['id'] === 10
-                && $job->payload['slug'] === 'hello-world'
-                && $job->payload['content_type'] === 'blog-post';
+                && $job->payload['slug']['tr'] === 'hello-world';
         });
     }
 

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Race extends Model
 {
@@ -45,6 +46,7 @@ class Race extends Model
         'tabs',
         'min_age',
         'max_age',
+        'whats_included',
     ];
 
     protected $casts = [
@@ -67,6 +69,7 @@ class Race extends Model
         'tabs' => 'array',
         'min_age' => 'integer',
         'max_age' => 'integer',
+        'whats_included' => 'array',
     ];
 
     // Polymorphic categories relation
@@ -86,6 +89,27 @@ class Race extends Model
     public function parentRaces(): BelongsToMany
     {
         return $this->belongsToMany(Race::class, 'race_relations', 'child_id', 'parent_id');
+    }
+
+    public function registrations(): HasMany
+    {
+        return $this->hasMany(Registration::class);
+    }
+
+    public function participants(): BelongsToMany
+    {
+        return $this->belongsToMany(Participant::class, 'race_registrations')
+            ->withPivot([
+                'id',
+                'race_category_id',
+                'bib_number',
+                'price',
+                'status',
+                'payment_id',
+                'group_id',
+                'user_id',
+            ])
+            ->withTimestamps();
     }
 
     public function coverImage(): BelongsTo

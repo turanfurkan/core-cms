@@ -108,6 +108,14 @@ export function SignInForm() {
             <Icons.googleColorful className="size-5! opacity-100!" /> Sign in
             with Google
           </Button>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => signIn('facebook', { callbackUrl: returnUrl })}
+          >
+            <Icons.faecbookColorful className="size-5! opacity-100!" /> Sign in
+            with Facebook
+          </Button>
         </div>
 
         <div className="relative py-1.5">

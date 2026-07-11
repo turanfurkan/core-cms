@@ -233,7 +233,7 @@ export default function PostsPage() {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>Blog / Haberler</BreadcrumbPage>
+            <BreadcrumbPage>Yazılar</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -241,9 +241,9 @@ export default function PostsPage() {
       {/* Header Toolbar */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Blog / Haberler</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Yazılar</h1>
           <p className="text-xs md:text-sm text-muted-foreground/80 mt-1">
-            Tüm blog yazılarını buradan yönetebilir, filtreleyebilir, sıralayabilir ve düzenleyebilirsiniz.
+            Tüm yazıları buradan yönetebilir, filtreleyebilir, sıralayabilir ve düzenleyebilirsiniz.
           </p>
         </div>
         <div className="flex items-center gap-2">

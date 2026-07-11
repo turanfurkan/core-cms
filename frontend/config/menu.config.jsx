@@ -313,12 +313,40 @@ export const MENU_SIDEBAR = [
   {
     title: 'Races',
     icon: Flag,
-    path: '/content-management/races',
+    children: [
+      {
+        title: 'Race List',
+        path: '/admin/races',
+      },
+      {
+        title: 'Participants',
+        path: '/admin/race-participants',
+      },
+      {
+        title: 'Registrations',
+        path: '/admin/race-registrations',
+      },
+    ]
   },
   {
-    title: 'Blog / Haberler',
+    title: 'Orders',
+    icon: ShoppingCart,
+    path: '/admin/orders',
+  },
+  {
+    title: 'Yazılar',
     icon: FileText,
     path: '/content-management/posts',
+  },
+  {
+    title: 'Sayfalar',
+    icon: Layout,
+    path: '/content-management/pages',
+  },
+  {
+    title: 'Sponsorlar',
+    icon: Award,
+    path: '/content-management/partners',
   },
   {
     title: 'Categories',
@@ -768,12 +796,40 @@ export const MENU_SIDEBAR_COMPACT = [
   {
     title: 'Races',
     icon: Flag,
-    path: '/content-management/races',
+    children: [
+      {
+        title: 'Race List',
+        path: '/admin/races',
+      },
+      {
+        title: 'Participants',
+        path: '/admin/race-participants',
+      },
+      {
+        title: 'Registrations',
+        path: '/admin/race-registrations',
+      },
+    ]
   },
   {
-    title: 'Blog / Haberler',
+    title: 'Orders',
+    icon: ShoppingCart,
+    path: '/admin/orders',
+  },
+  {
+    title: 'Yazılar',
     icon: FileText,
     path: '/content-management/posts',
+  },
+  {
+    title: 'Sayfalar',
+    icon: Layout,
+    path: '/content-management/pages',
+  },
+  {
+    title: 'Sponsorlar',
+    icon: Award,
+    path: '/content-management/partners',
   },
   {
     title: 'Categories',

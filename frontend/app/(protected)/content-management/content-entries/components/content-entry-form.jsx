@@ -2685,6 +2685,22 @@ export default function ContentEntryForm({ contentType, entry, onSuccess, onCanc
               );
             }
 
+            if (block.type === 'cta_section') {
+              return (
+                <section key={block.id || idx} className="max-w-4xl mx-auto px-6 py-6">
+                  <div className="bg-slate-900 text-white rounded-2xl p-6 text-center space-y-4">
+                    <h3 className="text-sm font-extrabold truncate">{getBlockVal('section_title', true) || 'Maceraya Katılmaya Hazır mısın?'}</h3>
+                    <p className="text-[11px] text-slate-300 max-w-xl mx-auto leading-relaxed truncate">{getBlockVal('section_subtitle', true) || 'Açıklama detayı...'}</p>
+                    <div className="pt-2 max-w-xs mx-auto">
+                      <div className="bg-primary text-primary-foreground text-[10px] font-bold py-1.5 px-4 rounded-lg inline-block">
+                        {getBlockVal('button_text', true) || 'Buton / Kayıt Ol'}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              );
+            }
+
             return null;
           })}
         </div>

@@ -5,7 +5,6 @@ namespace App\Domains\Integration\Listeners;
 use App\Domains\Identity\Events\UserRegistered;
 use App\Domains\Forms\Events\FormSubmitted;
 use App\Domains\Workflow\Events\WorkflowTransitioned;
-use App\Domains\Content\Models\ContentEntry;
 use App\Domains\Integration\Models\Webhook;
 use App\Domains\Integration\Jobs\DispatchWebhookJob;
 
@@ -37,16 +36,23 @@ class WebhookEventListener
         } elseif ($event instanceof WorkflowTransitioned) {
             $log = $event->log;
             $model = $log->workflowable;
+            $toState = $log->toState;
 
-            if ($model instanceof ContentEntry) {
-                $toState = $log->toState;
-                if ($toState && $toState->is_final && $toState->code === 'approved') {
-                    $eventName = 'content.published';
+            if ($toState && $toState->is_final && $toState->code === 'approved') {
+                if ($model instanceof \App\Domains\Post\Models\Post) {
+                    $eventName = 'post.published';
                     $payload = [
                         'id' => $model->id,
-                        'content_type' => $model->contentType ? $model->contentType->slug : null,
+                        'title' => $model->title,
                         'slug' => $model->slug,
-                        'values' => $model->values,
+                        'published_at' => now()->toIso8601String(),
+                    ];
+                } elseif ($model instanceof \App\Domains\Page\Models\Page) {
+                    $eventName = 'page.published';
+                    $payload = [
+                        'id' => $model->id,
+                        'title' => $model->title,
+                        'slug' => $model->slug,
                         'published_at' => now()->toIso8601String(),
                     ];
                 }

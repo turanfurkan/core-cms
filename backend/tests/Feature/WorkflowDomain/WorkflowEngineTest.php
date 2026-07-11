@@ -3,8 +3,7 @@
 namespace Tests\Feature\WorkflowDomain;
 
 use App\Domains\Identity\Models\User;
-use App\Domains\Content\Models\ContentType;
-use App\Domains\Content\Models\ContentEntry;
+use App\Domains\Post\Models\Post;
 use App\Domains\Workflow\Models\Workflow;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -88,21 +87,23 @@ class WorkflowEngineTest extends TestCase
             'required_role' => 'editor'
         ]);
 
-        // 2. Create Content Entry
-        $contentType = ContentType::create(['name' => 'News', 'slug' => 'news']);
-        $entry = ContentEntry::create([
-            'content_type_id' => $contentType->id,
-            'data' => ['title' => 'Sample News'],
+        // 2. Create Post
+        $entry = Post::create([
+            'title' => ['tr' => 'Sample News', 'en' => 'Sample News'],
+            'slug' => ['tr' => 'sample-news', 'en' => 'sample-news'],
+            'content' => ['tr' => 'Content', 'en' => 'Content'],
+            'summary' => ['tr' => 'Summary', 'en' => 'Summary'],
             'status' => 'draft'
         ]);
 
         // 3. Assign Workflow
         $entry->assignWorkflow($workflow);
+
         $this->assertEquals('draft', $entry->currentWorkflowState()->code);
 
         // 4. Retrieve available transitions
         $responseAvailable = $this->actingAs($this->writer)
-            ->getJson("/api/admin/workflows/transitions/content_entry/{$entry->id}");
+            ->getJson("/api/admin/workflows/transitions/post/{$entry->id}");
 
         $responseAvailable->assertStatus(200);
         $this->assertCount(1, $responseAvailable->json());
@@ -110,7 +111,7 @@ class WorkflowEngineTest extends TestCase
 
         // 5. Trigger transition (Submit)
         $responseTrigger = $this->actingAs($this->writer)
-            ->postJson("/api/admin/workflows/transitions/content_entry/{$entry->id}", [
+            ->postJson("/api/admin/workflows/transitions/post/{$entry->id}", [
                 'transition_id' => $submitTransition->id,
                 'comment' => 'Submitting for editor review'
             ]);
@@ -127,16 +128,16 @@ class WorkflowEngineTest extends TestCase
 
         // 6. Test authorization restriction (Writer cannot approve)
         $responseUnauth = $this->actingAs($this->writer)
-            ->postJson("/api/admin/workflows/transitions/content_entry/{$entry->id}", [
+            ->postJson("/api/admin/workflows/transitions/post/{$entry->id}", [
                 'transition_id' => $approveTransition->id,
             ]);
 
         $responseUnauth->assertStatus(422); // ValidationException from required role check
         $this->assertEquals('review', $entry->fresh()->currentWorkflowState()->code);
 
-        // 7. Editor can approve and trigger AutoPublishContentListener
+        // 7. Editor can approve and trigger AutoPublishWorkflowListener
         $responseApprove = $this->actingAs($this->editor)
-            ->postJson("/api/admin/workflows/transitions/content_entry/{$entry->id}", [
+            ->postJson("/api/admin/workflows/transitions/post/{$entry->id}", [
                 'transition_id' => $approveTransition->id,
                 'comment' => 'Content approved!'
             ]);
@@ -144,13 +145,13 @@ class WorkflowEngineTest extends TestCase
         $responseApprove->assertStatus(200);
         $this->assertEquals('approved', $entry->fresh()->currentWorkflowState()->code);
 
-        // Assert Content Entry is auto-published
+        // Assert Post is auto-published
         $this->assertEquals('published', $entry->fresh()->status);
-        $this->assertNotNull($entry->fresh()->published_at);
+        $this->assertNotNull($entry->fresh()->publish_date);
 
         // 8. History endpoint check
         $responseHistory = $this->actingAs($this->writer)
-            ->getJson("/api/admin/workflows/history/content_entry/{$entry->id}");
+            ->getJson("/api/admin/workflows/history/post/{$entry->id}");
 
         $responseHistory->assertStatus(200);
         $this->assertCount(3, $responseHistory->json('data')); // initial assignment + submit + approve

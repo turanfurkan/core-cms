@@ -17,7 +17,6 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RolesAndPermissionsSeeder::class);
-        $this->call(ContentTypeSeeder::class);
 
         $user = User::where('email', 'test@example.com')->first();
         if (!$user) {

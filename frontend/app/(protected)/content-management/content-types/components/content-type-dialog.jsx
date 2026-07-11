@@ -144,7 +144,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
 
   // Dynamic Zone States
   const [dynamicZoneEnabled, setDynamicZoneEnabled] = useState(false);
-  const [dynamicZoneBlocks, setDynamicZoneBlocks] = useState(['hero_banner', 'rich_text', 'collection_display', 'entry_callout', 'statistics_block', 'faq_accordion', 'features_grid', 'integrations_logos', 'testimonial_card', 'timeline_milestones', 'event_banner', 'team_grid', 'campaign_banner']);
+  const [dynamicZoneBlocks, setDynamicZoneBlocks] = useState(['hero_banner', 'video_hero', 'rich_text', 'collection_display', 'entry_callout', 'statistics_block', 'faq_accordion', 'features_grid', 'integrations_logos', 'testimonial_card', 'timeline_milestones', 'event_banner', 'team_grid', 'campaign_banner', 'cta_section']);
 
   // Step 2 Fields Schema list
   const [fields, setFields] = useState([]);
@@ -185,7 +185,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
           setDynamicZoneBlocks(allowed.map(b => b.type));
         } else {
           setDynamicZoneEnabled(false);
-          setDynamicZoneBlocks(['hero_banner', 'rich_text', 'collection_display', 'entry_callout', 'statistics_block', 'faq_accordion', 'features_grid', 'integrations_logos', 'testimonial_card', 'timeline_milestones', 'event_banner', 'team_grid', 'campaign_banner']);
+          setDynamicZoneBlocks(['hero_banner', 'video_hero', 'rich_text', 'collection_display', 'entry_callout', 'statistics_block', 'faq_accordion', 'features_grid', 'integrations_logos', 'testimonial_card', 'timeline_milestones', 'event_banner', 'team_grid', 'campaign_banner', 'cta_section']);
         }
 
         // Localization mapping
@@ -233,7 +233,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
         setDefaultPrice(0);
         setDefaultCurrency('TRY');
         setDynamicZoneEnabled(false);
-        setDynamicZoneBlocks(['hero_banner', 'rich_text', 'collection_display', 'entry_callout', 'statistics_block', 'faq_accordion', 'features_grid', 'integrations_logos', 'testimonial_card', 'timeline_milestones', 'event_banner', 'team_grid', 'campaign_banner']);
+        setDynamicZoneBlocks(['hero_banner', 'video_hero', 'rich_text', 'collection_display', 'entry_callout', 'statistics_block', 'faq_accordion', 'features_grid', 'integrations_logos', 'testimonial_card', 'timeline_milestones', 'event_banner', 'team_grid', 'campaign_banner', 'cta_section']);
 
         // Standard default locked fields
         setFields([
@@ -650,6 +650,19 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
             { name: 'İlerleme Yüzdesi (0-100)', slug: 'progress_percent', type: 'number', validation_rules: { required: false } },
             { name: 'Buton Metni', slug: 'cta_text', type: 'string', validation_rules: { required: false }, options: { localized: true } },
             { name: 'Buton Linki', slug: 'cta_url', type: 'string', validation_rules: { required: false } }
+          ]
+        },
+        {
+          type: 'cta_section',
+          name: 'Harekete Geçirici Panel (CTA Section)',
+          desc: 'Bülten aboneliği veya buton yönlendirmeli modern eylem çağrısı (CTA) alanı.',
+          fields: [
+            { name: 'Başlık', slug: 'section_title', type: 'string', validation_rules: { required: true }, options: { localized: true } },
+            { name: 'Açıklama', slug: 'section_subtitle', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'CTA Modu', slug: 'cta_mode', type: 'string', validation_rules: { required: true } },
+            { name: 'E-posta Giriş İpucu', slug: 'placeholder', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Buton Metni', slug: 'button_text', type: 'string', validation_rules: { required: false }, options: { localized: true } },
+            { name: 'Buton Yönlendirme Linki', slug: 'button_link', type: 'string', validation_rules: { required: false } }
           ]
         }
       ];
@@ -1353,6 +1366,7 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
                       { type: 'hero_banner', name: '🖼️ Giriş Görseli (Hero)', desc: 'Geniş başlık, alt başlık ve buton alanı.' },
+                      { type: 'video_hero', name: '📹 Video Giriş (Hero)', desc: 'Otomatik döngülü video arka planı stili.' },
                       { type: 'rich_text', name: '✍️ Zengin Metin', desc: 'WYSIWYG formatında serbest yazı alanı.' },
                       { type: 'collection_display', name: '🗂️ Koleksiyon Listeleme', desc: 'İçerikleri carousel veya grid şeklinde listeler.' },
                       { type: 'entry_callout', name: '📢 Görsel Callout', desc: 'Buton ve görsel içeren callout alanı.' },
@@ -1364,7 +1378,8 @@ export default function ContentTypeDialog({ open, closeDialog, contentType }) {
                       { type: 'timeline_milestones', name: '📅 Zaman Çizelgesi', desc: 'Kilometre taşları ve dönem tarihleri.' },
                       { type: 'event_banner', name: '🎟️ Etkinlik Duyurusu', desc: 'Katılımcı ve ilerleme durumlu yatay kart.' },
                       { type: 'team_grid', name: '👥 Ekip Üyeleri', desc: 'Roller ve sosyal medya linkli ekip.' },
-                      { type: 'campaign_banner', name: '📈 Kampanya Paneli', desc: 'İndirim oranı ve kupon kopyalama alanı.' }
+                      { type: 'campaign_banner', name: '📈 Kampanya Paneli', desc: 'İndirim oranı ve kupon kopyalama alanı.' },
+                      { type: 'cta_section', name: '🔔 Harekete Geçirici (CTA)', desc: 'Bülten aboneliği veya buton yönlendirmeli modern panel.' }
                     ].map((block) => {
                       const isChecked = dynamicZoneBlocks.includes(block.type);
                       return (

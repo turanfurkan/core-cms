@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getContentEntries, getSeoMetadata, getPublicSettings, getPublicNavigation } from '@/lib/api-server';
+import { getContentEntries, getSeoMetadata, getPublicSettings, getPublicNavigation, getPublicPage } from '@/lib/api-server';
 import { Container } from '@/components/common/container';
 import BlockRenderer from '@/components/blocks/block-renderer';
 import PublicHeader from '@/components/common/public-header';
@@ -29,6 +29,19 @@ export async function generateMetadata() {
   const seo = await getSeoMetadata('/');
   if (seo) {
     return seo;
+  }
+
+  // Fallback to title from dynamic page marked as homepage
+  const page = await getPublicPage('__homepage__');
+  const pageData = page?.data ? page.data : page;
+  if (pageData) {
+    const title = getLocalizedValue(pageData.title, 'tr');
+    if (title) {
+      return {
+        title: `${title} | Core CMS`,
+        description: getLocalizedValue(pageData.summary, 'tr') || undefined
+      };
+    }
   }
 
   const rawSiteName = settings['site.name'];
@@ -86,17 +99,22 @@ export default async function Page() {
     footerMenuItems = nav?.items || null;
   }
 
-  // Fetch entries for the 'homepage' content type
-  const resData = await getContentEntries('homepage', {
-    page: 1,
-    limit: 1,
-  });
-
-  const entry = resData?.data?.[0] || null;
-  const entryData = entry?.data || {};
-
-  // Find if there are dynamic blocks
-  const blocks = entryData.dynamic_blocks || [];
+  // 1. Try to fetch dynamic page marked as homepage
+  let blocks = [];
+  const page = await getPublicPage('__homepage__');
+  const pageData = page?.data ? page.data : page;
+  if (pageData) {
+    blocks = pageData.content || [];
+  } else {
+    // 2. Fall back to old 'homepage' content type entries
+    const resData = await getContentEntries('homepage', {
+      page: 1,
+      limit: 1,
+    });
+    const entry = resData?.data?.[0] || null;
+    const entryData = entry?.data || {};
+    blocks = entryData.dynamic_blocks || [];
+  }
 
   return (
     <div className="w-full min-h-screen bg-background text-foreground flex flex-col justify-between animate-fade-in">
@@ -117,7 +135,7 @@ export default async function Page() {
                 </p>
                 <div className="pt-4">
                   <a
-                    href="http://localhost:3000/content-management/content-entries?type=homepage"
+                    href="http://localhost:3000/content-management/pages"
                     className="inline-flex items-center justify-center px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary/95 transition-colors"
                   >
                     Bölüm Ekle & Düzenle

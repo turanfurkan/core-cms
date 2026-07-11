@@ -78,9 +78,10 @@ import CategoryDialog from './components/category-dialog';
 
 const CATEGORY_TYPES_MAP = {
   race: { label: 'Yarışlar', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
-  blog: { label: 'Blog / Haberler', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
+  blog: { label: 'Yazılar', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
   portfolio: { label: 'Projeler', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' },
   service: { label: 'Hizmetler', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  partner: { label: 'Sponsorlar', color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20' },
   general: { label: 'Genel', color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' },
 };
 
@@ -627,9 +628,10 @@ export default function CategoriesPage() {
             <SelectContent className="bg-card border-border">
               <SelectItem value="all">Tümü</SelectItem>
               <SelectItem value="race">Yarışlar</SelectItem>
-              <SelectItem value="blog">Blog / Haberler</SelectItem>
+              <SelectItem value="blog">Yazılar</SelectItem>
               <SelectItem value="portfolio">Projeler</SelectItem>
               <SelectItem value="service">Hizmetler</SelectItem>
+              <SelectItem value="partner">Sponsorlar</SelectItem>
               <SelectItem value="general">Genel</SelectItem>
             </SelectContent>
           </Select>
@@ -874,7 +876,7 @@ export default function CategoriesPage() {
                       {(() => {
                         let linkHref = null;
                         if (item.type === 'race') {
-                          linkHref = `/content-management/races?category_id=${item.id}`;
+                          linkHref = `/admin/races?category_id=${item.id}`;
                         } else if (item.type === 'blog') {
                           linkHref = `/content-management/content-entries?type=blog`;
                         } else if (item.type === 'portfolio') {

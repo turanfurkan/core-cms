@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Calendar, Clock, ArrowUpRight } from 'lucide-react';
+import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -20,7 +20,6 @@ export function PostCard({ item, previewOnly = false, locale = 'tr' }) {
   const data = item.data || {};
   const title = getLocalized(data.title || item.title || '', locale) || 'Başlıksız';
   const summary = getLocalized(data.summary || data.description || '', locale);
-  const author = data.author || 'Administrator';
   const readingTime = data.reading_time || item.reading_time || '5';
 
   // Try resolving cover image URL
@@ -30,7 +29,6 @@ export function PostCard({ item, previewOnly = false, locale = 'tr' }) {
   } else if (item.cover_image && typeof item.cover_image === 'object') {
     coverUrl = item.cover_image.url || coverUrl;
   } else {
-    // Look for any media attachment inside JSON data
     const mediaFields = [];
     Object.entries(data).forEach(([k, v]) => {
       if (v && typeof v === 'object' && v.url) {
@@ -50,12 +48,10 @@ export function PostCard({ item, previewOnly = false, locale = 'tr' }) {
   const resolvedCoverUrl = fullCoverUrl.startsWith('/') && !fullCoverUrl.startsWith('//') ? `${backendUrl}${fullCoverUrl}` : fullCoverUrl;
 
   const date = item.published_at || item.created_at
-    ? new Date(item.published_at || item.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+    ? new Date(item.published_at || item.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
     : null;
 
-  // Categories resolution
   const categoriesList = item.categories || data.categories || [];
-
   const resolvedSlug = getLocalized(data.slug || item.slug || '', locale);
   const detailUrl = `/${item.content_type?.slug || 'posts'}/${resolvedSlug}`;
   const RootComponent = previewOnly ? 'div' : Link;
@@ -64,79 +60,56 @@ export function PostCard({ item, previewOnly = false, locale = 'tr' }) {
     <RootComponent
       href={previewOnly ? undefined : detailUrl}
       className={cn(
-        "group flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card shadow-xs transition-all duration-300 w-full select-none h-full",
-        previewOnly ? "" : "hover:-translate-y-1 hover:shadow-md hover:border-primary/20 cursor-pointer"
+        "group flex flex-col h-full rounded-2xl overflow-hidden border border-zinc-200/60 dark:border-white/5 bg-white dark:bg-[#0b1428] shadow-xs hover:shadow-md dark:hover:border-zinc-700/60 transition-all duration-300 hover:-translate-y-1.5 cursor-pointer",
+        previewOnly ? "pointer-events-none" : ""
       )}
     >
-      {/* Visual Area */}
-      <div className="relative aspect-video w-full overflow-hidden bg-muted/20 shrink-0">
-        {/* Categories Overlays */}
-        {categoriesList.length > 0 && (
-          <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1.5 max-w-[80%]">
-            {categoriesList.slice(0, 2).map((cat, idx) => {
-              const catName = getLocalized(cat.name || cat.title || '', locale);
-              return (
-                <Badge
-                  key={cat.id || idx}
-                  className="bg-background/90 hover:bg-background/90 text-foreground border border-border text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 shadow-sm rounded-lg"
-                >
-                  {catName}
-                </Badge>
-              );
-            })}
-          </div>
-        )}
+      {/* Aspect Ratio Image Container */}
+      <div className="relative aspect-[16/10] overflow-hidden bg-muted shrink-0">
         <img
           src={resolvedCoverUrl}
           alt={title}
-          className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-104"
           onError={(e) => {
             e.target.src = '/media/previews/placeholder.png';
           }}
         />
+
+        {/* Floating Reading Time Badge */}
+        {readingTime && (
+          <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm">
+            <Clock className="size-3 text-primary" />
+            {readingTime} {locale === 'tr' ? 'dk okuma' : 'min read'}
+          </span>
+        )}
       </div>
 
-      {/* Content Details */}
-      <div className="p-5 flex-1 flex flex-col justify-between gap-4">
-        <div className="space-y-3">
-          {/* Metadata Row */}
-          <div className="flex items-center gap-3 text-[10px] text-muted-foreground/75 font-semibold uppercase tracking-wider">
-            {date && (
-              <span className="flex items-center gap-1">
-                <Calendar className="size-3 text-muted-foreground/45 shrink-0" />
-                {date}
-              </span>
-            )}
-            {date && readingTime && <span className="text-muted-foreground/30">•</span>}
-            {readingTime && (
-              <span className="flex items-center gap-1">
-                <Clock className="size-3 text-muted-foreground/45 shrink-0" />
-                {readingTime} Dk Okuma
-              </span>
-            )}
-          </div>
-
-          {/* Title */}
-          <h4 className="font-black text-sm sm:text-base text-zinc-900 dark:text-zinc-50 line-clamp-2 leading-snug group-hover:text-primary transition-colors text-left">
-            {title}
-          </h4>
-
-          {/* Excerpt */}
-          {summary && (
-            <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed text-left">
-              {summary}
-            </p>
-          )}
-        </div>
-
-        {/* Footer info row */}
-        <div className="flex items-center justify-between border-t border-border/50 pt-3.5 mt-auto">
-          <span className="text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider">
-            Yazar: {author}
+      {/* Card Content Details */}
+      <div className="p-6 flex flex-col flex-grow">
+        {/* Date Row */}
+        {date && (
+          <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 mb-2.5">
+            <Calendar className="size-3.5 text-primary" />
+            {date}
           </span>
-          <span className="inline-flex items-center gap-1 text-[10px] font-black text-primary uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            Devamını Oku <ArrowUpRight className="size-3.5" />
-          </span>
+        )}
+
+        {/* Title */}
+        <h3 className="text-base font-black text-zinc-900 dark:text-white leading-snug tracking-tight group-hover:text-primary transition-colors duration-200 line-clamp-2 text-left">
+          {title}
+        </h3>
+
+        {/* Excerpt Summary */}
+        {summary && (
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2.5 line-clamp-2 font-medium leading-relaxed flex-grow text-left">
+            {summary}
+          </p>
+        )}
+
+        {/* Read More link */}
+        <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-primary mt-5 group-hover:text-primary/80 transition-colors">
+          <span>{locale === 'tr' ? 'DEVAMINI OKU' : 'READ MORE'}</span>
+          <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-1" />
         </div>
       </div>
     </RootComponent>

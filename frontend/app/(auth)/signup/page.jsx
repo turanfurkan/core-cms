@@ -132,6 +132,13 @@ export default function Page() {
             >
               <Icons.googleColorful className="size-4!" /> Sign up with Google
             </Button>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => signIn('facebook', { callbackUrl: '/' })}
+            >
+              <Icons.faecbookColorful className="size-4!" /> Sign up with Facebook
+            </Button>
           </div>
 
           <div className="relative py-1.5">

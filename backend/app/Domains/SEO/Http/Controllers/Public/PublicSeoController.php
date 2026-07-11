@@ -7,8 +7,6 @@ use App\Domains\SEO\Http\Resources\SeoPathResource;
 use App\Domains\SEO\Http\Resources\SeoRedirectResource;
 use App\Domains\SEO\Models\SeoPath;
 use App\Domains\SEO\Models\SeoRedirect;
-use App\Domains\Content\Models\ContentType;
-use App\Domains\Content\Models\ContentEntry;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,25 +54,37 @@ class PublicSeoController extends Controller
                 ->setStatusCode(200);
         }
 
-        // 2. Check if the path corresponds to a Content Entry: /content-type-slug/entry-slug
+        // 2. Check if the path corresponds to a Post: /blog/entry-slug
         $segments = array_values(array_filter(explode('/', $standardPath)));
         if (count($segments) >= 2) {
             $contentTypeSlug = $segments[0];
             $entrySlug = $segments[1];
 
-            $contentType = ContentType::where('slug', $contentTypeSlug)->first();
-            if ($contentType) {
-                $entry = ContentEntry::where('content_type_id', $contentType->id)
-                    ->where('status', ContentEntry::STATUS_PUBLISHED)
+            if ($contentTypeSlug === 'blog' || $contentTypeSlug === 'posts') {
+                $post = \App\Domains\Post\Models\Post::where('status', 'published')
                     ->where(function ($query) use ($entrySlug) {
-                        $query->where('data->slug', $entrySlug)
-                            ->orWhere('data->slug->tr', $entrySlug)
-                            ->orWhere('data->slug->en', $entrySlug);
+                        $query->where('slug->tr', $entrySlug)
+                            ->orWhere('slug->en', $entrySlug);
                     })
                     ->first();
 
-                if ($entry && $entry->seo) {
-                    return (new SeoMetadataResource($entry->seo))
+                if ($post && $post->seo) {
+                    return (new SeoMetadataResource($post->seo))
+                        ->response()
+                        ->setStatusCode(200);
+                }
+            }
+
+            if ($contentTypeSlug === 'pages') {
+                $page = \App\Domains\Page\Models\Page::where('status', 'published')
+                    ->where(function ($query) use ($entrySlug) {
+                        $query->where('slug->tr', $entrySlug)
+                            ->orWhere('slug->en', $entrySlug);
+                    })
+                    ->first();
+
+                if ($page && $page->seo) {
+                    return (new SeoMetadataResource($page->seo))
                         ->response()
                         ->setStatusCode(200);
                 }
@@ -99,28 +109,46 @@ class PublicSeoController extends Controller
             ];
         }
 
-        // 2. Add all published content entries
-        $entries = ContentEntry::where('status', ContentEntry::STATUS_PUBLISHED)
-            ->with('contentType')
-            ->get();
-
-        foreach ($entries as $entry) {
-            if (!$entry->contentType) {
-                continue;
+        // 2. Add all published posts
+        $posts = \App\Domains\Post\Models\Post::where('status', 'published')->get();
+        foreach ($posts as $post) {
+            $slug = is_array($post->slug) ? ($post->slug['tr'] ?? $post->slug['en'] ?? '') : $post->slug;
+            if ($slug) {
+                $routes[] = [
+                    'path' => '/blog/' . $slug,
+                    'lastmod' => ($post->publish_date ?: $post->updated_at)->toIso8601String(),
+                    'changefreq' => 'weekly',
+                    'priority' => 0.7,
+                ];
             }
+        }
 
-            // Fallback default slug or get localized slug
-            $slug = $entry->getLocalizedValue('slug') ?: $entry->slug;
-            if (!$slug) {
-                continue;
+        // 3. Add all published pages
+        $pages = \App\Domains\Page\Models\Page::where('status', 'published')->get();
+        foreach ($pages as $page) {
+            $slug = is_array($page->slug) ? ($page->slug['tr'] ?? $page->slug['en'] ?? '') : $page->slug;
+            if ($slug) {
+                $routes[] = [
+                    'path' => '/' . $slug,
+                    'lastmod' => $page->updated_at->toIso8601String(),
+                    'changefreq' => 'weekly',
+                    'priority' => 0.7,
+                ];
             }
+        }
 
-            $routes[] = [
-                'path' => '/' . $entry->contentType->slug . '/' . $slug,
-                'lastmod' => ($entry->published_at ?: $entry->updated_at)->toIso8601String(),
-                'changefreq' => 'weekly',
-                'priority' => 0.7,
-            ];
+        // 4. Add all published races
+        $races = \App\Domains\Race\Models\Race::where('status', 'published')->get();
+        foreach ($races as $race) {
+            $slug = is_array($race->slug) ? ($race->slug['tr'] ?? $race->slug['en'] ?? '') : $race->slug;
+            if ($slug) {
+                $routes[] = [
+                    'path' => '/races/' . $slug,
+                    'lastmod' => $race->updated_at->toIso8601String(),
+                    'changefreq' => 'weekly',
+                    'priority' => 0.7,
+                ];
+            }
         }
 
         return response()->json([
@@ -128,3 +156,4 @@ class PublicSeoController extends Controller
         ]);
     }
 }
+
