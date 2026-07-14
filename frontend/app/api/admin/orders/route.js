@@ -13,6 +13,7 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const queryString = searchParams.toString();
     const targetUrl = `/api/admin/orders${queryString ? `?${queryString}` : ''}`;
+    console.log("=== NEXT.JS GET ORDERS PROXY URL ===", targetUrl);
 
     const response = await backendFetch(targetUrl);
     const data = await response.json();

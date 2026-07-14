@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getCoreRowModel,
@@ -16,7 +17,14 @@ import {
   Eye,
   Info,
   Terminal,
+  User,
+  CalendarDays,
+  Download,
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { apiFetch } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Badge } from '@/components/ui/badge';
@@ -55,7 +63,9 @@ export default function OrdersPage() {
   });
   const [sorting, setSorting] = useState([{ id: 'id', desc: true }]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [ordersSearchInput, setOrdersSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
 
   // Detail Drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -87,7 +97,7 @@ export default function OrdersPage() {
 
   // Fetch Orders
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-orders', pagination, sorting, searchQuery, statusFilter],
+    queryKey: ['admin-orders', pagination, sorting, searchQuery, statusFilter, dateRange],
     queryFn: async () => {
       const sortField = sorting?.[0]?.id || 'id';
       const sortDirection = sorting?.[0]?.desc ? 'desc' : 'asc';
@@ -98,6 +108,8 @@ export default function OrdersPage() {
         dir: sortDirection,
         ...(searchQuery ? { search: searchQuery } : {}),
         ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+        ...(dateRange?.from ? { start_date: dateRange.from.toISOString() } : {}),
+        ...(dateRange?.to ? { end_date: dateRange.to.toISOString() } : {}),
       });
 
       const res = await apiFetch(`/api/admin/orders?${params.toString()}`);
@@ -115,28 +127,108 @@ export default function OrdersPage() {
     statusMutation.mutate({ orderId, status });
   };
 
+  const handleExport = async () => {
+    try {
+      const sortField = sorting?.[0]?.id || 'id';
+      const sortDirection = sorting?.[0]?.desc ? 'desc' : 'asc';
+      const params = new URLSearchParams({
+        page: '1',
+        per_page: '5000',
+        sort: sortField,
+        dir: sortDirection,
+        ...(searchQuery ? { search: searchQuery } : {}),
+        ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+        ...(dateRange?.from ? { start_date: dateRange.from.toISOString() } : {}),
+        ...(dateRange?.to ? { end_date: dateRange.to.toISOString() } : {}),
+      });
+
+      const res = await apiFetch(`/api/admin/orders?${params.toString()}`);
+      if (!res.ok) throw new Error('Dışa aktarma verisi yüklenemedi');
+      const json = await res.json();
+      const exportData = json.data || [];
+
+      if (exportData.length === 0) {
+        toast.error('Dışa aktarılacak veri bulunamadı.');
+        return;
+      }
+
+      const headers = ['Sipariş ID', 'Kullanıcı', 'E-Posta', 'Tutar', 'Para Birimi', 'Durum', 'Ödeme Kanalı', 'Ödeme Referansı (OID)', 'Tarih'];
+      const csvRows = [headers.join(',')];
+
+      for (const order of exportData) {
+        const row = [
+          `#${order.id}`,
+          `"${(order.user?.name || 'Misafir').replace(/"/g, '""')}"`,
+          `"${(order.user?.email || '-').replace(/"/g, '""')}"`,
+          order.amount,
+          order.currency,
+          `"${order.status}"`,
+          `"${order.gateway || '-'}"`,
+          `"${order.transaction_id || '-'}"`,
+          order.created_at ? `"${new Date(order.created_at).toLocaleString('tr-TR')}"` : '-'
+        ];
+        csvRows.push(row.join(','));
+      }
+
+      const csvContent = '\uFEFF' + csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `siparisler_export_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Siparişler başarıyla dışa aktarıldı.');
+    } catch (err) {
+      toast.error('Dışa aktarma başarısız oldu: ' + err.message);
+    }
+  };
+
   // Columns definition
   const columns = useMemo(() => [
     {
       accessorKey: 'id',
       id: 'id',
-      header: ({ column }) => (
-        <DataGridColumnHeader title="Sipariş ID" column={column} visibility />
-      ),
+      header: "Sipariş ID",
       cell: ({ row }) => <span className="font-mono text-xs">#{row.original.id}</span>,
-      meta: { skeleton: <Skeleton className="w-12 h-6" /> },
+      meta: {
+        cellClassName: 'w-[110px] max-w-[110px]',
+        headerClassName: 'w-[110px] max-w-[110px]',
+        skeleton: <Skeleton className="w-12 h-6" />
+      },
     },
     {
       accessorKey: 'user.name',
       id: 'user_name',
       header: "Kullanıcı",
-      cell: ({ row }) => (
-        <div>
-          <div className="font-semibold text-foreground">{row.original.user?.name || 'Misafir'}</div>
-          <div className="text-xs text-muted-foreground">{row.original.user?.email || '-'}</div>
-        </div>
-      ),
-      meta: { skeleton: <Skeleton className="w-32 h-6" /> },
+      cell: ({ row }) => {
+        const user = row.original.user;
+        if (!user) {
+          return <span className="text-muted-foreground">Misafir</span>;
+        }
+        return (
+          <div className="flex items-center gap-2 min-w-[200px]">
+            <User className="size-4 text-muted-foreground shrink-0" />
+            <div className="flex flex-col">
+              <Link
+                href={`/user-management/users/${user.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-semibold text-foreground hover:text-primary transition-colors hover:underline decoration-primary/40 underline-offset-2"
+              >
+                {user.name}
+              </Link>
+              <span className="text-xs text-muted-foreground">{user.email || '-'}</span>
+            </div>
+          </div>
+        );
+      },
+      meta: {
+        cellClassName: 'min-w-[220px]',
+        headerClassName: 'min-w-[220px]',
+        skeleton: <Skeleton className="w-32 h-6" />
+      },
     },
     {
       accessorKey: 'amount',
@@ -179,7 +271,12 @@ export default function OrdersPage() {
       accessorKey: 'gateway',
       id: 'gateway',
       header: "Ödeme Kanalı",
-      cell: ({ row }) => <span className="uppercase text-xs font-semibold">{row.original.gateway || 'PayTR'}</span>,
+      cell: ({ row }) => {
+        const gw = row.original.gateway;
+        if (gw === 'halkbank') return <span className="text-xs font-semibold">Halkbank</span>;
+        if (gw === 'paytr') return <span className="text-xs font-semibold">PayTR</span>;
+        return <span className="text-xs font-semibold uppercase">{gw || 'PayTR'}</span>;
+      },
       meta: { skeleton: <Skeleton className="w-16 h-6" /> },
     },
     {
@@ -201,7 +298,7 @@ export default function OrdersPage() {
       header: "",
       cell: ({ row }) => (
         <div className="flex items-center justify-end">
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleViewClick(row.original)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); handleViewClick(row.original); }}>
             <Eye className="size-4" />
           </Button>
         </div>
@@ -226,8 +323,7 @@ export default function OrdersPage() {
     manualFiltering: true,
   });
 
-  const Toolbar = () => {
-    const [inputValue, setInputValue] = useState(searchQuery);
+  const renderToolbar = () => {
     return (
       <CardHeader className="py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -235,13 +331,13 @@ export default function OrdersPage() {
             <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
             <Input
               placeholder="Referans no veya isim ara..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(inputValue)}
+              value={ordersSearchInput}
+              onChange={(e) => setOrdersSearchInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(ordersSearchInput)}
               className="ps-9 w-full md:w-64"
             />
             {searchQuery && (
-              <Button variant="ghost" className="absolute end-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0" onClick={() => { setSearchQuery(''); setInputValue(''); }}>
+              <Button variant="ghost" className="absolute end-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0" onClick={() => { setSearchQuery(''); setOrdersSearchInput(''); }}>
                 <X className="size-3.5" />
               </Button>
             )}
@@ -260,6 +356,66 @@ export default function OrdersPage() {
               <SelectItem value="refunded">İade Edildi</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Date Range Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-[250px] justify-start text-left font-normal h-10',
+                  !dateRange?.from && 'text-muted-foreground'
+                )}
+              >
+                <CalendarDays className="me-2 size-4 text-muted-foreground shrink-0" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, 'dd.MM.yyyy')} - {format(dateRange.to, 'dd.MM.yyyy')}
+                    </>
+                  ) : (
+                    format(dateRange.from, 'dd.MM.yyyy')
+                  )
+                ) : (
+                  <span>Tarih Aralığı Seçin</span>
+                )}
+                {dateRange?.from && (
+                  <span
+                    role="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDateRange({ from: undefined, to: undefined });
+                      setPagination({ ...pagination, pageIndex: 0 });
+                    }}
+                    className="ms-auto rounded-full p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="size-3" />
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={(val) => {
+                  setDateRange(val || { from: undefined, to: undefined });
+                  setPagination({ ...pagination, pageIndex: 0 });
+                }}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Excel Export Button */}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExport} className="h-10 px-4">
+            <Download className="me-2 size-4 text-muted-foreground" />
+            Excel / CSV Dışa Aktar
+          </Button>
         </div>
       </CardHeader>
     );
@@ -282,7 +438,7 @@ export default function OrdersPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Sipariş & Finans Yönetimi</h1>
         <p className="text-xs md:text-sm text-muted-foreground/80">
-          Ödeme ve sipariş kayıtlarını listeleyebilir, manuel onay verebilir ve PayTR webhook payload loglarını inceleyebilirsiniz.
+          Ödeme ve sipariş kayıtlarını listeleyebilir, manuel onay verebilir ve ödeme webhook payload loglarını inceleyebilirsiniz.
         </p>
       </div>
 
@@ -291,9 +447,10 @@ export default function OrdersPage() {
         recordCount={data?.meta?.total || 0}
         isLoading={isLoading}
         tableLayout={{ columnsResizable: true }}
+        onRowClick={handleViewClick}
       >
         <Card>
-          <Toolbar />
+          {renderToolbar()}
           <CardTable>
             <ScrollArea>
               <DataGridTable />
@@ -307,9 +464,9 @@ export default function OrdersPage() {
       </DataGrid>
 
       {/* Details Drawer */}
-      <RightDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Sipariş Detayı">
+      <RightDrawer open={drawerOpen} onOpenChange={setDrawerOpen} title="Sipariş Detayı">
         {selectedOrder && (
-          <div className="space-y-6 p-5 max-h-[calc(100vh-6rem)] overflow-y-auto">
+          <div className="space-y-5">
             {/* Summary Box */}
             <div className="border border-border rounded-xl p-4 bg-muted/20 space-y-3">
               <div className="flex items-center justify-between">
@@ -337,6 +494,16 @@ export default function OrdersPage() {
                 </div>
               </div>
             </div>
+
+            {/* Error Message Box (If any failed transaction has error_message) */}
+            {selectedOrder.transactions?.some((t) => t.error_message) && (
+              <div className="text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex flex-col gap-1">
+                <span>Ödeme Sağlayıcı Hata Mesajı:</span>
+                <span className="font-normal text-muted-foreground leading-relaxed">
+                  {selectedOrder.transactions.find((t) => t.error_message)?.error_message}
+                </span>
+              </div>
+            )}
 
             {/* Quick Status Control */}
             <div className="space-y-1.5">
@@ -385,10 +552,10 @@ export default function OrdersPage() {
               </div>
             </div>
 
-            {/* PayTR Webhook Payload Logs */}
+            {/* Payment Gateway Webhook Payload Logs */}
             <div className="space-y-2.5">
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <Terminal className="size-3.5" /> PayTR Callback Webhook Logları
+                <Terminal className="size-3.5" /> Ödeme Sağlayıcı Webhook Logları
               </h3>
               {(selectedOrder.transactions || []).length === 0 ? (
                 <div className="text-xs text-muted-foreground border border-dashed rounded-xl p-4 text-center">
@@ -402,16 +569,34 @@ export default function OrdersPage() {
                       : trans.payload;
                     return (
                       <AccordionItem key={trans.id || index} value={`trans-${trans.id || index}`} className="border rounded-xl px-4">
-                        <AccordionTrigger className="text-xs font-mono py-2.5 hover:no-underline flex justify-between w-full">
-                          <span className="flex items-center gap-1.5">
-                            <Info className="size-3 text-muted-foreground" />
-                            OID: {trans.merchant_oid || 'Bilinmeyen ID'}
+                        <AccordionTrigger className="text-xs font-mono py-2.5 hover:no-underline flex justify-between w-full gap-2">
+                          <span className="flex items-center gap-1.5 min-w-0">
+                            <Info className="size-3 text-muted-foreground shrink-0" />
+                            <span className="text-muted-foreground shrink-0">OID:</span>
+                            <span className="truncate max-w-[130px]" title={trans.transaction_id || trans.merchant_oid}>
+                              {trans.transaction_id || trans.merchant_oid || (trans.id ? '#' + trans.id : 'Bilinmeyen ID')}
+                            </span>
+                            {trans.status === 'failed' && (
+                              <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/10 shrink-0">
+                                Başarısız
+                              </Badge>
+                            )}
+                            {trans.status === 'success' && (
+                              <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/10 shrink-0">
+                                Başarılı
+                              </Badge>
+                            )}
                           </span>
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-[10px] text-muted-foreground shrink-0">
                             {new Date(trans.created_at).toLocaleString('tr-TR')}
                           </span>
                         </AccordionTrigger>
-                        <AccordionContent className="pt-1 pb-3">
+                        <AccordionContent className="pt-1 pb-3 space-y-3">
+                          {trans.error_message && (
+                            <div className="text-xs font-semibold text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg p-2.5">
+                              Hata Detayı: {trans.error_message}
+                            </div>
+                          )}
                           <ScrollArea className="h-60 border bg-muted/65 rounded-lg p-2.5">
                             <pre className="text-[10px] font-mono whitespace-pre-wrap leading-relaxed">
                               {JSON.stringify(parsedPayload, null, 2)}

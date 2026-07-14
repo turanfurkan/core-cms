@@ -56,6 +56,7 @@ export default function CategoryDialog({ open, closeDialog, category }) {
     pricing_details: true,
     registration_details: true,
     manager_details: true,
+    age_groups: '',
   };
 
   // Form states
@@ -580,6 +581,24 @@ export default function CategoryDialog({ open, closeDialog, category }) {
             <div className="space-y-5">
               <div className="p-4 rounded-xl border border-blue-500/10 bg-blue-500/5 text-xs text-blue-600 dark:text-blue-400 font-medium leading-relaxed">
                 ℹ️ Bu kategoriye bağlı yarışların ekleme/düzenleme formunda gösterilecek alanları seçin. Kapatılan alanlar formdan gizlenecektir.
+              </div>
+
+              {/* Group: Yaş Grupları Tanımlama */}
+              <div className="space-y-4 rounded-xl border border-border/80 bg-card p-4">
+                <h5 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 border-b pb-1.5 mb-2">Yaş Grupları Ayarı</h5>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold">Yarış Yaş Kategorileri (Virgülle ayırarak)</Label>
+                  <Input 
+                    type="text"
+                    placeholder="Örn: 18-21, 22-27, 28-33, 34-39, 40-45, 46-51, 52-57, 58-63, 64-69, 70+"
+                    value={fieldSettings.age_groups || ''}
+                    onChange={(e) => setFieldSettings(p => ({ ...p, age_groups: e.target.value }))}
+                    className="h-10 bg-zinc-50/50 dark:bg-zinc-900/10"
+                  />
+                  <span className="text-[10px] text-muted-foreground block leading-normal">
+                    Bu kategori altındaki tüm yarışlarda katılımcıların listeleneceği yaş aralıklarını belirler. Boş bırakılırsa varsayılan dinamik bölünme uygulanır.
+                  </span>
+                </div>
               </div>
 
               {/* Group 1: Medya & Harita */}

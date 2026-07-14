@@ -4,7 +4,7 @@ import React, { use, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Activity, MoveLeft, UserPen } from 'lucide-react';
+import { Activity, MoveLeft, UserPen, Users, Trophy } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -44,6 +44,16 @@ export default function UserLayout({ params, children }) {
         title: t('users.details.tab_profile', 'Profile'),
         icon: UserPen,
         path: `/user-management/users/${id}`,
+      },
+      participants: {
+        title: t('users.details.tab_participants', 'Participants'),
+        icon: Users,
+        path: `/user-management/users/${id}/participants`,
+      },
+      registrations: {
+        title: t('users.details.tab_registrations', 'Race Registrations'),
+        icon: Trophy,
+        path: `/user-management/users/${id}/registrations`,
       },
       logs: {
         title: t('users.details.tab_logs', 'Activity Logs'),

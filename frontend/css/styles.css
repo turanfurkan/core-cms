@@ -6,6 +6,12 @@
 
 /** Global Styles **/
 @layer base {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   * {
     @apply border-border;
   }
@@ -50,5 +56,23 @@
 }
 
 /* Force CSS recompilation for primary color update */
+
+/* Utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Defensive Map & Third-party Embed Responsiveness */
+.strava-embed-container,
+.strava-embed-container * {
+  max-width: 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
 
 

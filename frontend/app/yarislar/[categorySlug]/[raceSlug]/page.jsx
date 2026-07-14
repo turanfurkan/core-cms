@@ -6,9 +6,11 @@ import PublicFooter from '@/components/common/public-footer';
 import PageHeader from '@/components/common/page-header';
 import { Container } from '@/components/common/container';
 import RaceDetailsTabs from './components/race-details-tabs';
+import RaceParticipants from './components/race-participants';
 import SimilarRacesCarousel from './components/similar-races-carousel';
 import StravaEmbed from './components/strava-embed';
 import SponsorsBlock from '@/components/blocks/sponsors-block';
+import { ShareButtons, BackToTopButton } from './components/client-widgets';
 import { 
   Calendar, 
   Clock, 
@@ -179,7 +181,7 @@ export default async function RaceDetailPage({ params }) {
       <div>
         <PublicHeader settings={settings} menuItems={headerMenuItems} />
         
-        <main className="pb-16 space-y-8">
+        <main className="pb-24 lg:pb-16 space-y-8">
           {/* Breadcrumb Header */}
           <PageHeader 
             title={raceTitle}
@@ -192,7 +194,7 @@ export default async function RaceDetailPage({ params }) {
 
           <Container className="grid gap-8 lg:grid-cols-3">
             {/* Left/Main Column: Hero Banner & Tabs */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-12 min-w-0">
               {/* Large Race Card Cover Image / Strava Map / Graphic Image layout */}
               {(() => {
                 const hasStrava = !!race.location_embed;
@@ -202,11 +204,11 @@ export default async function RaceDetailPage({ params }) {
                   return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Strava Embed Map container */}
-                      <div className="relative rounded-2xl overflow-hidden border border-border bg-muted/10 h-[300px] sm:h-[380px] [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:border-0 shadow-xs">
+                      <div className="relative rounded-2xl overflow-hidden border border-border bg-muted/10 h-[300px] sm:h-[380px] [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:border-0 shadow-xs w-full max-w-full strava-embed-container">
                         <StravaEmbed html={race.location_embed} />
                       </div>
                       {/* Graphic Image container */}
-                      <div className="relative rounded-2xl overflow-hidden border border-border bg-zinc-950 dark:bg-zinc-950/40 flex items-center justify-center h-[300px] sm:h-[380px]">
+                      <div className="relative rounded-2xl overflow-hidden border border-border bg-zinc-950 dark:bg-zinc-950/40 flex items-center justify-center h-[300px] sm:h-[380px] w-full max-w-full">
                         <div 
                           className="absolute inset-0 bg-cover bg-center filter blur-md opacity-20"
                           style={{ backgroundImage: `url(${resolvedGraphicImgUrl})` }}
@@ -231,7 +233,7 @@ export default async function RaceDetailPage({ params }) {
 
                 if (hasStrava) {
                   return (
-                    <div className="relative rounded-2xl overflow-hidden border border-border bg-muted/10 h-[300px] sm:h-[380px] [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:border-0 shadow-xs">
+                    <div className="relative rounded-2xl overflow-hidden border border-border bg-muted/10 h-[300px] sm:h-[380px] [&_iframe]:!w-full [&_iframe]:!h-full [&_iframe]:border-0 shadow-xs w-full max-w-full strava-embed-container">
                       <StravaEmbed html={race.location_embed} />
                     </div>
                   );
@@ -239,7 +241,7 @@ export default async function RaceDetailPage({ params }) {
 
                 if (hasGraphic) {
                   return (
-                    <div className="relative rounded-2xl overflow-hidden border border-border bg-zinc-950 dark:bg-zinc-950/40 flex items-center justify-center h-[300px] sm:h-[380px]">
+                    <div className="relative rounded-2xl overflow-hidden border border-border bg-zinc-950 dark:bg-zinc-950/40 flex items-center justify-center h-[300px] sm:h-[380px] w-full max-w-full">
                       <div 
                         className="absolute inset-0 bg-cover bg-center filter blur-md opacity-20"
                         style={{ backgroundImage: `url(${resolvedGraphicImgUrl})` }}
@@ -263,7 +265,7 @@ export default async function RaceDetailPage({ params }) {
 
                 // Fallback to Cover Image
                 return (
-                  <div className="relative rounded-2xl overflow-hidden border border-border bg-zinc-950 dark:bg-zinc-950/40 flex items-center justify-center h-[300px] sm:h-[380px]">
+                  <div className="relative rounded-2xl overflow-hidden border border-border bg-zinc-950 dark:bg-zinc-950/40 flex items-center justify-center h-[300px] sm:h-[380px] w-full max-w-full">
                     <div 
                       className="absolute inset-0 bg-cover bg-center filter blur-md opacity-20"
                       style={{ backgroundImage: `url(${resolvedImgUrl})` }}
@@ -287,15 +289,21 @@ export default async function RaceDetailPage({ params }) {
 
               {/* Dynamic Tabs switcher */}
               <RaceDetailsTabs race={race} locale="tr" />
+
+              {/* Divider line between Tabs and Participant list */}
+              <div className="h-px bg-zinc-200/60 dark:bg-zinc-800/60" />
+
+              {/* Race Participants List */}
+              <RaceParticipants race={race} category={category} locale="tr" />
             </div>
 
             {/* Right Column: Sticky Sidebar Info & Registration CTA */}
-            <div className="space-y-6 h-fit lg:sticky lg:top-24">
+            <div className="space-y-6 h-fit lg:sticky lg:top-36 z-20 min-w-0">
               
               {/* Registration Call To Action card */}
-              <div className="p-6 border border-border bg-card rounded-2xl shadow-xs space-y-6 flex flex-col overflow-hidden">
+              <div className="p-6 border border-border bg-card rounded-2xl shadow-xs space-y-6 flex flex-col">
                 {/* Highlighted Price Box - stretched to full width as card header */}
-                <div className={`-mx-6 -mt-6 border-b border-border/60 px-6 py-5 space-y-1 transition-all duration-150 ${race.is_sales_active !== false ? 'bg-zinc-50 dark:bg-zinc-900/40' : 'bg-red-50/10 dark:bg-red-950/5 border-b-red-100 dark:border-b-red-950/20'}`}>
+                <div className={`-mx-6 -mt-6 border-b border-border/60 px-6 py-5 space-y-1 transition-all duration-150 rounded-t-2xl ${race.is_sales_active !== false ? 'bg-zinc-50 dark:bg-zinc-900/40' : 'bg-red-50/10 dark:bg-red-950/5 border-b-red-100 dark:border-b-red-950/20'}`}>
                   <span className={`text-[11px] font-black uppercase tracking-wider block ${race.is_sales_active !== false ? 'text-zinc-400 dark:text-zinc-500' : 'text-red-500 dark:text-red-400'}`}>
                     {race.is_sales_active !== false ? 'YARIŞ KATILIM BEDELİ' : 'BAŞVURULAR SONA ERDİ'}
                   </span>
@@ -428,6 +436,8 @@ export default async function RaceDetailPage({ params }) {
                       <span>{categoryName} Yarışlarına Dön</span>
                     </Link>
                   </Button>
+
+                  <ShareButtons title={raceTitle} locale="tr" />
                 </div>
               </div>
 
@@ -494,6 +504,38 @@ export default async function RaceDetailPage({ params }) {
         </main>
       </div>
       <PublicFooter settings={settings} menuItems={footerMenuItems} />
+      <BackToTopButton locale="tr" />
+
+      {/* Mobile Sticky Bottom CTA Bar */}
+      {race.is_sales_active !== false && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-background/95 backdrop-blur-md border-t border-border pl-14 pr-6 py-3.5 flex items-center justify-between gap-4 shadow-xl select-none animate-in slide-in-from-bottom-5 duration-300">
+          <div className="flex flex-col">
+            <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+              {isFree ? 'Yarış Bedeli' : 'Katılım Bedeli'}
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-black text-zinc-900 dark:text-zinc-50">
+                {isFree ? 'Ücretsiz' : `${activePrice.toLocaleString('tr-TR')} ${race.currency || 'TRY'}`}
+              </span>
+              {hasDiscount && (
+                <span className="text-[8px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-md uppercase tracking-wider scale-90">
+                  -%{discountPercent}
+                </span>
+              )}
+            </div>
+          </div>
+          <Button 
+            asChild 
+            size="md" 
+            className="bg-primary hover:bg-primary/95 text-white font-black text-xs rounded-xl px-5 py-2.5 shadow-sm cursor-pointer flex items-center gap-1.5 active:scale-98"
+          >
+            <Link href={`/yarislar/${categorySlug}/${raceSlug}/kayit`}>
+              <UserPlus className="size-3.5 shrink-0 text-white" />
+              <span className="text-white">Kayıt Ol</span>
+            </Link>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

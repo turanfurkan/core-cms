@@ -183,10 +183,16 @@ export default function CategoriesGrid({ data, locale = 'tr' }) {
           if (active) {
             const rawCategories = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
             
-            // Filter by targetItemIds if user selected specific ones
-            const filteredCategories = Array.isArray(targetItemIds) && targetItemIds.length > 0
-              ? rawCategories.filter(cat => targetItemIds.some(id => String(id) === String(cat.id)))
-              : rawCategories;
+            // Filter by active status and targetItemIds if specified
+            const filteredCategories = rawCategories.filter(cat => {
+              const isActive = cat.is_active === true || cat.is_active === 1 || cat.is_active === "1";
+              if (!isActive) return false;
+              
+              if (Array.isArray(targetItemIds) && targetItemIds.length > 0) {
+                return targetItemIds.some(id => String(id) === String(cat.id));
+              }
+              return true;
+            });
 
             // Sort: active countdowns (time in future) first, then completed ones (time in past/empty)
             const nowTime = new Date().getTime();

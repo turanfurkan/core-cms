@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -21,6 +22,7 @@ import {
   Mars,
   Trophy,
   Users,
+  User,
   Shirt,
   Globe,
   Shield,
@@ -560,7 +562,7 @@ export default function RegistrationsPage() {
     pageIndex: 0,
     pageSize: 10,
   });
-  const [sorting, setSorting] = useState([{ id: 'id', desc: true }]);
+  const [sorting, setSorting] = useState([{ id: 'participant_name', desc: true }]);
   const [searchQuery, setSearchQuery] = useState('');
   const [apiSearchQuery, setApiSearchQuery] = useState('');
   const [raceFilter, setRaceFilter] = useState('all');
@@ -683,6 +685,47 @@ export default function RegistrationsPage() {
       return json.data || [];
     }
   });
+
+  // Fetch unique nationalities of existing participants from backend
+  const { data: nationalitiesData } = useQuery({
+    queryKey: ['admin-nationalities-list'],
+    queryFn: async () => {
+      const res = await apiFetch('/api/admin/race-participants/nationalities');
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+
+  const uniqueNationalitiesOptions = useMemo(() => {
+    if (!nationalitiesData) return [];
+    
+    const set = new Set();
+    let hasTurkey = false;
+    
+    nationalitiesData.forEach(nat => {
+      if (!nat) {
+        hasTurkey = true;
+        return;
+      }
+      const lower = nat.toLowerCase();
+      if (lower === 'tr' || lower === 'türkiye' || lower === 'türkiye (tr)') {
+        hasTurkey = true;
+      } else {
+        set.add(nat);
+      }
+    });
+    
+    const options = [];
+    if (hasTurkey) {
+      options.push({ value: 'TR', label: 'Türkiye (TR)' });
+    }
+    
+    Array.from(set).sort().forEach(nat => {
+      options.push({ value: nat, label: nat });
+    });
+    
+    return options;
+  }, [nationalitiesData]);
 
   // Fetch Participants (for adding new manual registrations)
   const { data: participantsData } = useQuery({
@@ -1141,11 +1184,26 @@ export default function RegistrationsPage() {
       header: ({ column }) => (
         <DataGridColumnHeader title="Katılımcı" column={column} visibility />
       ),
-      cell: ({ row }) => (
-        <span className="font-semibold text-foreground capitalize">
-          {row.original.participant?.name || 'Bilinmiyor'}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const userId = row.original.participant?.user_id || row.original.user_id || row.original.participant?.user?.id;
+        const name = row.original.participant?.name || 'Bilinmiyor';
+        if (userId) {
+          return (
+            <Link
+              href={`/user-management/users/${userId}`}
+              className="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline capitalize"
+            >
+              <User className="size-3.5 shrink-0" />
+              <span>{name}</span>
+            </Link>
+          );
+        }
+        return (
+          <span className="font-semibold text-foreground capitalize">
+            {name}
+          </span>
+        );
+      },
       meta: {
         cellClassName: 'text-[13px] py-2 px-3 max-w-[160px] truncate',
         headerClassName: 'text-[13px] py-2 px-3 font-semibold',
@@ -1347,7 +1405,7 @@ export default function RegistrationsPage() {
     manualFiltering: true,
   });
 
-  const Toolbar = () => {
+  const renderToolbar = () => {
     return (
       <CardHeader className="py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -1427,19 +1485,24 @@ export default function RegistrationsPage() {
 
           {/* Nationality Filter */}
           <Select value={nationalityFilter} onValueChange={(val) => { setNationalityFilter(val); setPagination({ ...pagination, pageIndex: 0 }); }}>
-            <SelectTrigger className="w-[155px] text-xs">
-              <div className="flex items-center gap-1.5 text-left w-full">
+            <SelectTrigger className="w-[170px] text-xs">
+              <div className="flex items-center gap-1.5 text-left w-full truncate">
                 <Globe className="size-3.5 text-muted-foreground shrink-0" />
                 <span className="text-muted-foreground shrink-0">Uyruk:</span>
-                <span className="font-semibold">
-                  {nationalityFilter === 'all' ? 'Hepsi' : nationalityFilter === 'TR' ? 'TR' : 'Yabancı'}
+                <span className="font-semibold truncate">
+                  {nationalityFilter === 'all' 
+                    ? 'Hepsi' 
+                    : nationalityFilter === 'TR' 
+                      ? 'TR' 
+                      : nationalityFilter}
                 </span>
               </div>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Hepsi</SelectItem>
-              <SelectItem value="TR">Türkiye (TR)</SelectItem>
-              <SelectItem value="foreign">Yabancı</SelectItem>
+              {uniqueNationalitiesOptions.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -1492,7 +1555,7 @@ export default function RegistrationsPage() {
         tableLayout={{ columnsResizable: false }}
       >
         <Card>
-          <Toolbar />
+          {renderToolbar()}
           <CardTable>
             <ScrollArea>
               <DataGridTable />

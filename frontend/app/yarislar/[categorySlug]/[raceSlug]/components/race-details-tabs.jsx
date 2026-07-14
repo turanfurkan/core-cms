@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Info, MapPin, ClipboardList, Trophy, ShieldCheck, CloudSun, Compass, Calendar, Clock, Sun, Cloud, CloudRain, CloudSnow, CloudLightning } from 'lucide-react';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 function getLocalized(val, locale = 'tr') {
   if (val && typeof val === 'object') {
@@ -23,6 +24,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
   const raceTabs = Array.isArray(race.tabs) ? race.tabs : [];
 
   const [activeTab, setActiveTab] = React.useState('rules');
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
   const [weatherData, setWeatherData] = React.useState(null);
   const [weatherLoading, setWeatherLoading] = React.useState(true);
@@ -101,7 +103,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
       icon: ClipboardList,
       content: (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-border/40">
+          <div className="hidden md:flex items-center gap-2 pb-2 border-b border-border/40">
             <ClipboardList className="size-5 text-primary" />
             <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
               {locale === 'tr' ? 'Yarışma Kuralları & Katılım Şartları' : 'Rules & Entry Requirements'}
@@ -130,7 +132,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
       icon: Calendar,
       content: (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-border/40">
+          <div className="hidden md:flex items-center gap-2 pb-2 border-b border-border/40">
             <Calendar className="size-5 text-primary" />
             <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
               {locale === 'tr' ? 'Etkinlik Programı' : 'Event Schedule'}
@@ -179,7 +181,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
       icon: ShieldCheck,
       content: (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-border/40">
+          <div className="hidden md:flex items-center gap-2 pb-2 border-b border-border/40">
             <ShieldCheck className="size-5 text-primary" />
             <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
               {locale === 'tr' ? 'Muvafakatname & Sorumluluk Beyanı' : 'Consent & Release Form'}
@@ -199,7 +201,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
       icon: CloudSun,
       content: (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-border/40">
+          <div className="hidden md:flex items-center gap-2 pb-2 border-b border-border/40">
             <CloudSun className="size-5 text-primary" />
             <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
               {locale === 'tr' ? 'Fethiye Anlık Hava Durumu' : 'Fethiye Live Weather'}
@@ -324,7 +326,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
       icon: Compass,
       content: (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-border/40">
+          <div className="hidden md:flex items-center gap-2 pb-2 border-b border-border/40">
             <Compass className="size-5 text-primary" />
             <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
               {locale === 'tr' ? 'Ulaşım & Otopark Bilgileri' : 'Transportation & Parking'}
@@ -351,11 +353,14 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
     }
   ];
 
+  const activeTabData = tabsData.find(t => t.id === activeTab) || tabsData[0];
+  const ActiveIcon = activeTabData.icon;
+
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-10">
       {/* 1. Genel Açıklama, Girilen Veriler & Neler Dahil */}
       {(description || distance > 0 || startPoint || finishPoint || elevation > 0 || descent > 0 || race.whats_included) && (
-        <div className="p-6 sm:p-8 border border-border bg-card rounded-2xl shadow-xs space-y-6">
+        <div className="space-y-6 py-2">
           
           {description && (
             <div 
@@ -366,7 +371,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
 
           {/* Entered specifications list right above What's Included */}
           {(distance > 0 || startPoint || finishPoint || elevation > 0 || descent > 0) && (
-            <div className="pt-6 border-t border-border/40 grid gap-4 grid-cols-2 sm:grid-cols-3">
+            <div className="pt-6 border-t border-border/40 grid gap-6 grid-cols-1 sm:grid-cols-3">
               {distance > 0 && (
                 <div className="flex items-start gap-2.5">
                   <Trophy className="size-5 text-primary shrink-0 mt-0.5" />
@@ -462,10 +467,15 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
         </div>
       )}
 
-      {/* 2. Mock Data Tabs System */}
-      <div className="border border-border bg-card rounded-2xl shadow-xs overflow-hidden">
-        {/* Horizontal Tab Buttons Bar */}
-        <div className="flex border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/10 overflow-x-auto scrollbar-none">
+      {/* Divider line between Description and Tabs System */}
+      {(description || distance > 0 || startPoint || finishPoint || elevation > 0 || descent > 0 || race.whats_included) && (
+        <div className="h-px bg-zinc-200/60 dark:bg-zinc-800/60" />
+      )}
+
+      {/* 2. Mock Data Tabs System - Desktop (md:block) */}
+      <div className="hidden md:block space-y-6">
+        {/* Horizontal Tab Buttons Bar for Desktop View */}
+        <div className="flex border-b border-border/60 bg-zinc-50/50 dark:bg-zinc-900/10 overflow-x-auto no-scrollbar rounded-xl">
           {tabsData.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -487,7 +497,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
         </div>
 
         {/* Tab Content Panel */}
-        <div className="p-6 sm:p-8">
+        <div className="py-4">
           {tabsData.map((tab) => {
             if (activeTab !== tab.id) return null;
             return (
@@ -499,9 +509,31 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
         </div>
       </div>
 
+      {/* 2. Mock Data Tabs System - Mobile (md:hidden) */}
+      <div className="md:hidden">
+        <Accordion type="single" collapsible className="space-y-3">
+          {tabsData.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <AccordionItem key={tab.id} value={tab.id} className="border border-border/50 bg-zinc-50/50 dark:bg-zinc-900/10 rounded-xl overflow-hidden">
+                <AccordionTrigger className="hover:no-underline py-4 px-4 flex items-center justify-between text-xs font-black uppercase tracking-wider text-foreground group">
+                  <div className="flex items-center gap-2.5">
+                    <Icon className="size-4.5 text-primary shrink-0" />
+                    <span>{tab.label}</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="p-4 bg-background border-t border-border/40">
+                  {tab.content}
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+      </div>
+
       {/* 3. Özel Sekmeler (Custom Sections) */}
       {raceTabs.map((tab, idx) => (
-        <div key={idx} className="p-6 sm:p-8 border border-border bg-card rounded-2xl shadow-xs space-y-6">
+        <div key={idx} className="space-y-6 py-2">
           <h2 className="text-sm font-black uppercase tracking-wider text-foreground flex items-center gap-2 pb-3 border-b border-border/60">
             <ClipboardList className="size-4.5 text-primary" />
             <span>{getLocalized(tab.title, locale)}</span>

@@ -311,22 +311,14 @@ export const MENU_SIDEBAR = [
     ],
   },
   {
-    title: 'Races',
+    title: 'Race List',
     icon: Flag,
-    children: [
-      {
-        title: 'Race List',
-        path: '/admin/races',
-      },
-      {
-        title: 'Participants',
-        path: '/admin/race-participants',
-      },
-      {
-        title: 'Registrations',
-        path: '/admin/race-registrations',
-      },
-    ]
+    path: '/admin/races',
+  },
+  {
+    title: 'Participants',
+    icon: ScrollText,
+    path: '/admin/race-registrations',
   },
   {
     title: 'Orders',
@@ -800,10 +792,6 @@ export const MENU_SIDEBAR_COMPACT = [
       {
         title: 'Race List',
         path: '/admin/races',
-      },
-      {
-        title: 'Participants',
-        path: '/admin/race-participants',
       },
       {
         title: 'Registrations',

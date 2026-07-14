@@ -39,7 +39,7 @@ export default function PageHeader({
           </div>
 
           {/* Right Side: Breadcrumbs */}
-          <nav className="flex items-center space-x-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 select-none md:self-end md:pb-1">
+          <nav className="flex flex-wrap items-center gap-y-1 gap-x-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 select-none md:self-end md:pb-1">
             <Link 
               href="/" 
               className="flex items-center gap-1 hover:text-zinc-900 dark:hover:text-white transition-colors duration-200"
