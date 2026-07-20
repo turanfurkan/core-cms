@@ -145,7 +145,7 @@ export default async function Page({ params, searchParams }) {
     });
 
     return (
-      <div className="w-full min-h-screen bg-background text-foreground flex flex-col justify-between">
+      <div className="w-full min-h-screen bg-background text-foreground flex flex-col justify-between" style={{ width: '100% !important' }}>
         <div>
           {/* Dynamic Header */}
           <PublicHeader settings={settings} menuItems={headerMenuItems} />

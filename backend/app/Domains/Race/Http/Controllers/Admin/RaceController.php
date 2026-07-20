@@ -104,4 +104,30 @@ class RaceController extends Controller
 
         return response()->json(['message' => 'Races reordered successfully.']);
     }
+
+    public function publicParticipants(Race $race): JsonResponse
+    {
+        $participants = $race->participants()
+            ->wherePivot('status', 'paid')
+            ->get();
+
+        $data = $participants->map(function ($p) use ($race) {
+            $dob = $p->date_of_birth;
+            $age = null;
+            if ($dob) {
+                $age = \Carbon\Carbon::parse($dob)->age;
+            }
+            return [
+                'name' => $p->name,
+                'gender' => $p->gender,
+                'age' => $age,
+                'bib_number' => $p->pivot->bib_number,
+                'club_name' => $p->club_name,
+                'nationality' => $p->nationality,
+                'race_title' => $race->getLocalizedTitle('tr'),
+            ];
+        });
+
+        return response()->json(['data' => $data]);
+    }
 }

@@ -76,6 +76,16 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia
         return $this->hasMany(LoginOtp::class);
     }
 
+    public function participants(): HasMany
+    {
+        return $this->hasMany(\App\Domains\Race\Models\Participant::class);
+    }
+
+    public function registrations(): HasMany
+    {
+        return $this->hasMany(\App\Domains\Race\Models\Registration::class, 'user_id');
+    }
+
     public function isActive(): bool
     {
         return $this->status === self::STATUS_ACTIVE;

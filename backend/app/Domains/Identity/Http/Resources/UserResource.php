@@ -2,6 +2,8 @@
 
 namespace App\Domains\Identity\Http\Resources;
 
+use App\Domains\Race\Http\Resources\ParticipantResource;
+use App\Domains\Race\Http\Resources\RegistrationResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -40,6 +42,8 @@ class UserResource extends JsonResource
                 'name' => ucwords(str_replace(['_', '-'], ' ', $firstRole->name)),
             ] : null,
             'roles' => $this->getRoleNames()->values(),
+            'participants' => ParticipantResource::collection($this->whenLoaded('participants')),
+            'registrations' => RegistrationResource::collection($this->whenLoaded('registrations')),
         ];
     }
 }

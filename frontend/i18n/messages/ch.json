@@ -55,7 +55,11 @@
   "sidebar": {
     "heading": {
       "user": "用户",
-      "apps": "应用"
+      "apps": "应用",
+      "race_management": "赛事管理",
+      "content_media": "内容与媒体",
+      "marketing_comm": "营销与传播",
+      "administration": "系统管理"
     },
     "2_columns": "两列",
     "2fa": "双重认证",

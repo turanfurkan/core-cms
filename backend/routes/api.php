@@ -129,6 +129,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('/admin/races', RaceController::class);
 
     // Admin Race Participants & Registrations Management
+    Route::get('/admin/race-participants/nationalities', [ParticipantController::class, 'nationalities']);
     Route::apiResource('/admin/race-participants', ParticipantController::class);
     Route::apiResource('/admin/race-registrations', RegistrationController::class);
     Route::apiResource('/admin/orders', \App\Domains\Billing\Http\Controllers\Admin\OrderController::class);
@@ -236,6 +237,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // Settings Management
     Route::get('/admin/settings', [\App\Domains\Settings\Http\Controllers\Admin\SettingsController::class, 'index']);
     Route::put('/admin/settings', [\App\Domains\Settings\Http\Controllers\Admin\SettingsController::class, 'update']);
+    Route::post('/admin/database-sync', [\App\Domains\Settings\Http\Controllers\Admin\DatabaseSyncController::class, 'sync']);
 
     // API Keys Management
     Route::get('/admin/api-keys', [\App\Domains\API\Http\Controllers\Admin\ApiKeyController::class, 'index']);
@@ -305,6 +307,8 @@ Route::middleware('api_key:content:read')->group(function (): void {
     // Public Page delivery
     Route::get('/pages/{slug}', [\App\Domains\Page\Http\Controllers\Public\PageController::class, 'show']);
 
+    // Public Race Participants delivery
+    Route::get('/races/{race}/participants', [\App\Domains\Race\Http\Controllers\Admin\RaceController::class, 'publicParticipants']);
 });
 
 // Public Form Delivery & Submission API

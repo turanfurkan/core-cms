@@ -55,7 +55,11 @@
   "sidebar": {
     "heading": {
       "user": "Benutzer",
-      "apps": "Apps"
+      "apps": "Apps",
+      "race_management": "Rennmanagement",
+      "content_media": "Inhalte & Medien",
+      "marketing_comm": "Marketing & Komm",
+      "administration": "Verwaltung"
     },
     "2_columns": "2 Spalten",
     "2fa": "2FA",

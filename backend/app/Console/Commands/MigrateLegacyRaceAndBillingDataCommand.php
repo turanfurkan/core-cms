@@ -130,6 +130,14 @@ class MigrateLegacyRaceAndBillingDataCommand extends Command
         $this->info("Migrating races (parkours)...");
         $legacyRaces = DB::connection('mysql_old')->table('races')->get();
 
+        $legacyRaceImages = [];
+        if (!$skipMedia) {
+            $legacyRaceImages = DB::connection('mysql_old')
+                ->table('race_images')
+                ->get()
+                ->groupBy('race_id');
+        }
+
         foreach ($legacyRaces as $race) {
             $coverImageId = $skipMedia ? null : $this->downloadAndRegisterMedia($race->image);
             $graphicImageId = $skipMedia ? null : $this->downloadAndRegisterMedia($race->graph_image);
@@ -139,10 +147,7 @@ class MigrateLegacyRaceAndBillingDataCommand extends Command
             // Gallery images
             $galleryIds = [];
             if (!$skipMedia) {
-                $legacyImages = DB::connection('mysql_old')
-                    ->table('race_images')
-                    ->where('race_id', $race->id)
-                    ->get();
+                $legacyImages = $legacyRaceImages[$race->id] ?? collect();
                 foreach ($legacyImages as $img) {
                     $galleryImageId = $this->downloadAndRegisterMedia($img->image);
                     if ($galleryImageId) {
@@ -206,16 +211,16 @@ class MigrateLegacyRaceAndBillingDataCommand extends Command
         // 5. Link Multi-races
         $this->info("Linking multi-race relations...");
         $legacyMultiRaces = DB::connection('mysql_old')->table('multiple_races')->get();
-        foreach ($legacyMultiRaces as $relation) {
-            $parent = Race::find($relation->parent_race_id);
-            if ($parent) {
-                $exists = DB::table('race_relations')
-                    ->where('parent_id', $relation->parent_race_id)
-                    ->where('child_id', $relation->race_id)
-                    ->exists();
+        $localRacesMap = Race::all()->keyBy('id');
+        $insertedRelations = [];
 
-                if (!$exists) {
+        foreach ($legacyMultiRaces as $relation) {
+            $parent = $localRacesMap->get($relation->parent_race_id);
+            if ($parent) {
+                $relKey = $relation->parent_race_id . '_' . $relation->race_id;
+                if (!isset($insertedRelations[$relKey])) {
                     $parent->childRaces()->attach($relation->race_id);
+                    $insertedRelations[$relKey] = true;
                 }
             }
         }
@@ -228,6 +233,8 @@ class MigrateLegacyRaceAndBillingDataCommand extends Command
         $processedIdentities = [];
         $processedNames = [];
         $pCount = 0;
+
+        $existingUserIdsMap = array_flip(User::pluck('id')->toArray());
 
         foreach ($legacyParticipants as $row) {
             $identity = trim($row->identity_number ?? '');
@@ -278,7 +285,7 @@ class MigrateLegacyRaceAndBillingDataCommand extends Command
                 $gender = strtolower($row->gender);
             }
 
-            $userId = User::where('id', $row->user_id)->exists() ? $row->user_id : $defaultUserId;
+            $userId = isset($existingUserIdsMap[$row->user_id]) ? $row->user_id : $defaultUserId;
 
             $participant = Participant::forceCreate([
                 'id' => $row->id,
@@ -322,6 +329,9 @@ class MigrateLegacyRaceAndBillingDataCommand extends Command
         $registrationMapping = [];
         $regCount = 0;
 
+        $existingRaceIdsMap = array_flip(Race::pluck('id')->toArray());
+        $insertedRegistrations = [];
+
         foreach ($legacyRegistrations as $row) {
             $newParticipantId = $participantMapping[$row->participant_id] ?? null;
 
@@ -329,20 +339,18 @@ class MigrateLegacyRaceAndBillingDataCommand extends Command
                 continue;
             }
 
-            if (!Race::where('id', $row->race_id)->exists()) {
+            if (!isset($existingRaceIdsMap[$row->race_id])) {
                 continue;
             }
 
-            // Prevent duplicate registration insert for the same participant and race
-            $exists = Registration::where('race_id', $row->race_id)
-                ->where('participant_id', $newParticipantId)
-                ->exists();
-
-            if ($exists) {
+            // Prevent duplicate registration insert for the same participant and race in-memory
+            $regKey = $row->race_id . '_' . $newParticipantId;
+            if (isset($insertedRegistrations[$regKey])) {
                 continue;
             }
+            $insertedRegistrations[$regKey] = true;
 
-            $userId = User::where('id', $row->user_id)->exists() ? $row->user_id : $defaultUserId;
+            $userId = isset($existingUserIdsMap[$row->user_id]) ? $row->user_id : $defaultUserId;
 
             $registration = Registration::forceCreate([
                 'id' => $row->id,
@@ -369,8 +377,31 @@ class MigrateLegacyRaceAndBillingDataCommand extends Command
         $legacyPayments = DB::connection('mysql_old')->table('payments')->get();
         $orderCount = 0;
 
+        $legacyParticipantsByPayment = DB::connection('mysql_old')
+            ->table('participants')
+            ->whereNotNull('payment_id')
+            ->get()
+            ->groupBy('payment_id');
+
+        $regTable = 'registrations';
+        try {
+            DB::connection('mysql_old')->table($regTable)->first();
+        } catch (\Exception $e) {
+            $regTable = 'registirations';
+        }
+
+        $legacyRegsByParticipant = DB::connection('mysql_old')
+            ->table($regTable)
+            ->get()
+            ->groupBy('participant_id');
+
+        $localRegistrationsMap = Registration::all()->keyBy('id');
+
         foreach ($legacyPayments as $row) {
-            $userId = User::where('id', $row->user_id)->exists() ? $row->user_id : $defaultUserId;
+            $userId = isset($existingUserIdsMap[$row->user_id]) ? $row->user_id : $defaultUserId;
+
+            $createdAt = $row->created_at ?: now();
+            $gateway = Carbon::parse($createdAt)->greaterThanOrEqualTo(Carbon::parse('2026-05-13 00:00:00')) ? 'halkbank' : 'paytr';
 
             $order = Order::forceCreate([
                 'id' => $row->id,
@@ -378,49 +409,60 @@ class MigrateLegacyRaceAndBillingDataCommand extends Command
                 'amount' => $row->payment_amount / 100, // convert kurus/cents to TL
                 'currency' => $row->currency ?: 'TRY',
                 'status' => $row->status === 'success' ? 'paid' : ($row->status === 'paid' ? 'paid' : 'failed'),
-                'gateway' => 'paytr',
+                'gateway' => $gateway,
                 'transaction_id' => $row->merchant_oid,
-                'created_at' => $row->created_at ?: now(),
+                'created_at' => $createdAt,
                 'updated_at' => $row->updated_at ?: now(),
             ]);
 
             PaymentTransaction::create([
                 'order_id' => $order->id,
-                'gateway' => 'paytr',
+                'gateway' => $gateway,
                 'transaction_id' => $row->merchant_oid,
                 'amount' => $row->payment_amount / 100,
                 'status' => $row->status === 'success' ? 'success' : ($row->status === 'paid' ? 'success' : 'failed'),
                 'payload' => (array) $row,
                 'error_message' => $row->status !== 'success' && $row->status !== 'paid' ? ($row->failed_reason_msg ?: 'Payment failed') : null,
-                'created_at' => $row->created_at ?: now(),
+                'created_at' => $createdAt,
                 'updated_at' => $row->updated_at ?: now(),
             ]);
 
-            // Try to link registration to this order
-            if (!empty($row->participant_id)) {
-                $newParticipantId = $participantMapping[$row->participant_id] ?? null;
-                if ($newParticipantId) {
-                    $registration = Registration::where('participant_id', $newParticipantId)
-                        ->where('user_id', $userId)
-                        ->first();
+            // Link registrations to this order using pre-fetched participants' payment_id
+            $legacyPaidParts = $legacyParticipantsByPayment[$row->id] ?? collect();
+            $legacyPaidPartIds = $legacyPaidParts->pluck('id')->toArray();
 
-                    if ($registration) {
-                        OrderItem::create([
-                            'order_id' => $order->id,
-                            'orderable_type' => Registration::class,
-                            'orderable_id' => $registration->id,
-                            'price' => $registration->price ?: ($row->payment_amount / 100),
-                            'quantity' => 1,
-                            'created_at' => $row->created_at ?: now(),
-                            'updated_at' => $row->updated_at ?: now(),
+            $legacyRegs = collect();
+            foreach ($legacyPaidPartIds as $partId) {
+                if (isset($legacyRegsByParticipant[$partId])) {
+                    $legacyRegs = $legacyRegs->merge($legacyRegsByParticipant[$partId]);
+                }
+            }
+
+            foreach ($legacyRegs as $legacyReg) {
+                // Find the corresponding new registration (they share the same ID!)
+                $registration = $localRegistrationsMap->get($legacyReg->id);
+
+                if ($registration) {
+                    $regPrice = floatval($legacyReg->price);
+                    $fallbackPrice = ($row->payment_amount / 100) / max(1, $legacyRegs->count());
+                    $itemPrice = ($regPrice > 0) ? $regPrice : $fallbackPrice;
+
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'orderable_type' => Registration::class,
+                        'orderable_id' => $registration->id,
+                        'price' => $itemPrice,
+                        'quantity' => 1,
+                        'created_at' => $row->created_at ?: now(),
+                        'updated_at' => $row->updated_at ?: now(),
+                    ]);
+
+                    if ($order->status === 'paid') {
+                        $registration->update([
+                            'status' => 'paid',
+                            'payment_id' => $row->merchant_oid,
+                            'price' => $itemPrice,
                         ]);
-
-                        if ($order->status === 'paid') {
-                            $registration->update([
-                                'status' => 'paid',
-                                'payment_id' => $row->merchant_oid,
-                            ]);
-                        }
                     }
                 }
             }
@@ -486,11 +528,57 @@ class MigrateLegacyRaceAndBillingDataCommand extends Command
                 'name' => 'global_library',
             ]);
 
-            $media = $placeholder->addMediaFromUrl($url)
+            // Create a temporary file path
+            $tempDir = storage_path('app/temp_media');
+            if (!file_exists($tempDir)) {
+                mkdir($tempDir, 0777, true);
+            }
+            $tempFile = $tempDir . '/' . $fileName;
+
+            // Download file using custom curl to bypass SSL issues on local dev
+            $ch = curl_init($url);
+            $fp = fopen($tempFile, 'wb');
+            curl_setopt($ch, CURLOPT_FILE, $fp);
+            curl_setopt($ch, CURLOPT_HEADER, 0);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_exec($ch);
+            $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            fclose($fp);
+
+            if ($statusCode !== 200 && $statusCode !== 206) {
+                if (file_exists($tempFile)) {
+                    unlink($tempFile);
+                }
+                $this->warn("Failed to download media from {$url} (HTTP Code: {$statusCode})");
+                return null;
+            }
+
+            if (!file_exists($tempFile) || filesize($tempFile) === 0) {
+                if (file_exists($tempFile)) {
+                    unlink($tempFile);
+                }
+                $this->warn("Failed to download media from {$url} (File empty or not found)");
+                return null;
+            }
+
+            // Register in media library using local path
+            $media = $placeholder->addMedia($tempFile)
                 ->toMediaCollection('default');
+
+            // Clean up temp file
+            if (file_exists($tempFile)) {
+                unlink($tempFile);
+            }
 
             return $media->id;
         } catch (\Exception $e) {
+            if (isset($tempFile) && file_exists($tempFile)) {
+                unlink($tempFile);
+            }
             $this->warn("Failed to download media from {$url}: " . $e->getMessage());
             return null;
         }

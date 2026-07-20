@@ -269,7 +269,7 @@ function StepperIndicator({ children, className }) {
       data-slot="stepper-indicator"
       data-state={state}
       className={cn(
-        'relative flex items-center overflow-hidden justify-center size-6 shrink-0 border-background bg-accent text-accent-foreground rounded-full text-xs data-[state=completed]:bg-primary data-[state=completed]:text-primary-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground',
+        'relative flex items-center overflow-hidden justify-center size-9 shrink-0 border-background bg-accent text-accent-foreground rounded-full text-sm font-bold data-[state=completed]:bg-primary data-[state=completed]:text-primary-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground',
         className,
       )}
     >
@@ -311,7 +311,7 @@ function StepperTitle({ children, className }) {
     <h3
       data-slot="stepper-title"
       data-state={state}
-      className={cn('text-sm font-medium leading-none', className)}
+      className={cn('text-sm sm:text-base font-semibold leading-none', className)}
     >
       {children}
     </h3>

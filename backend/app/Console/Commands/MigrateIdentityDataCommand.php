@@ -43,20 +43,33 @@ class MigrateIdentityDataCommand extends Command
             return self::FAILURE;
         }
 
-        // 2. Perform safe cleanup of current database users (excluding seed users 1-4)
+        // 2. Perform safe cleanup of current database users (excluding seed users 1-4 and active admin users)
         if (!$dryRun) {
             $this->info("Cleaning up existing non-seed users...");
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
             
-            // Delete users except seed users (ID 1 to 4)
-            User::whereNotIn('id', [1, 2, 3, 4])->forceDelete();
+            $protectedIds = [1, 2, 3, 4];
+            if (auth()->check()) {
+                $protectedIds[] = auth()->id();
+            }
+            $protectedEmails = ['admin@sporfest.com.tr', 'demo@kt.com'];
+            if (auth()->check()) {
+                $protectedEmails[] = auth()->user()->email;
+            }
+
+            // Delete users except seed users and active admin users
+            User::whereNotIn('id', $protectedIds)
+                ->whereNotIn('email', $protectedEmails)
+                ->forceDelete();
             
             // Clear model_has_roles table for non-seed users
-            DB::table('model_has_roles')->whereNotIn('model_id', [1, 2, 3, 4])->delete();
+            DB::table('model_has_roles')
+                ->whereNotIn('model_id', $protectedIds)
+                ->delete();
             
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         } else {
-            $this->info("[Dry Run] Would clean up existing users except IDs 1-4.");
+            $this->info("[Dry Run] Would clean up existing users except IDs 1-4 and active admin users.");
         }
 
         // 3. Fetch legacy roles and show stats
@@ -66,19 +79,29 @@ class MigrateIdentityDataCommand extends Command
             $this->line(" - ID: {$role->id} | Name: {$role->name} | Guard: {$role->guard_name}");
         }
 
-        // 4. Fetch legacy users and map them
         $legacyUsers = DB::connection('mysql_old')->table('users')->get();
         $totalLegacyUsers = $legacyUsers->count();
         $this->info("Found {$totalLegacyUsers} users in legacy database. Starting migration...");
+
+        // Fetch all legacy role assignments at once to avoid remote database roundtrips inside the loop.
+        $this->info("Fetching legacy role assignments...");
+        $legacyRoleAssignments = DB::connection('mysql_old')
+            ->table('model_has_roles')
+            ->get()
+            ->groupBy('model_id');
 
         $migratedCount = 0;
         $skippedCount = 0;
         $failedCount = 0;
 
         foreach ($legacyUsers as $row) {
-            // Protect our seed users
-            if (in_array($row->id, [1, 2, 3, 4])) {
-                $this->warn("Skipping legacy user ID {$row->id} ({$row->email}) to protect seed workspace user.");
+            // Protect our seed users and active admin users
+            $isProtected = in_array($row->id, [1, 2, 3, 4])
+                || in_array($row->email, ['admin@sporfest.com.tr', 'demo@kt.com'])
+                || (auth()->check() && ($row->id == auth()->id() || $row->email == auth()->user()->email));
+
+            if ($isProtected) {
+                $this->warn("Skipping legacy user ID {$row->id} ({$row->email}) to protect current user / seed workspace user.");
                 $skippedCount++;
                 continue;
             }
@@ -115,11 +138,10 @@ class MigrateIdentityDataCommand extends Command
                     ]);
                 }
 
-                // Sync roles from model_has_roles
-                $legacyRoleIds = DB::connection('mysql_old')
-                    ->table('model_has_roles')
-                    ->where('model_id', $row->id)
-                    ->pluck('role_id');
+                // Sync roles from pre-fetched model_has_roles
+                $legacyRoleIds = isset($legacyRoleAssignments[$row->id])
+                    ? $legacyRoleAssignments[$row->id]->pluck('role_id')
+                    : collect();
 
                 $newRoleNames = [];
                 foreach ($legacyRoleIds as $roleId) {
@@ -132,8 +154,16 @@ class MigrateIdentityDataCommand extends Command
                     }
                 }
 
-                if (!empty($newRoleNames)) {
-                    $user->syncRoles($newRoleNames);
+                $currentRoleNames = $user->roles->pluck('name')->toArray();
+                sort($currentRoleNames);
+                sort($newRoleNames);
+
+                if ($currentRoleNames !== $newRoleNames) {
+                    if (!empty($newRoleNames)) {
+                        $user->syncRoles($newRoleNames);
+                    } else {
+                        $user->syncRoles([]);
+                    }
                 }
 
                 $migratedCount++;

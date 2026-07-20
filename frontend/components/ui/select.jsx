@@ -50,13 +50,13 @@ const selectTriggerVariants = cva(
   {
     variants: {
       size: {
-        sm: 'h-7 px-2.5 text-xs gap-1 rounded-md',
-        md: 'h-8.5 px-3 text-[0.8125rem] leading-(--text-sm--line-height) gap-1 rounded-md',
-        lg: 'h-10 px-4 text-sm gap-1.5 rounded-md',
+        sm: 'h-8 px-2.5 text-xs gap-1 rounded-md',
+        md: 'h-9.5 px-3.5 text-[0.8125rem] sm:text-sm gap-1 rounded-md',
+        lg: 'h-11 px-4 text-sm sm:text-base gap-1.5 rounded-lg',
       },
     },
     defaultVariants: {
-      size: 'md',
+      size: 'lg',
     },
   },
 );
@@ -211,8 +211,42 @@ function SelectSeparator({ className, ...props }) {
   );
 }
 
+const FloatingSelect = ({ label, id, value, children, className, ...props }) => {
+  const hasValue = value !== undefined && value !== null && value !== '';
+  return (
+    <div className="relative w-full mb-2">
+      <Select value={value} {...props}>
+        <SelectTrigger
+          id={id}
+          className={cn(
+            "h-12 px-3.5 text-sm sm:text-base text-left flex items-center justify-between peer",
+            className
+          )}
+        >
+          <SelectValue placeholder=" " />
+        </SelectTrigger>
+        <SelectContent>{children}</SelectContent>
+      </Select>
+      {label && (
+        <label
+          htmlFor={id}
+          className={cn(
+            "absolute left-3 pointer-events-none transition-all duration-200 bg-background px-1.5 text-muted-foreground/80",
+            hasValue
+              ? "top-0 -translate-y-1/2 text-xs"
+              : "top-1/2 -translate-y-1/2 text-sm sm:text-base peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-xs peer-focus:text-primary"
+          )}
+        >
+          {label}
+        </label>
+      )}
+    </div>
+  );
+};
+
 export {
   Select,
+  FloatingSelect,
   SelectContent,
   SelectGroup,
   SelectIndicator,

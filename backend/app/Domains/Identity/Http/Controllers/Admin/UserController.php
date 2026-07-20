@@ -36,7 +36,14 @@ class UserController extends Controller
     {
         Gate::authorize('view', $user);
 
-        return new UserResource($user);
+        return new UserResource(
+            $user->load([
+                'participants',
+                'registrations.participant',
+                'registrations.race',
+                'registrations.category',
+            ])
+        );
     }
 
     public function store(AdminRegisterRequest $request, RegisterUserAction $action): JsonResponse

@@ -45,12 +45,18 @@ class RegistrationController extends Controller
                     $q->where(function ($sub) {
                         $sub->where('nationality', 'TR')
                             ->orWhere('nationality', 'Türkiye')
+                            ->orWhere('nationality', 'Türkiye (TR)')
                             ->orWhereNull('nationality');
                     });
+                } elseif ($nationality === 'foreign') {
+                    $q->where(function ($sub) {
+                        $sub->where('nationality', '!=', 'TR')
+                            ->where('nationality', '!=', 'Türkiye')
+                            ->where('nationality', '!=', 'Türkiye (TR)')
+                            ->whereNotNull('nationality');
+                    });
                 } else {
-                    $q->where('nationality', '!=', 'TR')
-                      ->where('nationality', '!=', 'Türkiye')
-                      ->whereNotNull('nationality');
+                    $q->where('nationality', $nationality);
                 }
             });
         }
@@ -65,8 +71,26 @@ class RegistrationController extends Controller
             });
         }
 
-        $registrations = $query->orderBy('id', 'desc')
-            ->paginate($request->query('per_page', 15));
+        $sortField = $request->query('sort', 'id');
+        $sortDirection = $request->query('dir', 'desc');
+
+        if ($sortField === 'participant_name') {
+            $sortField = 'participant_id';
+        }
+
+        $allowedFields = ['id', 'bib_number', 'created_at', 'participant_id', 'price', 'status'];
+        if (!in_array($sortField, $allowedFields)) {
+            $sortField = 'id';
+        }
+        $sortDirection = in_array(strtolower($sortDirection), ['asc', 'desc']) ? $sortDirection : 'desc';
+
+        if ($sortField === 'participant_id') {
+            $query->orderBy('participant_id', $sortDirection)->orderBy('id', 'desc');
+        } else {
+            $query->orderBy($sortField, $sortDirection);
+        }
+
+        $registrations = $query->paginate($request->query('per_page', 15));
 
         return RegistrationResource::collection($registrations);
     }

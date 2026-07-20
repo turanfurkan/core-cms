@@ -305,7 +305,7 @@ export default function RaceParticipants({ race, category, locale = 'tr' }) {
                   </Badge>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="p-4 bg-background border-t border-border/40">
+              <AccordionContent className="px-2 py-3 bg-background border-t border-border/40">
                 {item.count === 0 ? (
                   <p className="text-xs font-semibold text-zinc-400 py-2.5 pl-1.5">
                     {locale === 'tr' ? 'Bu yaş kategorisinde henüz kayıtlı sporcu bulunmamaktadır.' : 'No registered athletes in this age category.'}
@@ -314,12 +314,12 @@ export default function RaceParticipants({ race, category, locale = 'tr' }) {
                   <div>
                     {/* Desktop/Tablet View - Full Table */}
                     <div className="hidden sm:block overflow-x-auto w-full no-scrollbar">
-                      <Table className="border-none bg-transparent sm:min-w-full">
+                      <Table className="border-none bg-transparent w-full">
                         <TableHeader className="bg-zinc-50/50 dark:bg-zinc-900/20">
                           <TableRow>
                             <TableHead className="w-12 text-center font-black text-[10px] text-zinc-400 uppercase tracking-wider">{locale === 'tr' ? 'SIRA' : 'NO'}</TableHead>
                             <TableHead className="w-20 text-center font-black text-[10px] text-zinc-400 uppercase tracking-wider">{locale === 'tr' ? 'GÖĞÜS NO' : 'BIB NO'}</TableHead>
-                            <TableHead className="font-black text-[10px] text-zinc-400 uppercase tracking-wider pl-4">{locale === 'tr' ? 'AD SOYAD' : 'NAME'}</TableHead>
+                            <TableHead className="font-black text-[10px] text-zinc-400 uppercase tracking-wider pl-2">{locale === 'tr' ? 'AD SOYAD' : 'NAME'}</TableHead>
                             <TableHead className="font-black text-[10px] text-zinc-400 uppercase tracking-wider hidden sm:table-cell">{locale === 'tr' ? 'CİNSİYET' : 'GENDER'}</TableHead>
                             <TableHead className="font-black text-[10px] text-zinc-400 uppercase tracking-wider">{locale === 'tr' ? 'KULÜP ADI' : 'CLUB NAME'}</TableHead>
                             <TableHead className="font-black text-[10px] text-zinc-400 uppercase tracking-wider hidden md:table-cell">{locale === 'tr' ? 'YARIŞ KATEGORİSİ' : 'RACE CATEGORY'}</TableHead>
@@ -333,13 +333,13 @@ export default function RaceParticipants({ race, category, locale = 'tr' }) {
                               <TableCell className="text-center font-black text-xs text-primary">
                                 {p.bib_number ? `#${p.bib_number}` : '-'}
                               </TableCell>
-                              <TableCell className="font-semibold text-sm text-foreground pl-4 capitalize whitespace-nowrap">
+                              <TableCell className="font-semibold text-sm text-foreground pl-2 capitalize whitespace-nowrap">
                                 {p.name?.toLowerCase()}
                               </TableCell>
                               <TableCell className="font-semibold text-xs text-foreground hidden sm:table-cell">
                                 {p.gender === 'male' ? (locale === 'tr' ? 'Erkek' : 'Men') : (locale === 'tr' ? 'Kadın' : 'Women')}
                               </TableCell>
-                              <TableCell className="font-semibold text-xs text-zinc-500 max-w-[150px] truncate">
+                              <TableCell className="font-semibold text-xs text-zinc-500 max-w-[200px] truncate">
                                 {p.club_name ? (
                                   <div className="flex items-center gap-1.5 capitalize">
                                     <Shield className="size-3.5 text-blue-500 shrink-0" strokeWidth={2} />

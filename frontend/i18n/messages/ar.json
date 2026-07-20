@@ -55,7 +55,11 @@
   "sidebar": {
     "heading": {
       "user": "المستخدم",
-      "apps": "التطبيقات"
+      "apps": "التطبيقات",
+      "race_management": "إدارة السباقات",
+      "content_media": "المحتوى والوسائط",
+      "marketing_comm": "التسويق والاتصالات",
+      "administration": "الإدارة"
     },
     "2_columns": "عمودين",
     "2fa": "المصادقة الثنائية",

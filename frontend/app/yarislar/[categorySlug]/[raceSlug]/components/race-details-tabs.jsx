@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Info, MapPin, ClipboardList, Trophy, ShieldCheck, CloudSun, Compass, Calendar, Clock, Sun, Cloud, CloudRain, CloudSnow, CloudLightning } from 'lucide-react';
+import { MapPin, Trophy, CloudSun, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, FileText, Calendar, Clock, User } from 'lucide-react';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
 function getLocalized(val, locale = 'tr') {
@@ -11,7 +11,7 @@ function getLocalized(val, locale = 'tr') {
   return val || '';
 }
 
-export default function RaceDetailsTabs({ race, locale = 'tr' }) {
+export default function RaceDetailsTabs({ race, category = null, locale = 'tr', formattedDate = '', formattedDeadline = '', startTime = '', maxParticipants = null }) {
   const description = getLocalized(race.content || race.description, locale);
   
   // Entered metrics & route fields
@@ -21,11 +21,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
   const elevation = race.elevation ? parseInt(race.elevation, 10) : 0;
   const descent = race.descent ? parseInt(race.descent, 10) : 0;
 
-  const raceTabs = Array.isArray(race.tabs) ? race.tabs : [];
-
-  const [activeTab, setActiveTab] = React.useState('rules');
-  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
-
+  // Weather state and functions FIRST
   const [weatherData, setWeatherData] = React.useState(null);
   const [weatherLoading, setWeatherLoading] = React.useState(true);
 
@@ -96,105 +92,8 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
     return list;
   };
 
-  const tabsData = [
-    {
-      id: 'rules',
-      label: locale === 'tr' ? 'Yarışma Kuralları' : 'Competition Rules',
-      icon: ClipboardList,
-      content: (
-        <div className="space-y-4">
-          <div className="hidden md:flex items-center gap-2 pb-2 border-b border-border/40">
-            <ClipboardList className="size-5 text-primary" />
-            <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-              {locale === 'tr' ? 'Yarışma Kuralları & Katılım Şartları' : 'Rules & Entry Requirements'}
-            </h3>
-          </div>
-          <ul className="space-y-3.5 text-sm sm:text-base text-zinc-800 dark:text-zinc-200 leading-relaxed font-medium">
-            <li className="flex items-start gap-2.5">
-              <span className="flex items-center justify-center size-5 rounded-full bg-red-500/10 text-red-500 shrink-0 text-xs mt-0.5 font-bold">!</span>
-              <span><strong>{locale === 'tr' ? 'Yaş Sınırı:' : 'Age Limit:'}</strong> {locale === 'tr' ? 'Yarışmaya katılım yaşı minimum 18’dir. 18 yaş altındaki sporcular veli izin belgesiyle katılabilir.' : 'Minimum age is 18. Athletes under 18 must present a parental consent form.'}</span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <span className="flex items-center justify-center size-5 rounded-full bg-orange-500/10 text-orange-500 shrink-0 text-xs mt-0.5 font-bold">★</span>
-              <span><strong>{locale === 'tr' ? 'Zorunlu Malzemeler:' : 'Mandatory Gear:'}</strong> {locale === 'tr' ? 'Yarış esnasında göğüs numarası görünür olmalı, acil durum kiti ve su matarası bulundurulmalıdır.' : 'Race number must be visible, emergency kit and hydration bottle are mandatory.'}</span>
-            </li>
-            <li className="flex items-start gap-2.5">
-              <span className="flex items-center justify-center size-5 rounded-full bg-red-500/10 text-red-500 shrink-0 text-xs mt-0.5 font-bold">✗</span>
-              <span><strong>{locale === 'tr' ? 'Diskalifiye Nedenleri:' : 'Disqualification:'}</strong> {locale === 'tr' ? 'Parkur dışına çıkmak, çevreye çöp atmak veya sportmenlik dışı davranışlar doğrudan ihraç sebebidir.' : 'Cutting the course, littering, or unsportsmanlike behavior will result in immediate disqualification.'}</span>
-            </li>
-          </ul>
-        </div>
-      )
-    },
-    {
-      id: 'program',
-      label: locale === 'tr' ? 'Yarışma Programı' : 'Competition Program',
-      icon: Calendar,
-      content: (
-        <div className="space-y-4">
-          <div className="hidden md:flex items-center gap-2 pb-2 border-b border-border/40">
-            <Calendar className="size-5 text-primary" />
-            <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-              {locale === 'tr' ? 'Etkinlik Programı' : 'Event Schedule'}
-            </h3>
-          </div>
-          <div className="relative border-l border-zinc-200 dark:border-zinc-800 pl-4.5 ml-2.5 space-y-6">
-            <div className="relative">
-              <span className="absolute -left-7.5 top-0.5 size-5 rounded-full bg-primary border-4 border-background dark:border-zinc-950 shrink-0" />
-              <div className="space-y-0.5">
-                <span className="text-xs sm:text-sm font-black text-primary uppercase">07:00 - 08:30</span>
-                <h4 className="text-sm sm:text-base font-bold text-foreground">{locale === 'tr' ? 'Sporcu Kit Dağıtımı & Kayıt Kontrol' : 'Race Kit Distribution & Check-in'}</h4>
-                <p className="text-xs sm:text-sm text-zinc-500">{locale === 'tr' ? 'Yarış kitleri başlangıç noktasındaki stantlardan teslim edilecektir.' : 'Kit pickup will be available at the registration tents at the start area.'}</p>
-              </div>
-            </div>
-            <div className="relative">
-              <span className="absolute -left-7.5 top-0.5 size-5 rounded-full bg-zinc-400 border-4 border-background dark:border-zinc-950 shrink-0" />
-              <div className="space-y-0.5">
-                <span className="text-xs sm:text-sm font-black text-zinc-500 uppercase">08:45</span>
-                <h4 className="text-sm sm:text-base font-bold text-foreground">{locale === 'tr' ? 'Teknik Toplantı & Isınma' : 'Technical Briefing & Warm-up'}</h4>
-                <p className="text-xs sm:text-sm text-zinc-500">{locale === 'tr' ? 'Parkur güvenliği ve son talimatlar hakkında bilgilendirme yapılacaktır.' : 'Briefing about course safety and final reminders.'}</p>
-              </div>
-            </div>
-            <div className="relative">
-              <span className="absolute -left-7.5 top-0.5 size-5 rounded-full bg-emerald-500 border-4 border-background dark:border-zinc-950 shrink-0" />
-              <div className="space-y-0.5">
-                <span className="text-xs sm:text-sm font-black text-emerald-500 uppercase">09:00</span>
-                <h4 className="text-sm sm:text-base font-bold text-foreground">{locale === 'tr' ? 'Yarış Başlangıcı (Start)' : 'Race Start'}</h4>
-                <p className="text-xs sm:text-sm text-zinc-500">{locale === 'tr' ? 'Tüm kategoriler için toplu çıkış verilecektir.' : 'Mass start will be given for all categories.'}</p>
-              </div>
-            </div>
-            <div className="relative">
-              <span className="absolute -left-7.5 top-0.5 size-5 rounded-full bg-zinc-400 border-4 border-background dark:border-zinc-950 shrink-0" />
-              <div className="space-y-0.5">
-                <span className="text-xs sm:text-sm font-black text-zinc-500 uppercase">13:00</span>
-                <h4 className="text-sm sm:text-base font-bold text-foreground">{locale === 'tr' ? 'Ödül Töreni & Kapanış' : 'Awards Ceremony & Closing'}</h4>
-                <p className="text-xs sm:text-sm text-zinc-500">{locale === 'tr' ? 'Dereceye giren sporculara kürsü madalya ve kupaları takdim edilecektir.' : 'Trophies and prizes will be awarded to podium finishers.'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'consent',
-      label: locale === 'tr' ? 'Muvafakatname' : 'Consent Form',
-      icon: ShieldCheck,
-      content: (
-        <div className="space-y-4">
-          <div className="hidden md:flex items-center gap-2 pb-2 border-b border-border/40">
-            <ShieldCheck className="size-5 text-primary" />
-            <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-              {locale === 'tr' ? 'Muvafakatname & Sorumluluk Beyanı' : 'Consent & Release Form'}
-            </h3>
-          </div>
-          <div className="p-4.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-border/40 text-sm sm:text-base text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-3 font-medium">
-            <p>{locale === 'tr' ? 'Yarışmaya kendi hür irademle katıldığımı, yarış parkurunun zorluk derecesini bildiğimi ve bu mücadeleye katılmak için gerekli fiziksel ve zihinsel hazırlığa sahip olduğumu beyan ederim.' : 'I declare that I participate in the competition of my own free will, know the difficulty level of the course, and have the necessary physical and mental preparation to participate.'}</p>
-            <p>{locale === 'tr' ? 'Etkinlik boyunca meydana gelebilecek herhangi bir kaza, sakatlık, sağlık problemi ya da mal kaybından dolayı organizasyon komitesini, sponsorları ve yetkilileri sorumlu tutmayacağımı kabul ve taahhüt ederim.' : 'I accept and undertake that I will not hold the organization committee, sponsors, and officials responsible for any accident, injury, health problem, or loss of property that may occur during the event.'}</p>
-            <p>{locale === 'tr' ? 'Yarış sırasında sağlık ekiplerinin vereceği her türlü tıbbi karara uymayı, acil durumlarda tıbbi müdahaleyi şimdiden onayladığımı beyan ederim.' : 'I declare that I comply with all medical decisions of the medical teams during the race, and approve medical intervention in advance in case of emergencies.'}</p>
-          </div>
-        </div>
-      )
-    },
+  // Build tabs
+  const baseTabs = [
     {
       id: 'weather',
       label: locale === 'tr' ? 'Hava Durumu' : 'Weather',
@@ -319,42 +218,52 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
           )}
         </div>
       )
-    },
-    {
-      id: 'transportation',
-      label: locale === 'tr' ? 'Ulaşım' : 'Transportation',
-      icon: Compass,
-      content: (
-        <div className="space-y-4">
-          <div className="hidden md:flex items-center gap-2 pb-2 border-b border-border/40">
-            <Compass className="size-5 text-primary" />
-            <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
-              {locale === 'tr' ? 'Ulaşım & Otopark Bilgileri' : 'Transportation & Parking'}
-            </h3>
-          </div>
-          <div className="space-y-4 text-sm sm:text-base text-zinc-800 dark:text-zinc-200 leading-relaxed font-medium">
-            <div className="flex gap-3">
-              <div className="size-7 rounded bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-sm mt-0.5">🚌</div>
-              <div>
-                <h4 className="font-bold text-foreground text-xs sm:text-sm uppercase tracking-wide">{locale === 'tr' ? 'Toplu Taşıma / Servisler' : 'Public Transport / Shuttles'}</h4>
-                <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">{locale === 'tr' ? 'Yarış sabahı saat 07:15’te belediye binası önünden ücretsiz sporcu servisleri kaldırılacaktır.' : 'Free athlete shuttles will depart from the city hall at 07:15 AM on race morning.'}</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="size-7 rounded bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-sm mt-0.5">🚗</div>
-              <div>
-                <h4 className="font-bold text-foreground text-xs sm:text-sm uppercase tracking-wide">{locale === 'tr' ? 'Özel Araç & Otopark' : 'Private Vehicles & Parking'}</h4>
-                <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">{locale === 'tr' ? 'Yarış başlangıç noktasının 100m ilerisinde yer alan ücretsiz açık otopark alanını kullanabilirsiniz.' : 'Free public parking is available 100m from the race start gate area.'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
     }
   ];
 
-  const activeTabData = tabsData.find(t => t.id === activeTab) || tabsData[0];
-  const ActiveIcon = activeTabData.icon;
+  // Build dynamic tabs from category.tabs (active only)
+  const categoryDynamicTabs = Array.isArray(category?.tabs)
+    ? category.tabs
+        .filter(tab => tab.is_active !== false)
+        .map(tab => {
+          const tabTitle = getLocalized(tab.title, locale);
+          const tabContent = getLocalized(tab.content, locale);
+          return {
+            id: `cat_${tab.id}`,
+            label: tabTitle || 'Sekme',
+            icon: FileText,
+            content: (
+              <div className="space-y-4">
+                <div className="hidden md:flex items-center gap-2 pb-2 border-b border-border/40">
+                  <FileText className="size-5 text-primary" />
+                  <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
+                    {tabTitle}
+                  </h3>
+                </div>
+                {tabContent ? (
+                  <div
+                    className="prose prose-zinc dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 leading-relaxed text-sm sm:text-base"
+                    dangerouslySetInnerHTML={{ __html: tabContent }}
+                  />
+                ) : (
+                  <p className="text-sm text-zinc-400 dark:text-zinc-600 italic">
+                    {locale === 'tr' ? 'İçerik henüz eklenmemiş.' : 'Content not yet added.'}
+                  </p>
+                )}
+              </div>
+            ),
+          };
+        })
+    : [];
+
+  const tabsData = [...categoryDynamicTabs, ...baseTabs];
+
+  // Initialize activeTab: only set default if there's more than one tab
+  const [activeTab, setActiveTab] = React.useState(tabsData.length > 1 ? tabsData[0].id : null);
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+
+  const activeTabData = activeTab ? (tabsData.find(t => t.id === activeTab)) : null;
+  const ActiveIcon = activeTabData?.icon || FileText;
 
   return (
     <div className="w-full space-y-10">
@@ -370,8 +279,9 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
           )}
 
           {/* Entered specifications list right above What's Included */}
-          {(distance > 0 || startPoint || finishPoint || elevation > 0 || descent > 0) && (
+          {(distance > 0 || startPoint || finishPoint || elevation > 0 || descent > 0 || formattedDate || formattedDeadline || maxParticipants) && (
             <div className="pt-6 border-t border-border/40 grid gap-6 grid-cols-1 sm:grid-cols-3">
+              {/* First row */}
               {distance > 0 && (
                 <div className="flex items-start gap-2.5">
                   <Trophy className="size-5 text-primary shrink-0 mt-0.5" />
@@ -411,6 +321,49 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
                   </div>
                 </div>
               )}
+
+              {/* Second row */}
+              {(formattedDate || startTime) && (
+                <div className="flex items-start gap-2.5">
+                  <Calendar className="size-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="block text-[11px] font-black uppercase text-zinc-400 tracking-wider">
+                      {locale === 'tr' ? 'TARİH & SAAT' : 'DATE & TIME'}
+                    </span>
+                    <span className="text-sm sm:text-base font-semibold text-zinc-800 dark:text-zinc-100">
+                      {formattedDate}{startTime ? `, ${startTime.slice(0, 5)}` : ''}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {formattedDeadline && (
+                <div className="flex items-start gap-2.5">
+                  <Calendar className="size-5 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="block text-[11px] font-black uppercase text-red-400 tracking-wider">
+                      {locale === 'tr' ? 'SON KAYIT' : 'FINAL REGISTRATION'}
+                    </span>
+                    <span className="text-sm sm:text-base font-semibold text-zinc-800 dark:text-zinc-100">
+                      {formattedDeadline}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {maxParticipants && (
+                <div className="flex items-start gap-2.5">
+                  <User className="size-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <span className="block text-[11px] font-black uppercase text-zinc-400 tracking-wider">
+                      {locale === 'tr' ? 'KONTENJAN' : 'CAPACITY'}
+                    </span>
+                    <span className="text-sm sm:text-base font-semibold text-zinc-800 dark:text-zinc-100">
+                      {maxParticipants} Sporcu
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Elevation stats (optional) */}
               {elevation > 0 && (
                 <div className="flex items-start gap-2.5">
                   <div className="size-5 text-primary shrink-0 font-black text-sm mt-0.5">▲</div>
@@ -498,7 +451,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
 
         {/* Tab Content Panel */}
         <div className="py-4">
-          {tabsData.map((tab) => {
+          {activeTab && tabsData.map((tab) => {
             if (activeTab !== tab.id) return null;
             return (
               <div key={tab.id} className="animate-in fade-in slide-in-from-bottom-2 duration-200">
@@ -511,7 +464,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
 
       {/* 2. Mock Data Tabs System - Mobile (md:hidden) */}
       <div className="md:hidden">
-        <Accordion type="single" collapsible className="space-y-3">
+        <Accordion type="single" collapsible value={activeTab} onValueChange={setActiveTab} className="space-y-3">
           {tabsData.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -531,19 +484,7 @@ export default function RaceDetailsTabs({ race, locale = 'tr' }) {
         </Accordion>
       </div>
 
-      {/* 3. Özel Sekmeler (Custom Sections) */}
-      {raceTabs.map((tab, idx) => (
-        <div key={idx} className="space-y-6 py-2">
-          <h2 className="text-sm font-black uppercase tracking-wider text-foreground flex items-center gap-2 pb-3 border-b border-border/60">
-            <ClipboardList className="size-4.5 text-primary" />
-            <span>{getLocalized(tab.title, locale)}</span>
-          </h2>
-          <div 
-            className="prose prose-zinc dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 leading-relaxed text-sm"
-            dangerouslySetInnerHTML={{ __html: getLocalized(tab.content, locale) }}
-          />
-        </div>
-      ))}
+      {/* Category dynamic tabs are now rendered inside the unified tab bar above */}
     </div>
   );
 }

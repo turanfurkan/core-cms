@@ -44,7 +44,9 @@ class CategoryController extends Controller
                 'races.gpxFile',
                 'races.stravaFile',
                 'races' => function ($q) {
-                    $q->where('status', 'published')->orderBy('start_date', 'asc');
+                    $q->where('status', 'published')
+                      ->orderBy('start_date', 'asc')
+                      ->with('childRaces'); // multi-race conflict detection için
                 }
             ])
             ->orderBy('order', 'asc')

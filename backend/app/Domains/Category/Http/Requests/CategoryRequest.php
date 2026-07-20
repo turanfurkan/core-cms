@@ -29,6 +29,7 @@ class CategoryRequest extends FormRequest
             'order' => 'nullable|integer',
             'is_active' => 'nullable|boolean',
             'tabs' => 'nullable|array',
+            'field_settings' => 'nullable|array',
         ];
     }
 }

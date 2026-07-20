@@ -55,7 +55,11 @@
   "sidebar": {
     "heading": {
       "user": "Kullanıcı",
-      "apps": "Uygulamalar"
+      "apps": "Uygulamalar",
+      "race_management": "Yarış Yönetimi",
+      "content_media": "İçerik & Medya",
+      "marketing_comm": "Pazarlama & İletişim",
+      "administration": "Sistem Yönetimi"
     },
     "2_columns": "2 Sütun",
     "2fa": "2FA",

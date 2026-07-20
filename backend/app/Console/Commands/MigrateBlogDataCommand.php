@@ -138,18 +138,71 @@ class MigrateBlogDataCommand extends Command
 
         $cleanPath = ltrim($relativePath, '/');
         $url = "https://sporfest.com.tr/" . $cleanPath;
+        $fileName = basename($cleanPath);
+
+        // Deduplicate: check if we already have this file in media library
+        $existing = \App\Domains\Media\Models\MediaItem::where('file_name', $fileName)->first();
+        if ($existing) {
+            return $existing->id;
+        }
 
         try {
             $placeholder = MediaLibraryPlaceholder::firstOrCreate([
                 'name' => 'global_library',
             ]);
 
-            $media = $placeholder->addMediaFromUrl($url)
+            // Create a temporary file path
+            $tempDir = storage_path('app/temp_media');
+            if (!file_exists($tempDir)) {
+                mkdir($tempDir, 0777, true);
+            }
+            $tempFile = $tempDir . '/' . $fileName;
+
+            // Download file using custom curl to bypass SSL issues on local dev
+            $ch = curl_init($url);
+            $fp = fopen($tempFile, 'wb');
+            curl_setopt($ch, CURLOPT_FILE, $fp);
+            curl_setopt($ch, CURLOPT_HEADER, 0);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_exec($ch);
+            $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            fclose($fp);
+
+            if ($statusCode !== 200 && $statusCode !== 206) {
+                if (file_exists($tempFile)) {
+                    unlink($tempFile);
+                }
+                $this->warn("Failed to download media from {$url} (HTTP Code: {$statusCode})");
+                return null;
+            }
+
+            if (!file_exists($tempFile) || filesize($tempFile) === 0) {
+                if (file_exists($tempFile)) {
+                    unlink($tempFile);
+                }
+                $this->warn("Failed to download media from {$url} (File empty or not found)");
+                return null;
+            }
+
+            // Register in media library using local path
+            $media = $placeholder->addMedia($tempFile)
                 ->toMediaCollection('default');
+
+            // Clean up temp file
+            if (file_exists($tempFile)) {
+                unlink($tempFile);
+            }
 
             return $media->id;
         } catch (\Exception $e) {
-            $this->warn("Failed to download cover image from {$url}: " . $e->getMessage());
+            if (isset($tempFile) && file_exists($tempFile)) {
+                unlink($tempFile);
+            }
+            $this->warn("Failed to download media from {$url}: " . $e->getMessage());
             return null;
         }
     }

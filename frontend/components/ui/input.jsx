@@ -16,13 +16,13 @@ const inputVariants = cva(
   {
     variants: {
       variant: {
-        lg: 'h-10 px-4 text-sm rounded-md file:pe-4 file:me-4',
-        md: 'h-8.5 px-3 text-[0.8125rem] leading-(--text-sm--line-height) rounded-md file:pe-3 file:me-3',
-        sm: 'h-7 px-2.5 text-xs rounded-md file:pe-2.5 file:me-2.5',
+        lg: 'h-11 px-4 text-sm sm:text-base rounded-lg file:pe-4 file:me-4',
+        md: 'h-9.5 px-3.5 text-[0.8125rem] sm:text-sm rounded-md file:pe-3.5 file:me-3.5',
+        sm: 'h-8 px-2.5 text-xs rounded-md file:pe-2.5 file:me-2.5',
       },
     },
     defaultVariants: {
-      variant: 'md',
+      variant: 'lg',
     },
   },
 );
@@ -32,9 +32,9 @@ const inputAddonVariants = cva(
   {
     variants: {
       variant: {
-        sm: 'rounded-md h-7 min-w-7 text-xs px-2.5 [&_svg:not([class*=size-])]:size-3.5',
-        md: 'rounded-md h-8.5 min-w-8.5 px-3 text-[0.8125rem] leading-(--text-sm--line-height) [&_svg:not([class*=size-])]:size-4.5',
-        lg: 'rounded-md h-10 min-w-10 px-4 text-sm [&_svg:not([class*=size-])]:size-4.5',
+        sm: 'rounded-md h-8 min-w-8 px-2.5 text-xs [&_svg:not([class*=size-])]:size-3.5',
+        md: 'rounded-md h-9.5 min-w-9.5 px-3.5 text-sm [&_svg:not([class*=size-])]:size-4.5',
+        lg: 'rounded-lg h-11 min-w-11 px-4 text-sm sm:text-base [&_svg:not([class*=size-])]:size-4.5',
       },
       mode: {
         default: '',
@@ -42,7 +42,7 @@ const inputAddonVariants = cva(
       },
     },
     defaultVariants: {
-      variant: 'md',
+      variant: 'lg',
       mode: 'default',
     },
   },
@@ -107,11 +107,11 @@ const inputWrapperVariants = cva(
       variant: {
         sm: 'gap-1.25 [&_svg:not([class*=size-])]:size-3.5',
         md: 'gap-1.5 [&_svg:not([class*=size-])]:size-4',
-        lg: 'gap-1.5 [&_svg:not([class*=size-])]:size-4',
+        lg: 'gap-1.5 [&_svg:not([class*=size-])]:size-4.5',
       },
     },
     defaultVariants: {
-      variant: 'md',
+      variant: 'lg',
     },
   },
 );
@@ -126,6 +126,40 @@ function Input({ className, type, variant, ...props }) {
     />
   );
 }
+
+const FloatingInput = React.forwardRef(({ label, id, className, alwaysFloat, ...props }, ref) => {
+  const isDate = props.type === 'date';
+  const shouldFloat = alwaysFloat || isDate;
+
+  return (
+    <div className="relative w-full mb-2">
+      <Input
+        ref={ref}
+        id={id}
+        placeholder=" "
+        className={cn(
+          "h-12 px-3.5 peer placeholder:text-transparent",
+          className
+        )}
+        {...props}
+      />
+      {label && (
+        <label
+          htmlFor={id}
+          className={cn(
+            "absolute left-3 pointer-events-none transition-all duration-200 bg-background px-1.5 text-muted-foreground/80",
+            shouldFloat
+              ? "top-0 -translate-y-1/2 text-xs text-muted-foreground/80 peer-focus:text-primary"
+              : "top-1/2 -translate-y-1/2 text-sm sm:text-base peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:text-sm sm:peer-placeholder-shown:text-base peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-xs peer-focus:text-primary peer-[:not(:placeholder-shown)]:top-0 peer-[:not(:placeholder-shown)]:-translate-y-1/2 peer-[:not(:placeholder-shown)]:text-xs"
+          )}
+        >
+          {label}
+        </label>
+      )}
+    </div>
+  );
+});
+FloatingInput.displayName = 'FloatingInput';
 
 function InputAddon({ className, variant, mode, ...props }) {
   return (
@@ -163,6 +197,7 @@ function InputWrapper({ className, variant, ...props }) {
 
 export {
   Input,
+  FloatingInput,
   InputAddon,
   InputGroup,
   InputWrapper,

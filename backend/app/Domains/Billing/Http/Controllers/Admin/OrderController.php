@@ -14,7 +14,15 @@ class OrderController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Order::query()->with(['user', 'items.orderable', 'transactions']);
+        $query = Order::query()->with([
+            'user',
+            'items.orderable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    \App\Domains\Race\Models\Registration::class => ['participant', 'race'],
+                ]);
+            },
+            'transactions',
+        ]);
 
         if ($request->has('status') && $request->query('status') !== 'all') {
             $query->where('status', $request->query('status'));
@@ -22,6 +30,14 @@ class OrderController extends Controller
 
         if ($request->has('gateway') && $request->query('gateway') !== 'all') {
             $query->where('gateway', $request->query('gateway'));
+        }
+
+        if ($request->has('start_date') && !empty($request->query('start_date'))) {
+            $query->whereDate('created_at', '>=', \Illuminate\Support\Carbon::parse($request->query('start_date'))->toDateString());
+        }
+
+        if ($request->has('end_date') && !empty($request->query('end_date'))) {
+            $query->whereDate('created_at', '<=', \Illuminate\Support\Carbon::parse($request->query('end_date'))->toDateString());
         }
 
         if ($request->has('search')) {
@@ -43,9 +59,16 @@ class OrderController extends Controller
 
     public function show(Order $order): OrderResource
     {
-        return new OrderResource($order->load(['user', 'items.orderable', 'transactions']));
+        return new OrderResource($order->load([
+            'user',
+            'items.orderable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    \App\Domains\Race\Models\Registration::class => ['participant', 'race'],
+                ]);
+            },
+            'transactions',
+        ]));
     }
-
     public function update(Request $request, Order $order): OrderResource
     {
         $validated = $request->validate([
@@ -71,7 +94,15 @@ class OrderController extends Controller
             }
         });
 
-        return new OrderResource($order->load(['user', 'items.orderable', 'transactions']));
+        return new OrderResource($order->load([
+            'user',
+            'items.orderable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    \App\Domains\Race\Models\Registration::class => ['participant', 'race'],
+                ]);
+            },
+            'transactions',
+        ]));
     }
 
     public function destroy(Order $order): JsonResponse

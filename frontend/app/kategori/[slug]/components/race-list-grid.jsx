@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Calendar, Clock, Trophy, MapPin, Sparkles, User, BadgeInfo, Eye, UserPlus } from 'lucide-react';
+import { Calendar, Clock, Trophy, MapPin, User, BadgeInfo, Eye, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -171,17 +171,7 @@ function RaceCard({ race, index, locale = 'tr', categorySlug }) {
               <span>{race.age_limit_min ?? '18'}-{race.age_limit_max ?? '75'} Yaş</span>
             </div>
           )}
-          {race.price && parseFloat(race.price) > 0 ? (
-            <div className="flex items-center gap-1 text-zinc-800 dark:text-zinc-300 font-bold">
-              <Sparkles className="size-3.5 text-amber-500 shrink-0" />
-              <span>{parseFloat(race.price)} {race.currency || 'TRY'}</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
-              <Sparkles className="size-3.5 text-emerald-500 shrink-0" />
-              <span>Ücretsiz</span>
-            </div>
-          )}
+
         </div>
 
         {/* Card Action Buttons */}

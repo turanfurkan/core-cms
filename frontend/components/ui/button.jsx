@@ -39,10 +39,10 @@ const buttonVariants = cva(
         dashed: '',
       },
       size: {
-        lg: 'h-10 rounded-md px-4 text-sm gap-1.5 [&_svg:not([class*=size-])]:size-4',
-        md: 'h-8.5 rounded-md px-3 gap-1.5 text-[0.8125rem] leading-(--text-sm--line-height) [&_svg:not([class*=size-])]:size-4',
-        sm: 'h-7 rounded-md px-2.5 gap-1.25 text-xs [&_svg:not([class*=size-])]:size-3.5',
-        icon: 'size-8.5 rounded-md [&_svg:not([class*=size-])]:size-4 shrink-0',
+        lg: 'h-11 rounded-lg px-4 text-sm sm:text-base gap-1.5 [&_svg:not([class*=size-])]:size-4.5',
+        md: 'h-9.5 rounded-md px-3.5 gap-1.5 text-[0.8125rem] sm:text-sm leading-(--text-sm--line-height) [&_svg:not([class*=size-])]:size-4',
+        sm: 'h-8 rounded-md px-2.5 gap-1.25 text-xs [&_svg:not([class*=size-])]:size-3.5',
+        icon: 'size-9.5 rounded-md [&_svg:not([class*=size-])]:size-4 shrink-0',
       },
       autoHeight: {
         true: '',
@@ -116,17 +116,17 @@ const buttonVariants = cva(
       {
         size: 'md',
         autoHeight: true,
-        className: 'h-auto min-h-8.5',
+        className: 'h-auto min-h-9.5',
       },
       {
         size: 'sm',
         autoHeight: true,
-        className: 'h-auto min-h-7',
+        className: 'h-auto min-h-8',
       },
       {
         size: 'lg',
         autoHeight: true,
-        className: 'h-auto min-h-10',
+        className: 'h-auto min-h-11',
       },
 
       // Shadow support
@@ -316,21 +316,21 @@ const buttonVariants = cva(
       {
         size: 'sm',
         mode: 'icon',
-        className: 'w-7 h-7 p-0 [[&_svg:not([class*=size-])]:size-3.5',
+        className: 'w-8 h-8 p-0 [&_svg:not([class*=size-])]:size-3.5',
       },
       {
         size: 'md',
         mode: 'icon',
-        className: 'w-8.5 h-8.5 p-0 [&_svg:not([class*=size-])]:size-4',
+        className: 'w-9.5 h-9.5 p-0 [&_svg:not([class*=size-])]:size-4',
       },
       {
         size: 'icon',
-        className: 'w-8.5 h-8.5 p-0 [&_svg:not([class*=size-])]:size-4',
+        className: 'w-9.5 h-9.5 p-0 [&_svg:not([class*=size-])]:size-4',
       },
       {
         size: 'lg',
         mode: 'icon',
-        className: 'w-10 h-10 p-0 [&_svg:not([class*=size-])]:size-4',
+        className: 'w-11 h-11 p-0 [&_svg:not([class*=size-])]:size-4.5',
       },
 
       // Input mode

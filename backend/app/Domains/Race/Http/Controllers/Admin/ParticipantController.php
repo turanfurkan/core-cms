@@ -33,8 +33,8 @@ class ParticipantController extends Controller
             $query->where('user_id', $request->query('user_id'));
         }
 
-        $sortField = $request->query('sort_field', 'name');
-        $sortDirection = $request->query('sort_direction', 'asc');
+        $sortField = $request->query('sort', $request->query('sort_field', 'name'));
+        $sortDirection = $request->query('dir', $request->query('sort_direction', 'asc'));
 
         // Map frontend keys to database columns
         if ($sortField === 'phone') {
@@ -94,5 +94,17 @@ class ParticipantController extends Controller
         $action->execute($participant);
 
         return response()->json(['message' => 'Participant profile deleted successfully.']);
+    }
+
+    public function nationalities(): JsonResponse
+    {
+        $nationalities = Participant::query()
+            ->whereNotNull('nationality')
+            ->where('nationality', '!=', '')
+            ->distinct()
+            ->orderBy('nationality', 'asc')
+            ->pluck('nationality');
+
+        return response()->json($nationalities);
     }
 }

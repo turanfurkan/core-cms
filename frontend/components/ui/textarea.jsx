@@ -15,13 +15,13 @@ const textareaVariants = cva(
   {
     variants: {
       variant: {
-        sm: 'px-2.5 py-2.5 text-xs rounded-md',
-        md: 'px-3 py-3 text-[0.8125rem] leading-(--text-sm--line-height) rounded-md',
-        lg: 'px-4 py-4 text-sm rounded-md',
+        sm: 'px-2.5 py-2 text-xs rounded-md',
+        md: 'px-3.5 py-2.5 text-[0.8125rem] sm:text-sm rounded-md',
+        lg: 'px-4 py-3 text-sm sm:text-base rounded-lg',
       },
     },
     defaultVariants: {
-      variant: 'md',
+      variant: 'lg',
     },
   },
 );

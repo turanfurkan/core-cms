@@ -15,7 +15,10 @@ import {
   Trash2,
   X,
   Lock,
-  MapPin
+  MapPin,
+  Database,
+  RefreshCw,
+  Terminal
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { Container } from '@/components/common/container';
@@ -130,6 +133,47 @@ export default function SystemSettingsPage() {
   const [currency, setCurrency] = useState('USD');
   const [currencyFormat, setCurrencyFormat] = useState('$ {value}');
   const [siteActive, setSiteActive] = useState(true);
+
+  // Tabs management
+  const [activeTab, setActiveTab] = useState('general');
+
+  // Database Sync states
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncOutput, setSyncOutput] = useState('');
+  const [dryRun, setDryRun] = useState(false);
+  const [skipMedia, setSkipMedia] = useState(false);
+
+  const handleSync = async (type) => {
+    setIsSyncing(true);
+    setSyncOutput(t('system_settings.db_sync.starting', 'Senkronizasyon başlatılıyor... Lütfen bekleyin...\n'));
+    try {
+      const res = await apiFetch('/api/admin/database-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type,
+          'dry_run': type === 'identity' ? dryRun : false,
+          'skip_media': type === 'race_billing' ? skipMedia : true,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSyncOutput((prev) => prev + `\n[SUCCESS] ${data.message}\n\n` + data.output);
+        toast.success(t('system_settings.db_sync.success', 'Veritabanı senkronizasyonu tamamlandı.'));
+      } else {
+        setSyncOutput((prev) => prev + `\n[FAILED] ${data.message || 'Error occurred'}\n\n` + (data.output || ''));
+        toast.error(data.message || t('system_settings.db_sync.error', 'Senkronizasyon başarısız oldu.'));
+      }
+    } catch (err) {
+      setSyncOutput((prev) => prev + `\n[ERROR] ${err.message}\n`);
+      toast.error(t('system_settings.db_sync.error', 'Senkronizasyon sırasında bir hata oluştu.'));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Fetch settings
   const { data: response, isLoading } = useQuery({
@@ -341,7 +385,7 @@ export default function SystemSettingsPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <Tabs defaultValue="general" className="w-full space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
               {/* Tab Header Card */}
               <Card className="select-none p-3">
                 <TabsList variant="line" className="w-full flex-wrap justify-start border-none bg-transparent gap-2 h-auto p-0">
@@ -386,6 +430,13 @@ export default function SystemSettingsPage() {
                   >
                     <Mail className="size-4" />
                     {t('system_settings.tabs.mail', 'Mail Sunucusu (SMTP)')}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="db-sync"
+                    className="text-xs font-bold gap-2 py-3 px-4 rounded-lg data-[state=active]:bg-primary/5 data-[state=active]:text-primary h-10"
+                  >
+                    <Database className="size-4" />
+                    {t('system_settings.tabs.db_sync', 'Veritabanı Senkronizasyonu')}
                   </TabsTrigger>
                 </TabsList>
               </Card>
@@ -833,21 +884,161 @@ export default function SystemSettingsPage() {
                 </Card>
               </TabsContent>
 
+              {/* Database Sync Tab */}
+              <TabsContent value="db-sync" className="m-0 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left Column: Sync Controls */}
+                  <div className="space-y-6">
+                    {/* Identity Data Sync Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base font-bold flex items-center gap-2">
+                          <Database className="size-4.5 text-primary" />
+                          {t('system_settings.db_sync.identity_title', 'Kullanıcı ve Rol Senkronizasyonu')}
+                        </CardTitle>
+                        <CardDescription className="text-xs">
+                          {t('system_settings.db_sync.identity_description', 'Canlıdaki veritabanından kullanıcıları ve rollerini çeker. Seed kullanıcılarını (ID 1-4) korur.')}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center space-x-2 border border-border rounded-lg p-3 bg-muted/5 select-none">
+                          <Switch
+                            id="db-sync-dry-run"
+                            checked={dryRun}
+                            onCheckedChange={setDryRun}
+                            disabled={isSyncing}
+                          />
+                          <div className="space-y-0.5 cursor-pointer" onClick={() => !isSyncing && setDryRun(!dryRun)}>
+                            <Label htmlFor="db-sync-dry-run" className="text-xs font-bold text-foreground cursor-pointer">
+                              {t('system_settings.db_sync.dry_run', 'Simülasyon Modu (Dry Run)')}
+                            </Label>
+                            <p className="text-[10px] text-muted-foreground">
+                              {t('system_settings.db_sync.dry_run_help', 'Aktif edilirse hiçbir veritabanı değişikliği kaydedilmez, sadece işlem simüle edilir.')}
+                            </p>
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          onClick={() => handleSync('identity')}
+                          disabled={isSyncing}
+                          className="w-full gap-2 font-semibold"
+                        >
+                          {isSyncing ? (
+                            <LoaderCircleIcon className="size-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="size-4" />
+                          )}
+                          {t('system_settings.db_sync.run_identity', 'Kullanıcıları Senkronize Et')}
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Race and Billing Data Sync Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base font-bold flex items-center gap-2">
+                          <Database className="size-4.5 text-rose-500" />
+                          {t('system_settings.db_sync.race_billing_title', 'Yarış ve Ödeme Verileri Senkronizasyonu')}
+                        </CardTitle>
+                        <CardDescription className="text-xs text-rose-500/80">
+                          {t('system_settings.db_sync.race_billing_warning', 'DİKKAT: Bu işlem mevcut yerel kategori, yarış, katılımcı ve ödeme tablolarını temizleyip sıfırdan çeker.')}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center space-x-2 border border-border rounded-lg p-3 bg-muted/5 select-none">
+                          <Switch
+                            id="db-sync-skip-media"
+                            checked={skipMedia}
+                            onCheckedChange={setSkipMedia}
+                            disabled={isSyncing}
+                          />
+                          <div className="space-y-0.5 cursor-pointer" onClick={() => !isSyncing && setSkipMedia(!skipMedia)}>
+                            <Label htmlFor="db-sync-skip-media" className="text-xs font-bold text-foreground cursor-pointer">
+                              {t('system_settings.db_sync.skip_media', 'Medya İndirmeyi Atla (Skip Media)')}
+                            </Label>
+                            <p className="text-[10px] text-muted-foreground">
+                              {t('system_settings.db_sync.skip_media_help', 'Önerilen. Görsel ve GPX/Strava dosyalarını indirmeyi atlayarak senkronizasyonu hızlandırır.')}
+                            </p>
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={() => handleSync('race_billing')}
+                          disabled={isSyncing}
+                          className="w-full gap-2 font-semibold"
+                        >
+                          {isSyncing ? (
+                            <LoaderCircleIcon className="size-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="size-4" />
+                          )}
+                          {t('system_settings.db_sync.run_race_billing', 'Yarış & Ödeme Verilerini Senkronize Et')}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Right Column: Console Log Output */}
+                  <Card className="flex flex-col h-full min-h-[450px]">
+                    <CardHeader className="pb-3 border-b border-border">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base font-bold flex items-center gap-2">
+                          <Terminal className="size-4.5 text-emerald-500" />
+                          {t('system_settings.db_sync.console_title', 'Senkronizasyon Konsolu')}
+                        </CardTitle>
+                        {syncOutput && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSyncOutput('')}
+                            className="text-[10px] h-7 px-2"
+                          >
+                            Temizle
+                          </Button>
+                        )}
+                      </div>
+                      <CardDescription className="text-xs">
+                        {t('system_settings.db_sync.console_description', 'Gerçekleştirilen işlemlerin detaylı günlük çıktısı.')}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-1 p-0 relative bg-zinc-950 text-zinc-300 font-mono text-xs rounded-b-lg overflow-hidden flex flex-col">
+                      <div className="flex-1 overflow-y-auto p-4 space-y-1.5 select-text scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent max-h-[480px]">
+                        {syncOutput ? (
+                          <pre className="whitespace-pre-wrap font-mono break-all leading-relaxed text-left">{syncOutput}</pre>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full text-zinc-500 select-none py-20">
+                            <Terminal className="size-8 mb-2 stroke-[1.5]" />
+                            <p>{t('system_settings.db_sync.console_empty', 'Konsol çıktısı bulunmamaktadır.')}</p>
+                            <p className="text-[10px] text-zinc-600 mt-1">{t('system_settings.db_sync.console_empty_help', 'Senkronizasyonu başlatmak için sol taraftaki işlemleri kullanın.')}</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
               {/* Action Save Button */}
-              <div className="pt-2 border-t border-border flex justify-end gap-3 select-none">
-                <Button
-                  type="submit"
-                  disabled={mutation.isPending}
-                  className="gap-1.5 font-semibold"
-                >
-                  {mutation.isPending ? (
-                    <LoaderCircleIcon className="size-4 animate-spin" />
-                  ) : (
-                    <Save className="size-4" />
-                  )}
-                  {t('system_settings.save_settings', 'Ayarları Kaydet')}
-                </Button>
-              </div>
+              {activeTab !== 'db-sync' && (
+                <div className="pt-2 border-t border-border flex justify-end gap-3 select-none">
+                  <Button
+                    type="submit"
+                    disabled={mutation.isPending}
+                    className="gap-1.5 font-semibold"
+                  >
+                    {mutation.isPending ? (
+                      <LoaderCircleIcon className="size-4 animate-spin" />
+                    ) : (
+                      <Save className="size-4" />
+                    )}
+                    {t('system_settings.save_settings', 'Ayarları Kaydet')}
+                  </Button>
+                </div>
+              )}
             </Tabs>
           </form>
         )}

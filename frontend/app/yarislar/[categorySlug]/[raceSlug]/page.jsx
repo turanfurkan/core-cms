@@ -24,6 +24,7 @@ import {
   ArrowLeft, 
   ArrowUpRight 
 } from 'lucide-react';
+import { Countdown } from '@/components/ui/countdown';
 import { Button } from '@/components/ui/button';
 
 export const dynamic = 'force-dynamic';
@@ -147,6 +148,7 @@ export default async function RaceDetailPage({ params }) {
 
   // Format date display
   let formattedDate = '';
+  let formattedTime = '';
   if (race.start_date) {
     const dateObj = new Date(race.start_date);
     formattedDate = dateObj.toLocaleDateString('tr-TR', {
@@ -181,7 +183,28 @@ export default async function RaceDetailPage({ params }) {
       <div>
         <PublicHeader settings={settings} menuItems={headerMenuItems} />
         
-        <main className="pb-24 lg:pb-16 space-y-8">
+        {/* Fixed Countdown Bar (Mobile Only) */}
+        {race.registration_deadline && (
+          <div className="fixed top-0 left-0 right-0 z-50 bg-primary border-b border-primary/60 shadow-lg px-4 py-3 lg:hidden">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="size-4 text-white shrink-0" />
+                <span className="text-[11px] font-black uppercase text-white tracking-wider">
+                  Son Kayıt
+                </span>
+              </div>
+              <Countdown
+                targetDate={race.registration_deadline}
+                locale="tr"
+                showLabels={false}
+                className="flex items-center gap-2"
+                isPrimaryBackground={true}
+              />
+            </div>
+          </div>
+        )}
+
+        <main className="pt-16 lg:pt-0">
           {/* Breadcrumb Header */}
           <PageHeader 
             title={raceTitle}
@@ -288,7 +311,15 @@ export default async function RaceDetailPage({ params }) {
               })()}
 
               {/* Dynamic Tabs switcher */}
-              <RaceDetailsTabs race={race} locale="tr" />
+              <RaceDetailsTabs 
+                race={race} 
+                category={category} 
+                locale="tr" 
+                formattedDate={formattedDate} 
+                formattedDeadline={formattedDeadline} 
+                startTime={race.start_time} 
+                maxParticipants={race.max_participants}
+              />
 
               {/* Divider line between Tabs and Participant list */}
               <div className="h-px bg-zinc-200/60 dark:bg-zinc-800/60" />
@@ -340,60 +371,24 @@ export default async function RaceDetailPage({ params }) {
                     )}
                   </div>
 
-                {/* Key Race Stats */}
-                <div className="space-y-4">
-                  {formattedDate && (
-                    <div className="flex items-start gap-3">
-                      <Calendar className="size-5 text-zinc-400 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="block text-[11px] font-black uppercase text-zinc-400 tracking-wider">Tarih</span>
-                        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{formattedDate}</span>
-                      </div>
-                    </div>
-                  )}
 
-                  {race.start_time && (
-                    <div className="flex items-start gap-3">
-                      <Clock className="size-5 text-zinc-400 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="block text-[11px] font-black uppercase text-zinc-400 tracking-wider">Başlangıç Saati</span>
-                        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{race.start_time.slice(0, 5)}</span>
-                      </div>
+                {/* Countdown Timer (if registration deadline exists) */}
+                {race.registration_deadline && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="size-4 text-red-500 shrink-0" />
+                      <span className="text-[11px] font-black uppercase text-red-500 tracking-wider">
+                        Son Kayıt Tarihi
+                      </span>
                     </div>
-                  )}
-
-                  {formattedDeadline && (
-                    <div className="flex items-start gap-3">
-                      <Calendar className="size-5 text-red-400 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="block text-[11px] font-black uppercase text-red-400 tracking-wider">Son Kayıt Tarihi</span>
-                        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{formattedDeadline}</span>
-                      </div>
+                    <div className="flex items-center justify-center">
+                      <Countdown 
+                        targetDate={race.registration_deadline} 
+                        locale="tr" 
+                      />
                     </div>
-                  )}
-
-                  {race.max_participants && (
-                    <div className="flex items-start gap-3">
-                      <User className="size-5 text-zinc-400 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="block text-[11px] font-black uppercase text-zinc-400 tracking-wider">Katılımcı Limiti</span>
-                        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{race.max_participants} Sporcu</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {(race.age_limit_min || race.age_limit_max) && (
-                    <div className="flex items-start gap-3">
-                      <Info className="size-5 text-zinc-400 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="block text-[11px] font-black uppercase text-zinc-400 tracking-wider">Yaş Sınırları</span>
-                        <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                          {race.age_limit_min ?? '18'} - {race.age_limit_max ?? '75'} Yaş Arası
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Primary CTA Buttons */}
                 <div className="space-y-3 pt-4 border-t border-border/40">

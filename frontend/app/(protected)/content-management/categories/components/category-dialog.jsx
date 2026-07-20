@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Save, Check, LoaderCircleIcon, Globe, Plus, Trash2, ArrowUp, ArrowDown, Layers, Info, Sliders } from 'lucide-react';
+import { Save, Check, LoaderCircleIcon, Globe, Plus, Trash2, ArrowUp, ArrowDown, Layers, Info, Sliders, Zap, ChevronDown } from 'lucide-react';
 import RichTextEditor from '@/components/common/rich-text-editor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiFetch } from '@/lib/api';
@@ -32,6 +32,69 @@ const CATEGORY_TYPES = [
   { value: 'service', label: 'Hizmetler / Ürünler' },
   { value: 'partner', label: 'Sponsorlar (Sponsors)' },
   { value: 'general', label: 'Genel (General)' },
+];
+
+const QUICK_ADD_TABS = [
+  {
+    id: 'rules', emoji: '📋', label: 'Yarışma Kuralları',
+    titleTr: 'Yarışma Kuralları', titleEn: 'Competition Rules',
+    contentTr: '<h2>Yarışma Kuralları &amp; Katılım Şartları</h2><ul><li><strong>Yaş Sınırı:</strong> Yarışmaya katılım yaşı minimum 18’dir. 18 yaş altındaki sporcular veli izin belgesiyle katılabilir.</li><li><strong>Zorunlu Malzemeler:</strong> Yarış esnasında göğüs numarası görünür olmalı, acil durum kiti ve su matarası bulundurulmalıdır.</li><li><strong>Diskalifiye Nedenleri:</strong> Parkur dışına çıkmak, çevreye çöp atmak veya sportmenlik dışı davranışlar doğrudan ihraç sebebidir.</li><li><strong>Chip Zorunluluğu:</strong> Yarışmacılar, organizasyon tarafından sağlanan elektronik chip’i ayakkabılarına takmalıdır.</li><li><strong>Hava Koşulları:</strong> Şiddetli hava koşullarında yarış organizasyon kararıyla ertelenebilir veya iptal edilebilir.</li></ul>',
+    contentEn: '<h2>Competition Rules &amp; Entry Requirements</h2><ul><li><strong>Age Limit:</strong> Minimum age is 18. Athletes under 18 must present a parental consent form.</li><li><strong>Mandatory Gear:</strong> Race number must be visible at all times; emergency kit and hydration bottle are mandatory.</li><li><strong>Disqualification:</strong> Cutting the course, littering, or unsportsmanlike behavior will result in immediate disqualification.</li><li><strong>Chip Requirement:</strong> All participants must attach the electronic timing chip provided by the organization to their shoe.</li><li><strong>Weather Conditions:</strong> In case of severe weather, the race may be postponed or cancelled at the organizer’s discretion.</li></ul>',
+  },
+  {
+    id: 'program', emoji: '📅', label: 'Etkinlik Programı',
+    titleTr: 'Etkinlik Programı', titleEn: 'Event Schedule',
+    contentTr: '<h2>Etkinlik Programı</h2><p><strong>07:00 – 08:30</strong> — Sporcu Kit Dağıtımı &amp; Kayıt Kontrol</p><p><strong>08:45</strong> — Teknik Toplantı &amp; Isınma</p><p><strong>09:00</strong> — Yarış Başlangıcı (Start)</p><p><strong>13:00</strong> — Ödül Töreni &amp; Kapanış</p>',
+    contentEn: '<h2>Event Schedule</h2><p><strong>07:00 – 08:30</strong> — Race Kit Distribution &amp; Check-in</p><p><strong>08:45</strong> — Technical Briefing &amp; Warm-up</p><p><strong>09:00</strong> — Race Start</p><p><strong>13:00</strong> — Awards Ceremony &amp; Closing</p>',
+  },
+  {
+    id: 'course', emoji: '🗺️', label: 'Parkur Bilgisi',
+    titleTr: 'Parkur Bilgisi', titleEn: 'Course Info',
+    contentTr: '<h2>Parkur Hakkında</h2><ul><li><strong>Zemin:</strong> Orman yolu, patika ve asfalt karışımı</li><li><strong>En Yüksek Nokta:</strong> — m</li><li><strong>Zorluk Derecesi:</strong> Orta / Orta-Zor</li><li><strong>Kontrol Noktaları:</strong> Belirlenecektir</li></ul><p>Parkur haritası ve GPX dosyası yarıştan önce yayınlanacaktır.</p>',
+    contentEn: '<h2>Course Information</h2><ul><li><strong>Surface:</strong> Mixed forest trail, singletrack and asphalt</li><li><strong>Highest Point:</strong> — m</li><li><strong>Difficulty:</strong> Moderate / Moderate-Hard</li><li><strong>Checkpoints:</strong> To be announced</li></ul><p>Course map and GPX file will be published before the race.</p>',
+  },
+  {
+    id: 'awards', emoji: '🏆', label: 'Ödüller &amp; Kupalar',
+    titleTr: 'Ödüller &amp; Kupalar', titleEn: 'Awards &amp; Trophies',
+    contentTr: '<h2>Ödüller &amp; Kupalar</h2><p>Her kategoride ilk 3 dereceye giren sporculara kupa ve madalya verilecektir.</p><ul><li>🥇 <strong>1. lik:</strong> Kupa + Madalya + Özel Ödül</li><li>🥈 <strong>2. lik:</strong> Kupa + Madalya</li><li>🥉 <strong>3. lük:</strong> Kupa + Madalya</li></ul><p>Tüm katılımcılara finişer madalyası ve katılım sertifikası verilecektir.</p>',
+    contentEn: '<h2>Awards &amp; Trophies</h2><p>The top 3 finishers in each category will receive trophies and medals.</p><ul><li>🥇 <strong>1st Place:</strong> Trophy + Medal + Special Prize</li><li>🥈 <strong>2nd Place:</strong> Trophy + Medal</li><li>🥉 <strong>3rd Place:</strong> Trophy + Medal</li></ul><p>All finishers will receive a finisher medal and participation certificate.</p>',
+  },
+  {
+    id: 'faq', emoji: '❓', label: 'Sıkça Sorulan Sorular',
+    titleTr: 'Sıkça Sorulan Sorular', titleEn: 'FAQ',
+    contentTr: '<h2>Sıkça Sorulan Sorular</h2><p><strong>Soru: Kayıt iptali mümkün müdür?</strong><br>Cevap: Yarıştan 14 gün öncesine kadar iptal talebinde bulunulabilir.</p><p><strong>Soru: Yarış kiti nerede teslim alınır?</strong><br>Cevap: Yarış kitleri, etkinlik günü sabah 07:00–08:30 saatleri arasında start alanındaki stantlardan teslim edilecektir.</p><p><strong>Soru: Eşlik eden kişiler için alan var mı?</strong><br>Cevap: Evet, finiş alanında seyirci bölgesi bulunmaktadır.</p>',
+    contentEn: '<h2>Frequently Asked Questions</h2><p><strong>Q: Can I cancel my registration?</strong><br>A: Cancellations are accepted up to 14 days before the race.</p><p><strong>Q: Where do I collect my race kit?</strong><br>A: Race kits will be distributed at the start area from 07:00–08:30 on race day.</p><p><strong>Q: Is there a spectator area?</strong><br>A: Yes, a designated spectator zone is available at the finish area.</p>',
+  },
+  {
+    id: 'transport', emoji: '🚌', label: 'Ulaşım Bilgisi',
+    titleTr: 'Ulaşım Bilgisi', titleEn: 'Transportation',
+    contentTr: '<h2>Ulaşım &amp; Otopark</h2><p>🚌 <strong>Toplu Taşıma / Servisler:</strong> Yarış sabahı saat 07:15’te belediye binası önünden ücretsiz sporcu servisleri kaldırılacaktır.</p><p>🚗 <strong>Özel Araç &amp; Otopark:</strong> Yarış başlangıç noktasının 100m ilerisinde yer alan ücretsiz açık otopark alanını kullanabilirsiniz.</p><p>📍 <strong>Konum:</strong> Etkinlik alanı adresi ve koordinatları buraya eklenecektir.</p>',
+    contentEn: '<h2>Transportation &amp; Parking</h2><p>🚌 <strong>Public Transport / Shuttles:</strong> Free athlete shuttles will depart from the city hall at 07:15 AM on race morning.</p><p>🚗 <strong>Private Vehicles &amp; Parking:</strong> Free public parking is available 100m from the race start gate area.</p><p>📍 <strong>Location:</strong> Venue address and coordinates will be added here.</p>',
+  },
+  {
+    id: 'accommodation', emoji: '🏨', label: 'Konaklama',
+    titleTr: 'Konaklama', titleEn: 'Accommodation',
+    contentTr: '<h2>Konaklama Seçenekleri</h2><p>Etkinlik bölgesinde çeşitli konaklama seçenekleri mevcuttur. Anlaşmalı oteller için organizasyon ofisiyle iletişime geçebilirsiniz.</p><ul><li>Anlaşmalı oteller için özel fiyat avantajından yararlanabilirsiniz.</li><li>Erken rezervasyon yaptırmanızı öneririz.</li><li>Kampçılık alanı için lütfen organizasyon ekibiyle iletişime geçin.</li></ul>',
+    contentEn: '<h2>Accommodation Options</h2><p>Various accommodation options are available near the event venue. Contact the organization office for partner hotels and special rates.</p><ul><li>Special discount rates are available at partner hotels.</li><li>Early booking is recommended.</li><li>Please contact the organization team for camping options.</li></ul>',
+  },
+  {
+    id: 'nutrition', emoji: '🍽️', label: 'Beslenme &amp; İkmal',
+    titleTr: 'Beslenme &amp; İkmal Noktaları', titleEn: 'Nutrition &amp; Aid Stations',
+    contentTr: '<h2>Beslenme &amp; İkmal Noktaları</h2><p>Parkur boyunca çeşitli noktalarda ikmal istasyonları kurulacaktır.</p><ul><li><strong>İkmal Sıklığı:</strong> Her 5 km’de bir su ve enerji jeli ikmal noktası bulunmaktadır.</li><li><strong>Sunulanlar:</strong> Su, enerji içeceği, muz, enerji jeli, tuzlu krakerler</li><li><strong>Finiş Alanı:</strong> Bitiş noktasında kapsamlı yemek ve içecek servisi yapılacaktır.</li></ul>',
+    contentEn: '<h2>Nutrition &amp; Aid Stations</h2><p>Aid stations will be set up at regular intervals along the course.</p><ul><li><strong>Frequency:</strong> Water and energy gel stations every 5 km.</li><li><strong>Available Items:</strong> Water, sports drink, banana, energy gel, salted crackers</li><li><strong>Finish Area:</strong> A comprehensive food and beverage service will be provided at the finish.</li></ul>',
+  },
+  {
+    id: 'safety', emoji: '🏥', label: 'Güvenlik &amp; Sağlık',
+    titleTr: 'Güvenlik &amp; Sağlık', titleEn: 'Safety &amp; Health',
+    contentTr: '<h2>Güvenlik &amp; Sağlık</h2><ul><li>Parkur boyunca düzenli aralıklarla sağlık ekibi konuml andırılacaktır.</li><li>Acil durum iletişimi telsiz ağı ve tüm iletiimşim kanalları üzerinden sağlanacaktır.</li><li>Tüm katılımcıların geçerli bir sağlık sigortasına sahip olması zorunludur.</li><li>Herhangi bir sağlık problemi yaşayan sporcu diskalifiye olmaksızın güvenli şekilde yarıştan çekilebilir.</li></ul>',
+    contentEn: '<h2>Safety &amp; Health</h2><ul><li>Medical teams will be stationed at regular intervals along the course.</li><li>Emergency communication will be maintained via radio network and all communication channels.</li><li>All participants are required to have valid health insurance.</li><li>Any athlete experiencing a health issue may safely withdraw from the race without disqualification.</li></ul>',
+  },
+  {
+    id: 'consent', emoji: '📝', label: 'Muvafakatname',
+    titleTr: 'Muvafakatname', titleEn: 'Consent Form',
+    contentTr: '<h2>Muvafakatname &amp; Sorumluluk Beyanı</h2><p>Yarışmaya kendi hür irademle katıldığımı, yarış parkurunun zorluk derecesini bildiğimi ve bu mücadeleye katılmak için gerekli fiziksel ve zihinsel hazırlığa sahip olduğumu beyan ederim.</p><p>Etkinlik boyunca meydana gelebilecek herhangi bir kaza, sakatlık, sağlık problemi ya da mal kaybından dolayı organizasyon komitesini, sponsorları ve yetkilileri sorumlu tutmayacağımı kabul ve taahhüt ederim.</p><p>Yarış sırasında sağlık ekiplerinin vereceği her türlü tıbbi karara uymayı, acil durumlarda tıbbi müdahaleyi şimdiden onayladığımı beyan ederim.</p>',
+    contentEn: '<h2>Consent &amp; Release Form</h2><p>I declare that I participate in the competition of my own free will, know the difficulty level of the course, and have the necessary physical and mental preparation to participate.</p><p>I accept and undertake that I will not hold the organization committee, sponsors, and officials responsible for any accident, injury, health problem, or loss of property that may occur during the event.</p><p>I declare that I comply with all medical decisions of the medical teams during the race and approve medical intervention in advance in case of emergencies.</p>',
+  },
 ];
 
 export default function CategoryDialog({ open, closeDialog, category }) {
@@ -69,6 +132,7 @@ export default function CategoryDialog({ open, closeDialog, category }) {
   const [isActive, setIsActive] = useState(true);
   const [fieldSettings, setFieldSettings] = useState(defaultFieldSettings);
   const [tabsList, setTabsList] = useState([]);
+  const [expandedTabs, setExpandedTabs] = useState(new Set());
 
   const handleAddTab = () => {
     const newKey = `tab_${Date.now()}`;
@@ -81,6 +145,7 @@ export default function CategoryDialog({ open, closeDialog, category }) {
         is_active: true,
       },
     ]);
+    setExpandedTabs((prev) => new Set([...prev, newKey]));
   };
 
   const handleUpdateTab = (id, field, lang, value) => {
@@ -118,6 +183,19 @@ export default function CategoryDialog({ open, closeDialog, category }) {
     setTabsList(updated);
   };
 
+  const handleQuickAdd = (template) => {
+    setTabsList((prev) => [
+      ...prev,
+      {
+        id: template.id,
+        title: { tr: template.titleTr, en: template.titleEn },
+        content: { tr: template.contentTr || '', en: template.contentEn || '' },
+        is_active: true,
+      },
+    ]);
+    setExpandedTabs((prev) => new Set([...prev, template.id]));
+  };
+
   // Fetch categories for parent selection
   const { data: categoriesList } = useQuery({
     queryKey: ['admin-categories-all'],
@@ -134,6 +212,7 @@ export default function CategoryDialog({ open, closeDialog, category }) {
     if (open) {
       setActiveLang('tr');
       setActiveMainTab('general');
+      setExpandedTabs(new Set());
       if (category) {
         setName({
           tr: category.name?.tr || '',
@@ -456,121 +535,195 @@ export default function CategoryDialog({ open, closeDialog, category }) {
         </TabsContent>
 
         {type === 'race' && (
-          <TabsContent value="tabs" className="space-y-6 mt-0">
-            <div className="flex justify-between items-center mb-4">
+          <TabsContent value="tabs" className="space-y-5 mt-0">
+            {/* Section header */}
+            <div className="flex items-start justify-between gap-3">
               <div className="space-y-0.5">
                 <h4 className="text-sm font-bold text-foreground">Detay Sayfası Sekmeleri</h4>
-                <p className="text-xs text-muted-foreground">Bu kategorideki yarışların detay sayfalarında gösterilecek sekmeler.</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Bu kategorideki yarışların detay sayfalarında gösterilecek özel sekmeler.
+                </p>
               </div>
-              <Button type="button" onClick={handleAddTab} size="sm" className="gap-1.5">
-                <Plus className="size-3.5" /> Yeni Sekme Ekle
+              <Button type="button" onClick={handleAddTab} size="sm" className="gap-1.5 shrink-0 h-8">
+                <Plus className="size-3.5" />
+                Yeni Sekme
               </Button>
             </div>
 
-            {tabsList.length > 0 && (
-              <Tabs value={activeLang} onValueChange={setActiveLang} className="w-full mb-4">
-                <TabsList variant="line" size="sm" className="w-fit bg-transparent pb-0">
-                  <TabsTrigger value="tr" className="gap-1.5">
-                    <Globe className="size-3.5" /> Türkçe
-                  </TabsTrigger>
-                  <TabsTrigger value="en" className="gap-1.5">
-                    <Globe className="size-3.5" /> English
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            )}
+            {/* Quick Add chips */}
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Zap className="size-3.5 text-primary" />
+                <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">Hızlı Ekle</span>
+                <span className="text-[10px] text-muted-foreground">— Hazır şablonlardan seçin</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {QUICK_ADD_TABS.filter(qt => !tabsList.some(t => t.id === qt.id)).map(qt => (
+                  <button
+                    key={qt.id}
+                    type="button"
+                    onClick={() => handleQuickAdd(qt)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-background text-xs font-semibold text-foreground hover:border-primary/60 hover:text-primary hover:bg-primary/5 transition-all duration-150 select-none"
+                  >
+                    <span className="text-sm leading-none">{qt.emoji}</span>
+                    <span>{qt.label}</span>
+                  </button>
+                ))}
+                {QUICK_ADD_TABS.filter(qt => !tabsList.some(t => t.id === qt.id)).length === 0 && (
+                  <span className="text-xs text-muted-foreground italic">
+                    Tüm hazır şablonlar eklendi.
+                  </span>
+                )}
+              </div>
+            </div>
 
+            {/* Tab list */}
             {tabsList.length === 0 ? (
-              <div className="text-center py-10 border border-dashed border-border rounded-xl">
-                <p className="text-sm text-muted-foreground">Henüz sekme eklenmemiş. "Yeni Sekme Ekle" butonunu kullanarak başlayabilirsiniz.</p>
+              <div className="flex flex-col items-center justify-center py-12 border border-dashed border-border rounded-xl bg-muted/5 space-y-3">
+                <div className="size-10 rounded-xl bg-muted/30 flex items-center justify-center">
+                  <Layers className="size-5 text-muted-foreground/50" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-semibold text-foreground">Henüz sekme eklenmemiş</p>
+                  <p className="text-xs text-muted-foreground max-w-[260px] leading-relaxed">
+                    Yukarıdan hazır şablon seçin ya da "Yeni Sekme" butonuna tıklayın.
+                  </p>
+                </div>
+                <Button type="button" onClick={handleAddTab} size="sm" variant="outline" className="gap-1.5 h-8 mt-1">
+                  <Plus className="size-3.5" />
+                  Boş Sekme Ekle
+                </Button>
               </div>
             ) : (
-              <div className="space-y-4">
-                {tabsList.map((tab, idx) => (
-                  <div key={tab.id} className="p-4 border border-border rounded-xl bg-card space-y-4 shadow-sm relative">
-                    {/* Tab Header Row */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
-                      <div className="flex items-center gap-2">
-                        {/* Order Buttons */}
-                        <div className="flex items-center gap-1 border border-border rounded-lg p-0.5 bg-muted/20">
-                          <Button
+              <div className="space-y-3">
+                {/* Lang switcher */}
+                <Tabs value={activeLang} onValueChange={setActiveLang} className="w-full">
+                  <TabsList variant="line" size="sm" className="w-fit bg-transparent pb-0">
+                    <TabsTrigger value="tr" className="gap-1.5">
+                      <Globe className="size-3.5" /> Türkçe
+                    </TabsTrigger>
+                    <TabsTrigger value="en" className="gap-1.5">
+                      <Globe className="size-3.5" /> English
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
+                {/* Tab cards */}
+                {tabsList.map((tab, idx) => {
+                  const isExpanded = expandedTabs.has(tab.id);
+                  const tabTitle = tab.title?.[activeLang] || tab.title?.tr || '';
+                  return (
+                    <div key={tab.id} className="rounded-xl border border-border bg-card overflow-hidden shadow-sm transition-shadow duration-200">
+                      {/* Card Header */}
+                      <div className="flex items-center gap-3 px-4 py-3 bg-muted/20 border-b border-transparent data-[expanded=true]:border-border/60" data-expanded={isExpanded}>
+                        {/* Order controls */}
+                        <div className="flex flex-col gap-0.5 shrink-0">
+                          <button
                             type="button"
-                            variant="ghost"
-                            size="icon"
                             onClick={() => handleMoveTab(idx, 'up')}
                             disabled={idx === 0}
-                            className="size-6 rounded-md"
+                            className="size-5 flex items-center justify-center rounded hover:bg-muted disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Yukarı taşı"
                           >
                             <ArrowUp className="size-3" />
-                          </Button>
-                          <Button
+                          </button>
+                          <button
                             type="button"
-                            variant="ghost"
-                            size="icon"
                             onClick={() => handleMoveTab(idx, 'down')}
                             disabled={idx === tabsList.length - 1}
-                            className="size-6 rounded-md"
+                            className="size-5 flex items-center justify-center rounded hover:bg-muted disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                            aria-label="Aşağı taşı"
                           >
                             <ArrowDown className="size-3" />
-                          </Button>
+                          </button>
                         </div>
-                        <span className="text-xs font-bold text-muted-foreground">#{idx + 1}</span>
-                        {/* Tab Key Input */}
-                        <div className="flex items-center gap-1.5">
-                          <Label className="text-xs text-muted-foreground shrink-0">Sekme Kodu:</Label>
-                          <Input
-                            value={tab.id}
-                            onChange={(e) => handleUpdateTab(tab.id, 'id', null, e.target.value)}
-                            placeholder="örn: rules"
-                            className="h-8 text-xs font-mono w-32 bg-muted/10"
-                          />
+
+                        {/* Tab title preview */}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-bold text-foreground truncate block">
+                            {tabTitle || <span className="text-muted-foreground/70 italic font-normal">Başlıksız Sekme</span>}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">#{idx + 1}</span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-muted-foreground font-medium">Aktif</span>
+                            <Switch
+                              checked={tab.is_active !== false}
+                              onCheckedChange={(val) => handleUpdateTab(tab.id, 'is_active', null, val)}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTab(tab.id)}
+                            className="size-7 flex items-center justify-center rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                            aria-label="Sekmeyi sil"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedTabs((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(tab.id)) next.delete(tab.id);
+                                else next.add(tab.id);
+                                return next;
+                              })
+                            }
+                            className="size-7 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                            aria-label={isExpanded ? 'Daralt' : 'Genişlet'}
+                          >
+                            <ChevronDown
+                              className={`size-3.5 text-muted-foreground transition-transform duration-200 ${
+                                isExpanded ? 'rotate-180' : ''
+                              }`}
+                            />
+                          </button>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        {/* Active Toggle */}
-                        <div className="flex items-center gap-2">
-                          <Label className="text-xs text-muted-foreground">Aktif:</Label>
-                          <Switch
-                            checked={tab.is_active !== false}
-                            onCheckedChange={(val) => handleUpdateTab(tab.id, 'is_active', null, val)}
-                          />
+                      {/* Card body (expanded) */}
+                      {isExpanded && (
+                        <div className="p-4 space-y-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">
+                              Sekme Başlığı ({activeLang.toUpperCase()})
+                            </Label>
+                            <Input
+                              value={tab.title?.[activeLang] || ''}
+                              onChange={(e) =>
+                                handleUpdateTab(tab.id, 'title', activeLang, e.target.value)
+                              }
+                              placeholder={
+                                activeLang === 'tr' ? 'Örn: Yarış Kuralları' : 'Example: Race Rules'
+                              }
+                              className="h-9 text-xs"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold">
+                              Sekme İçeriği ({activeLang.toUpperCase()})
+                            </Label>
+                            <RichTextEditor
+                              value={tab.content?.[activeLang] || ''}
+                              onChange={(val) =>
+                                handleUpdateTab(tab.id, 'content', activeLang, val)
+                              }
+                              placeholder={
+                                activeLang === 'tr'
+                                  ? 'Sekme içeriğini buraya girin...'
+                                  : 'Enter tab content here...'
+                              }
+                            />
+                          </div>
                         </div>
-                        {/* Delete button */}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteTab(tab.id)}
-                          className="size-8 text-destructive hover:bg-destructive/10 rounded-lg"
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
+                      )}
                     </div>
-
-                    {/* Tab Title & Content */}
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold">Sekme Başlığı ({activeLang.toUpperCase()})</Label>
-                        <Input
-                          value={tab.title?.[activeLang] || ''}
-                          onChange={(e) => handleUpdateTab(tab.id, 'title', activeLang, e.target.value)}
-                          placeholder={activeLang === 'tr' ? "Yarış Kuralları" : "Race Rules"}
-                          className="h-9 text-xs bg-card"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold">Sekme İçeriği ({activeLang.toUpperCase()})</Label>
-                        <RichTextEditor
-                          value={tab.content?.[activeLang] || ''}
-                          onChange={(val) => handleUpdateTab(tab.id, 'content', activeLang, val)}
-                          placeholder={activeLang === 'tr' ? "Sekme içeriğini buraya girin..." : "Enter tab content here..."}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </TabsContent>
