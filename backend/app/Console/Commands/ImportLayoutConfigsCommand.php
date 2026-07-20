@@ -65,7 +65,15 @@ class ImportLayoutConfigsCommand extends Command
             DB::table($table)->truncate();
 
             if (!empty($rows)) {
-                DB::table($table)->insert($rows);
+                // Fetch valid columns of the target table to auto-heal schema mismatches
+                $allowedColumns = \Illuminate\Support\Facades\Schema::getColumnListing($table);
+                
+                $filteredRows = [];
+                foreach ($rows as $row) {
+                    $filteredRows[] = array_intersect_key($row, array_flip($allowedColumns));
+                }
+
+                DB::table($table)->insert($filteredRows);
             }
         }
 
