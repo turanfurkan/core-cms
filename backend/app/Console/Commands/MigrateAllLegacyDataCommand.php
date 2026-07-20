@@ -25,6 +25,9 @@ class MigrateAllLegacyDataCommand extends Command
      */
     public function handle(): int
     {
+        // Temporarily use local single log channel to prevent remote socket timeouts during bulk migration
+        config(['logging.default' => 'single']);
+
         $this->info("=============================================");
         $this->info("STARTING COMPLETE DATABASE MIGRATION...");
         $this->info("=============================================");
