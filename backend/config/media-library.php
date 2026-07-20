@@ -65,7 +65,7 @@ return [
     /*
      * The fully qualified class name of the media model.
      */
-    'media_model' => App\Domains\Media\Models\MediaItem::class,
+    'media_model' => TuranFurkan\CoreCms\Domains\Media\Models\MediaItem::class,
 
     /*
      * The fully qualified class name of the media observer.

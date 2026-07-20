@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\WorkflowDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Post\Models\Post;
-use App\Domains\Workflow\Models\Workflow;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Post\Models\Post;
+use TuranFurkan\CoreCms\Domains\Workflow\Models\Workflow;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

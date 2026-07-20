@@ -17,6 +17,13 @@ export async function GET(req) {
     const response = await backendFetch(targetUrl);
     const data = await response.json();
 
+    console.log('DEBUG [Next.js API GET /api/admin/pages]:', {
+      targetUrl,
+      backendStatus: response.status,
+      backendOk: response.ok,
+      dataCount: Array.isArray(data) ? data.length : (data.data ? data.data.length : 'not an array')
+    });
+
     if (!response.ok) {
       return NextResponse.json(
         { message: data.message || 'Error fetching pages' },

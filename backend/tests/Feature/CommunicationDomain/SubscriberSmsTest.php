@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\CommunicationDomain;
 
-use App\Domains\Identity\Contracts\SmsGateway;
-use App\Domains\Identity\Models\User;
-use App\Domains\Communication\Models\Campaign;
-use App\Domains\Communication\Models\Subscriber;
-use App\Domains\Notification\Models\NotificationTemplate;
-use App\Domains\Notification\Support\DynamicNotification;
+use TuranFurkan\CoreCms\Domains\Identity\Contracts\SmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Communication\Models\Campaign;
+use TuranFurkan\CoreCms\Domains\Communication\Models\Subscriber;
+use TuranFurkan\CoreCms\Domains\Notification\Models\NotificationTemplate;
+use TuranFurkan\CoreCms\Domains\Notification\Support\DynamicNotification;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -92,7 +92,7 @@ class SubscriberSmsTest extends TestCase
         ]);
 
         // Execute the job synchronously
-        $job = new \App\Domains\Communication\Jobs\SendCampaignJob($campaign);
+        $job = new \TuranFurkan\CoreCms\Domains\Communication\Jobs\SendCampaignJob($campaign);
         $job->handle();
 
         $campaign->refresh();

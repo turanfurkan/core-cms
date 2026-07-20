@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -41,10 +41,10 @@ class DatabaseSeeder extends Seeder
             $demoUser->assignRole(\Spatie\Permission\Models\Role::where('name', 'super_admin')->get());
         }
 
-        if (!\App\Domains\API\Models\ApiKey::where('name', 'Default Development Key')->exists()) {
+        if (!\TuranFurkan\CoreCms\Domains\API\Models\ApiKey::where('name', 'Default Development Key')->exists()) {
             $rawKey = 'corecms_key_devkey1234567890abcdef1234567890';
             $hashedKey = hash('sha256', $rawKey);
-            \App\Domains\API\Models\ApiKey::create([
+            \TuranFurkan\CoreCms\Domains\API\Models\ApiKey::create([
                 'name' => 'Default Development Key',
                 'hashed_key' => $hashedKey,
                 'hint' => 'corecms_key_...cdef',

@@ -1,9 +1,9 @@
 <?php
 
-use App\Domains\Identity\Exceptions\LoginException;
-use App\Domains\Identity\Exceptions\OtpException;
-use App\Domains\Identity\Exceptions\RegistrationException;
-use App\Domains\Identity\Exceptions\RevokeFailedException;
+use TuranFurkan\CoreCms\Domains\Identity\Exceptions\LoginException;
+use TuranFurkan\CoreCms\Domains\Identity\Exceptions\OtpException;
+use TuranFurkan\CoreCms\Domains\Identity\Exceptions\RegistrationException;
+use TuranFurkan\CoreCms\Domains\Identity\Exceptions\RevokeFailedException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -21,9 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->append(\App\Domains\Localization\Http\Middleware\SetLocaleMiddleware::class);
+        $middleware->append(\TuranFurkan\CoreCms\Domains\Localization\Http\Middleware\SetLocaleMiddleware::class);
         $middleware->alias([
-            'api_key' => \App\Domains\API\Http\Middleware\AuthenticateApiKey::class,
+            'api_key' => \TuranFurkan\CoreCms\Domains\API\Http\Middleware\AuthenticateApiKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

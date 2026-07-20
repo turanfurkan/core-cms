@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\MarketingDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Marketing\Models\MarketingCoupon;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Marketing\Models\MarketingCoupon;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

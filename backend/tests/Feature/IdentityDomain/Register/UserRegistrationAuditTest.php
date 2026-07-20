@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\IdentityDomain\Register;
 
-use App\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;

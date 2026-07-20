@@ -2,15 +2,15 @@
 
 namespace Tests\Feature\IdentityDomain\Otp;
 
-use App\Domains\Identity\Actions\Authentication\RequestLoginOtpAction;
-use App\Domains\Identity\Contracts\SmsGateway;
-use App\Domains\Identity\Events\OtpDeliveryFailed;
-use App\Domains\Identity\Events\OtpRequested;
-use App\Domains\Identity\Events\OtpRequestRateLimited;
-use App\Domains\Identity\Exceptions\OtpException;
-use App\Domains\Identity\Models\LoginOtp;
-use App\Domains\Identity\Models\User;
-use App\Domains\Identity\Sms\FakeSmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Actions\Authentication\RequestLoginOtpAction;
+use TuranFurkan\CoreCms\Domains\Identity\Contracts\SmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Events\OtpDeliveryFailed;
+use TuranFurkan\CoreCms\Domains\Identity\Events\OtpRequested;
+use TuranFurkan\CoreCms\Domains\Identity\Events\OtpRequestRateLimited;
+use TuranFurkan\CoreCms\Domains\Identity\Exceptions\OtpException;
+use TuranFurkan\CoreCms\Domains\Identity\Models\LoginOtp;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Sms\FakeSmsGateway;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;

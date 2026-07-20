@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Domains\Category\Models\Category;
-use App\Domains\Media\Models\MediaItem;
-use App\Domains\Media\Models\MediaLibraryPlaceholder;
-use App\Domains\Race\Models\Race;
+use TuranFurkan\CoreCms\Domains\Category\Models\Category;
+use TuranFurkan\CoreCms\Domains\Media\Models\MediaItem;
+use TuranFurkan\CoreCms\Domains\Media\Models\MediaLibraryPlaceholder;
+use TuranFurkan\CoreCms\Domains\Race\Models\Race;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;

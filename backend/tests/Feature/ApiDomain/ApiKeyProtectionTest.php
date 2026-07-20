@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\ApiDomain;
 
-use App\Domains\API\Models\ApiKey;
-use App\Domains\Settings\Models\Setting;
+use TuranFurkan\CoreCms\Domains\API\Models\ApiKey;
+use TuranFurkan\CoreCms\Domains\Settings\Models\Setting;
 use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

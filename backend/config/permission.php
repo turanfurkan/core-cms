@@ -1,8 +1,8 @@
 <?php
 
 use Spatie\Permission\DefaultTeamResolver;
-use App\Domains\Identity\Models\Permission;
-use App\Domains\Identity\Models\Role;
+use TuranFurkan\CoreCms\Domains\Identity\Models\Permission;
+use TuranFurkan\CoreCms\Domains\Identity\Models\Role;
 
 return [
 

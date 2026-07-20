@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\IdentityDomain\Login;
 
-use App\Domains\Identity\Actions\Authentication\LoginWithPasswordAction;
-use App\Domains\Identity\Events\UserLoggedIn;
-use App\Domains\Identity\Events\UserLoginFailed;
-use App\Domains\Identity\Exceptions\LoginException;
-use App\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Actions\Authentication\LoginWithPasswordAction;
+use TuranFurkan\CoreCms\Domains\Identity\Events\UserLoggedIn;
+use TuranFurkan\CoreCms\Domains\Identity\Events\UserLoginFailed;
+use TuranFurkan\CoreCms\Domains\Identity\Exceptions\LoginException;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;

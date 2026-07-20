@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\FormDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Forms\Models\Form;
-use App\Domains\Forms\Models\FormSubmission;
-use App\Domains\Forms\Events\FormSubmitted;
-use App\Domains\Forms\Mail\FormSubmissionAlert;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Forms\Models\Form;
+use TuranFurkan\CoreCms\Domains\Forms\Models\FormSubmission;
+use TuranFurkan\CoreCms\Domains\Forms\Events\FormSubmitted;
+use TuranFurkan\CoreCms\Domains\Forms\Mail\FormSubmissionAlert;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -185,7 +185,7 @@ class FormBuilderEngineTest extends TestCase
         });
 
         // Trigger listener manually since Event::fake prevents it
-        $listener = new \App\Domains\Forms\Listeners\SendFormSubmissionAlert();
+        $listener = new \TuranFurkan\CoreCms\Domains\Forms\Listeners\SendFormSubmissionAlert();
         $listener->handle(new FormSubmitted($submission));
 
         Mail::assertSent(FormSubmissionAlert::class, function ($mail) use ($submission) {

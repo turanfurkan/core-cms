@@ -2,34 +2,34 @@
 
 namespace App\Providers;
 
-use App\Domains\Identity\Actions\Authentication\LoginWithPasswordAction;
-use App\Domains\Identity\Actions\Authentication\RequestLoginOtpAction;
-use App\Domains\Identity\Contracts\SmsGateway;
-use App\Domains\Identity\Events\OtpDeliveryFailed;
-use App\Domains\Identity\Events\OtpRequested;
-use App\Domains\Identity\Events\OtpRequestRateLimited;
-use App\Domains\Identity\Events\OtpVerificationFailed;
-use App\Domains\Identity\Events\OtpVerified;
-use App\Domains\Identity\Events\UserLoggedIn;
-use App\Domains\Identity\Events\UserLoggedOut;
-use App\Domains\Identity\Events\UserLoginFailed;
-use App\Domains\Identity\Events\UserRegistered;
-use App\Domains\Identity\Listeners\LogFailedLogin;
-use App\Domains\Identity\Listeners\LogLogoutActivity;
-use App\Domains\Identity\Listeners\LogOtpDeliveryFailed;
-use App\Domains\Identity\Listeners\LogOtpRateLimited;
-use App\Domains\Identity\Listeners\LogOtpRequested;
-use App\Domains\Identity\Listeners\LogOtpVerificationFailed;
-use App\Domains\Identity\Listeners\LogOtpVerified;
-use App\Domains\Identity\Listeners\LogRegisteredUser;
-use App\Domains\Identity\Listeners\LogSuccessfulLogin;
-use App\Domains\Identity\Models\User;
-use App\Domains\Identity\Policies\UserPolicy;
-use App\Domains\Identity\Sms\FakeSmsGateway;
-use App\Domains\Identity\Sms\LogSmsGateway;
-use App\Domains\Identity\Sms\NetgsmSmsGateway;
-use App\Domains\Identity\Sms\TwilioSmsGateway;
-use App\Domains\Identity\Support\OtpCodeGenerator;
+use TuranFurkan\CoreCms\Domains\Identity\Actions\Authentication\LoginWithPasswordAction;
+use TuranFurkan\CoreCms\Domains\Identity\Actions\Authentication\RequestLoginOtpAction;
+use TuranFurkan\CoreCms\Domains\Identity\Contracts\SmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Events\OtpDeliveryFailed;
+use TuranFurkan\CoreCms\Domains\Identity\Events\OtpRequested;
+use TuranFurkan\CoreCms\Domains\Identity\Events\OtpRequestRateLimited;
+use TuranFurkan\CoreCms\Domains\Identity\Events\OtpVerificationFailed;
+use TuranFurkan\CoreCms\Domains\Identity\Events\OtpVerified;
+use TuranFurkan\CoreCms\Domains\Identity\Events\UserLoggedIn;
+use TuranFurkan\CoreCms\Domains\Identity\Events\UserLoggedOut;
+use TuranFurkan\CoreCms\Domains\Identity\Events\UserLoginFailed;
+use TuranFurkan\CoreCms\Domains\Identity\Events\UserRegistered;
+use TuranFurkan\CoreCms\Domains\Identity\Listeners\LogFailedLogin;
+use TuranFurkan\CoreCms\Domains\Identity\Listeners\LogLogoutActivity;
+use TuranFurkan\CoreCms\Domains\Identity\Listeners\LogOtpDeliveryFailed;
+use TuranFurkan\CoreCms\Domains\Identity\Listeners\LogOtpRateLimited;
+use TuranFurkan\CoreCms\Domains\Identity\Listeners\LogOtpRequested;
+use TuranFurkan\CoreCms\Domains\Identity\Listeners\LogOtpVerificationFailed;
+use TuranFurkan\CoreCms\Domains\Identity\Listeners\LogOtpVerified;
+use TuranFurkan\CoreCms\Domains\Identity\Listeners\LogRegisteredUser;
+use TuranFurkan\CoreCms\Domains\Identity\Listeners\LogSuccessfulLogin;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Policies\UserPolicy;
+use TuranFurkan\CoreCms\Domains\Identity\Sms\FakeSmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Sms\LogSmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Sms\NetgsmSmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Sms\TwilioSmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Support\OtpCodeGenerator;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Http\Request;
@@ -94,8 +94,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
 
         \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
-            'App\\Domains\\User\\Models\\User' => \App\Domains\Identity\Models\User::class,
-            'App\\Domains\\Identity\\Models\\User' => \App\Domains\Identity\Models\User::class,
+            'App\\Domains\\User\\Models\\User' => \TuranFurkan\CoreCms\Domains\Identity\Models\User::class,
+            'App\\Domains\\Identity\\Models\\User' => \TuranFurkan\CoreCms\Domains\Identity\Models\User::class,
         ]);
 
         Event::listen(UserRegistered::class, LogRegisteredUser::class);
@@ -108,22 +108,22 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(OtpVerificationFailed::class, LogOtpVerificationFailed::class);
         Event::listen(UserLoggedOut::class, LogLogoutActivity::class);
         Event::listen(
-            \App\Domains\Workflow\Events\WorkflowTransitioned::class,
-            \App\Domains\Workflow\Listeners\AutoPublishWorkflowListener::class
+            \TuranFurkan\CoreCms\Domains\Workflow\Events\WorkflowTransitioned::class,
+            \TuranFurkan\CoreCms\Domains\Workflow\Listeners\AutoPublishWorkflowListener::class
         );
         Event::listen(
-            \App\Domains\Workflow\Events\WorkflowTransitioned::class,
-            \App\Domains\Integration\Listeners\WebhookEventListener::class
+            \TuranFurkan\CoreCms\Domains\Workflow\Events\WorkflowTransitioned::class,
+            \TuranFurkan\CoreCms\Domains\Integration\Listeners\WebhookEventListener::class
         );
         Event::listen(
-            \App\Domains\Forms\Events\FormSubmitted::class,
-            \App\Domains\Forms\Listeners\SendFormSubmissionAlert::class
+            \TuranFurkan\CoreCms\Domains\Forms\Events\FormSubmitted::class,
+            \TuranFurkan\CoreCms\Domains\Forms\Listeners\SendFormSubmissionAlert::class
         );
         Event::listen(
-            \App\Domains\Forms\Events\FormSubmitted::class,
-            \App\Domains\Integration\Listeners\WebhookEventListener::class
+            \TuranFurkan\CoreCms\Domains\Forms\Events\FormSubmitted::class,
+            \TuranFurkan\CoreCms\Domains\Integration\Listeners\WebhookEventListener::class
         );
-        Event::listen(UserRegistered::class, \App\Domains\Integration\Listeners\WebhookEventListener::class);
+        Event::listen(UserRegistered::class, \TuranFurkan\CoreCms\Domains\Integration\Listeners\WebhookEventListener::class);
 
         $this->configureRateLimiters();
     }

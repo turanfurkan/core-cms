@@ -2,16 +2,16 @@
 
 namespace App\Console\Commands;
 
-use App\Domains\Category\Models\Category;
-use App\Domains\Media\Models\MediaItem;
-use App\Domains\Media\Models\MediaLibraryPlaceholder;
-use App\Domains\Race\Models\Participant;
-use App\Domains\Race\Models\Registration;
-use App\Domains\Billing\Models\Order;
-use App\Domains\Billing\Models\OrderItem;
-use App\Domains\Billing\Models\PaymentTransaction;
-use App\Domains\Identity\Models\User;
-use App\Domains\Race\Models\Race;
+use TuranFurkan\CoreCms\Domains\Category\Models\Category;
+use TuranFurkan\CoreCms\Domains\Media\Models\MediaItem;
+use TuranFurkan\CoreCms\Domains\Media\Models\MediaLibraryPlaceholder;
+use TuranFurkan\CoreCms\Domains\Race\Models\Participant;
+use TuranFurkan\CoreCms\Domains\Race\Models\Registration;
+use TuranFurkan\CoreCms\Domains\Billing\Models\Order;
+use TuranFurkan\CoreCms\Domains\Billing\Models\OrderItem;
+use TuranFurkan\CoreCms\Domains\Billing\Models\PaymentTransaction;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Race\Models\Race;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;

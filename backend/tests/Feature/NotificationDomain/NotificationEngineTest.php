@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\NotificationDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Identity\Contracts\SmsGateway;
-use App\Domains\Notification\Models\NotificationTemplate;
-use App\Domains\Notification\Support\DynamicNotification;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Contracts\SmsGateway;
+use TuranFurkan\CoreCms\Domains\Notification\Models\NotificationTemplate;
+use TuranFurkan\CoreCms\Domains\Notification\Support\DynamicNotification;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;

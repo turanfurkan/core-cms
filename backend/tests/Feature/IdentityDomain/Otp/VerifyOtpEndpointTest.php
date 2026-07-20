@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\IdentityDomain\Otp;
 
-use App\Domains\Identity\Models\LoginOtp;
-use App\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Models\LoginOtp;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;

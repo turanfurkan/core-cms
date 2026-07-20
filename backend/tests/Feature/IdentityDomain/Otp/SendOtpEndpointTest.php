@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\IdentityDomain\Otp;
 
-use App\Domains\Identity\Contracts\SmsGateway;
-use App\Domains\Identity\Models\LoginOtp;
-use App\Domains\Identity\Models\User;
-use App\Domains\Identity\Sms\FakeSmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Contracts\SmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Models\LoginOtp;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Sms\FakeSmsGateway;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;

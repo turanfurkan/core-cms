@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\IdentityDomain\Admin;
 
-use App\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Domains\Identity\Models\Role;
-use App\Domains\Identity\Models\Permission;
+use TuranFurkan\CoreCms\Domains\Identity\Models\Role;
+use TuranFurkan\CoreCms\Domains\Identity\Models\Permission;
 use Tests\TestCase;
 
 class UserCrudTest extends TestCase

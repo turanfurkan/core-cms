@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Identity\Models\Role;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Models\Role;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 

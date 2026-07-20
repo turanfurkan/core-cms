@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\IntegrationDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Integration\Models\Webhook;
-use App\Domains\Integration\Models\WebhookLog;
-use App\Domains\Integration\Jobs\DispatchWebhookJob;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Integration\Models\Webhook;
+use TuranFurkan\CoreCms\Domains\Integration\Models\WebhookLog;
+use TuranFurkan\CoreCms\Domains\Integration\Jobs\DispatchWebhookJob;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;

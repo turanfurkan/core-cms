@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Domains\Identity\Models\Permission;
-use App\Domains\Identity\Models\Role;
+use TuranFurkan\CoreCms\Domains\Identity\Models\Permission;
+use TuranFurkan\CoreCms\Domains\Identity\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder

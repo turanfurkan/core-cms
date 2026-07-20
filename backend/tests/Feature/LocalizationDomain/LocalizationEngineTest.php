@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\LocalizationDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Localization\Models\Language;
-use App\Domains\Localization\Models\Translation;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Localization\Models\Language;
+use TuranFurkan\CoreCms\Domains\Localization\Models\Translation;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;

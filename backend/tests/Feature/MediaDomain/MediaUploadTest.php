@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\MediaDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Media\Models\MediaFolder;
-use App\Domains\Media\Models\MediaItem;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Media\Models\MediaFolder;
+use TuranFurkan\CoreCms\Domains\Media\Models\MediaItem;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;

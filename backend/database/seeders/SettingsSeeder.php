@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Domains\Settings\Models\Setting;
+use TuranFurkan\CoreCms\Domains\Settings\Models\Setting;
 use Illuminate\Database\Seeder;
 
 class SettingsSeeder extends Seeder

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\IdentityDomain\Profile;
 
-use App\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;

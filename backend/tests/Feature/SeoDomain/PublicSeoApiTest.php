@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\SeoDomain;
 
-use App\Domains\SEO\Models\SeoPath;
-use App\Domains\SEO\Models\SeoRedirect;
-use App\Domains\Post\Models\Post;
+use TuranFurkan\CoreCms\Domains\SEO\Models\SeoPath;
+use TuranFurkan\CoreCms\Domains\SEO\Models\SeoRedirect;
+use TuranFurkan\CoreCms\Domains\Post\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

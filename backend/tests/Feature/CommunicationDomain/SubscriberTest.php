@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\CommunicationDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Communication\Models\Subscriber;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Communication\Models\Subscriber;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;

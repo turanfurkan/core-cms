@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\IdentityDomain\Models;
 
-use App\Domains\Identity\Models\Permission;
-use App\Domains\Identity\Models\Role;
-use App\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Models\Permission;
+use TuranFurkan\CoreCms\Domains\Identity\Models\Role;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

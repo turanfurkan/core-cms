@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\CommunicationDomain;
 
-use App\Domains\Identity\Exceptions\SmsDeliveryException;
-use App\Domains\Identity\Sms\NetgsmSmsGateway;
-use App\Domains\Identity\Sms\TwilioSmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Exceptions\SmsDeliveryException;
+use TuranFurkan\CoreCms\Domains\Identity\Sms\NetgsmSmsGateway;
+use TuranFurkan\CoreCms\Domains\Identity\Sms\TwilioSmsGateway;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 

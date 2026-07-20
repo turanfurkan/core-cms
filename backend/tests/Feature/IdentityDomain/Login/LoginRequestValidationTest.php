@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\IdentityDomain\Login;
 
-use App\Domains\Identity\Http\Requests\Auth\LoginRequest;
+use TuranFurkan\CoreCms\Domains\Identity\Http\Requests\Auth\LoginRequest;
 use Illuminate\Routing\Redirector;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\DataProvider;

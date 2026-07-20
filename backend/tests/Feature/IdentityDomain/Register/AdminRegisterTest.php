@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\IdentityDomain\Register;
 
-use App\Domains\Identity\Events\UserRegistered;
-use App\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Events\UserRegistered;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;

@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Domains\Identity\Models\LoginOtp;
+use TuranFurkan\CoreCms\Domains\Identity\Models\LoginOtp;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 

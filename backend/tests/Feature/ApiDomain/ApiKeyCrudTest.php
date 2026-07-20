@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\ApiDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\API\Models\ApiKey;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\API\Models\ApiKey;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

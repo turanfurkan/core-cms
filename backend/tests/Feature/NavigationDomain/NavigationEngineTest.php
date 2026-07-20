@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\NavigationDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Navigation\Models\Navigation;
-use App\Domains\Navigation\Models\NavigationItem;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Navigation\Models\Navigation;
+use TuranFurkan\CoreCms\Domains\Navigation\Models\NavigationItem;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;

@@ -1,6 +1,6 @@
 <?php
 
-use App\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
 
 return [
 

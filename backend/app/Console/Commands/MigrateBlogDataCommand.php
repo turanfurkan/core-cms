@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Domains\Post\Models\Post;
-use App\Domains\Media\Models\MediaLibraryPlaceholder;
+use TuranFurkan\CoreCms\Domains\Post\Models\Post;
+use TuranFurkan\CoreCms\Domains\Media\Models\MediaLibraryPlaceholder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -141,7 +141,7 @@ class MigrateBlogDataCommand extends Command
         $fileName = basename($cleanPath);
 
         // Deduplicate: check if we already have this file in media library
-        $existing = \App\Domains\Media\Models\MediaItem::where('file_name', $fileName)->first();
+        $existing = \TuranFurkan\CoreCms\Domains\Media\Models\MediaItem::where('file_name', $fileName)->first();
         if ($existing) {
             return $existing->id;
         }

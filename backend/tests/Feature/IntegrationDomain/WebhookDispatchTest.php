@@ -2,18 +2,18 @@
 
 namespace Tests\Feature\IntegrationDomain;
 
-use App\Domains\Identity\Events\UserRegistered;
-use App\Domains\Identity\Models\User;
-use App\Domains\Forms\Events\FormSubmitted;
-use App\Domains\Forms\Models\Form;
-use App\Domains\Forms\Models\FormSubmission;
-use App\Domains\Workflow\Events\WorkflowTransitioned;
-use App\Domains\Workflow\Models\WorkflowLog;
-use App\Domains\Workflow\Models\WorkflowState;
-use App\Domains\Post\Models\Post;
-use App\Domains\Integration\Models\Webhook;
-use App\Domains\Integration\Models\WebhookLog;
-use App\Domains\Integration\Jobs\DispatchWebhookJob;
+use TuranFurkan\CoreCms\Domains\Identity\Events\UserRegistered;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Forms\Events\FormSubmitted;
+use TuranFurkan\CoreCms\Domains\Forms\Models\Form;
+use TuranFurkan\CoreCms\Domains\Forms\Models\FormSubmission;
+use TuranFurkan\CoreCms\Domains\Workflow\Events\WorkflowTransitioned;
+use TuranFurkan\CoreCms\Domains\Workflow\Models\WorkflowLog;
+use TuranFurkan\CoreCms\Domains\Workflow\Models\WorkflowState;
+use TuranFurkan\CoreCms\Domains\Post\Models\Post;
+use TuranFurkan\CoreCms\Domains\Integration\Models\Webhook;
+use TuranFurkan\CoreCms\Domains\Integration\Models\WebhookLog;
+use TuranFurkan\CoreCms\Domains\Integration\Jobs\DispatchWebhookJob;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;

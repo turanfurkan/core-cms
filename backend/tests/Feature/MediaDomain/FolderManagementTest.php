@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\MediaDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Media\Models\MediaFolder;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Media\Models\MediaFolder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

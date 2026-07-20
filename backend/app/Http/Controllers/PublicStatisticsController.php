@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Domains\Race\Models\Race;
-use App\Domains\Category\Models\Category;
-use App\Domains\Billing\Models\Order;
-use App\Domains\Communication\Models\Subscriber;
-use App\Domains\Post\Models\Post;
+use TuranFurkan\CoreCms\Domains\Race\Models\Race;
+use TuranFurkan\CoreCms\Domains\Category\Models\Category;
+use TuranFurkan\CoreCms\Domains\Billing\Models\Order;
+use TuranFurkan\CoreCms\Domains\Communication\Models\Subscriber;
+use TuranFurkan\CoreCms\Domains\Post\Models\Post;
 use Illuminate\Http\JsonResponse;
 
 class PublicStatisticsController extends Controller

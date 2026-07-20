@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\SettingsDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\Settings\Models\Setting;
-use App\Domains\Settings\Support\SettingHelper;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\Settings\Models\Setting;
+use TuranFurkan\CoreCms\Domains\Settings\Support\SettingHelper;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

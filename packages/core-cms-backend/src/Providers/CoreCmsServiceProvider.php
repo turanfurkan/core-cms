@@ -11,7 +11,7 @@ class CoreCmsServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->register(\TuranFurkan\CoreCms\Domains\Localization\Providers\LocalizationServiceProvider::class);
     }
 
     /**
@@ -21,5 +21,15 @@ class CoreCmsServiceProvider extends ServiceProvider
     {
         // Load package migrations
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+
+        // Load package routes
+        $this->loadRoutesFrom(__DIR__ . '/../../routes/api.php');
+
+        // Load package console commands
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \TuranFurkan\CoreCms\Console\Commands\UpgradeNamespacesCommand::class,
+            ]);
+        }
     }
 }

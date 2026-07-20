@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\SeoDomain;
 
-use App\Domains\Identity\Models\User;
-use App\Domains\SEO\Models\SeoRedirect;
+use TuranFurkan\CoreCms\Domains\Identity\Models\User;
+use TuranFurkan\CoreCms\Domains\SEO\Models\SeoRedirect;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
