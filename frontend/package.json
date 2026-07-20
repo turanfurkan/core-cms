@@ -37,7 +37,7 @@
     "@tanstack/react-query": "^5.81.5",
     "@tanstack/react-query-devtools": "^5.81.5",
     "@tanstack/react-table": "^8.21.3",
-    "@turanfurkan/core-cms-ui": "file:../packages/core-cms-ui",
+    "@turanfurkan/core-cms-ui": "file:packages/core-cms-ui",
     "apexcharts": "4.7.0",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",

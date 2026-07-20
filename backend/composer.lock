@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cf744a5b6606e59ffcb497fe38c32f2a",
+    "content-hash": "110b0cd353c48a0db6aa9395dd70b90f",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -7183,12 +7183,18 @@
             "version": "dev-main",
             "dist": {
                 "type": "path",
-                "url": "../packages/core-cms-backend",
-                "reference": "1638c5bd3d5d01ca8a15f15f900cd05cf2b19856"
+                "url": "packages/core-cms-backend",
+                "reference": "a69b378590cb421d7fd845cc875caa0838c2f2b6"
             },
             "require": {
+                "giggsey/libphonenumber-for-php": "^9.0",
                 "laravel/framework": "^11.0 || ^12.0",
-                "php": "^8.2"
+                "laravel/sanctum": "^4.0",
+                "php": "^8.2",
+                "spatie/laravel-activitylog": "^4.12",
+                "spatie/laravel-medialibrary": "^11.22",
+                "spatie/laravel-permission": "^6.25",
+                "spatie/laravel-translatable": "^6.11"
             },
             "type": "library",
             "extra": {
