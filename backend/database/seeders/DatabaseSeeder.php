@@ -20,24 +20,21 @@ class DatabaseSeeder extends Seeder
 
         $user = User::where('email', 'test@example.com')->first();
         if (!$user) {
-            $user = User::factory()
-                ->state(fn () => [
-                    'name' => 'Test User',
-                    'email' => 'test@example.com',
-                ])
-                ->create();
+            $user = User::create([
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+                'password' => Hash::make('password'),
+            ]);
             $user->assignRole(\Spatie\Permission\Models\Role::where('name', 'super_admin')->get());
         }
 
         $demoUser = User::where('email', 'demo@kt.com')->first();
         if (!$demoUser) {
-            $demoUser = User::factory()
-                ->state(fn () => [
-                    'name' => 'Demo User',
-                    'email' => 'demo@kt.com',
-                    'password' => Hash::make('demo123'),
-                ])
-                ->create();
+            $demoUser = User::create([
+                'name' => 'Demo User',
+                'email' => 'demo@kt.com',
+                'password' => Hash::make('demo123'),
+            ]);
             $demoUser->assignRole(\Spatie\Permission\Models\Role::where('name', 'super_admin')->get());
         }
 
